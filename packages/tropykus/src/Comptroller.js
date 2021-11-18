@@ -4,7 +4,7 @@ import ComptrollerAbi from '../abis/ComptrollerG6.json';
 export default class Comptroller {
     constructor(contractAddress, ethersProvider) {
         this.ethersProvider = ethersProvider;
-        this.instance = ethers.Contract(contractAddress, ComptrollerAbi, this.ethersProvider);
+        this.instance = new ethers.Contract(contractAddress, ComptrollerAbi, this.ethersProvider);
     }
 
     allMarkets() {

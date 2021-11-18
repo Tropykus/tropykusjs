@@ -1,7 +1,7 @@
 {
   "name": "tropykusjs",
-  "version": "1.0.0",
-  "description": "",
+  "version": "0.0.1",
+  "description": "Tropykus finance libraries",
   "main": "packages/tropykus/src/index.js",
   "scripts": {
     "build": "lerna run build",
@@ -23,7 +23,8 @@
     "url": "git+https://github.com/Tropykus/tropykusjs.git"
   },
   "keywords": [
-    "topykus"
+    "tropykus",
+    "finance"
   ],
   "author": "Tropykus finance",
   "license": "MIT",

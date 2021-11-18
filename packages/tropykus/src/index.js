@@ -17,8 +17,7 @@ export default class Tropykus {
      * By providing the on chain deployed controller address, a controller instance is made available.
      * @param {string} controllerAddress on chain deployed controller address.
      */
-    set controller(controllerAddress) {
+    setComptroller(controllerAddress) {
         this.internalController = new Comptroller(controllerAddress, this.ethersProvider);
-        this.markets();
     }
 }
