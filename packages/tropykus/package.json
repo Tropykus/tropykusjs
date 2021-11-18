@@ -1,0 +1,24 @@
+{
+  "name": "@trugroup/tropykus",
+  "version": "0.0.4",
+  "description": "Tropykus finance contract handlers",
+  "main": "dist/@trugroup/tropykus.cjs.js",
+  "module": "dist/@trugroup/tropykus.esm.js",
+  "browser": "dist/@trugroup/tropykus.umd.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -c -w",
+    "test": "nyc mocha --recursive --exit"
+  },
+  "author": "Tru Startup SAS",
+  "homepage": "https://github.com/Tropykus/tropykusjs#readme",
+  "license": "ISC",
+  "dependencies": {
+    "image-js": "^0.30.3",
+    "p5": "^1.1.9",
+    "web3": "^1.3.0"
+  }
+}
