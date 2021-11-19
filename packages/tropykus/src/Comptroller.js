@@ -14,4 +14,20 @@ export default class Comptroller {
                 .catch(reject);
         });
     }
+
+    getAssetsIn(account) {
+        return new Promise((resolve, reject) => {
+            this.instance.callStatic.getAssetsIn(account.address)
+            .then(resolve)
+            .catch(reject);
+        });
+    }
+
+    enterMarkets(account, marketAddresses) {
+        return new Promise((resolve,reject) => { 
+            this.instance.connect(account).enterMarkets(marketAddresses)
+                .then(resolve)
+                .catch(reject);
+        });
+    }
 }

@@ -2274,6 +2274,23 @@ var Comptroller = function () {
         _this.instance.callStatic.getAllMarkets().then(resolve).catch(reject);
       });
     }
+  }, {
+    key: "getAssetsIn",
+    value: function getAssetsIn(account) {
+      var _this2 = this;
+      return new Promise(function (resolve, reject) {
+        _this2.instance.callStatic.getAssetsIn(account.address).then(resolve).catch(reject);
+      });
+    }
+  }, {
+    key: "enterMarkets",
+    value: function enterMarkets(account, marketAddresses) {
+      var _this3 = this;
+      console.log(account);
+      return new Promise(function (resolve, reject) {
+        _this3.instance.connect(account).enterMarkets(marketAddresses).then(resolve).catch(reject);
+      });
+    }
   }]);
   return Comptroller;
 }();
@@ -2282,17 +2299,28 @@ var Tropykus = function () {
   function Tropykus(providerURL) {
     _classCallCheck__default["default"](this, Tropykus);
     this.ethersProvider = new ethers.ethers.providers.JsonRpcProvider(providerURL);
-    this.internalController = null;
+    this.internalComptroller = null;
+    this.internalAccount = null;
   }
   _createClass__default["default"](Tropykus, [{
     key: "comptroller",
     get: function get() {
-      return this.internalController;
+      return this.internalComptroller;
     }
   }, {
     key: "setComptroller",
-    value: function setComptroller(controllerAddress) {
-      this.internalController = new Comptroller(controllerAddress, this.ethersProvider);
+    value: function setComptroller(comptrollerAddress) {
+      this.internalComptroller = new Comptroller(comptrollerAddress, this.ethersProvider);
+    }
+  }, {
+    key: "account",
+    get: function get() {
+      return this.internalAccount;
+    }
+  }, {
+    key: "setAccount",
+    value: function setAccount(mnemonic) {
+      this.internalAccount = ethers.Wallet.fromMnemonic(mnemonic, "m/44'/60'/0'/0/0").connect(this.ethersProvider);
     }
   }]);
   return Tropykus;
