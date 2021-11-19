@@ -2286,7 +2286,6 @@
         key: "enterMarkets",
         value: function enterMarkets(account, marketAddresses) {
           var _this3 = this;
-          console.log(account);
           return new Promise(function (resolve, reject) {
             _this3.instance.connect(account).enterMarkets(marketAddresses).then(resolve).catch(reject);
           });
