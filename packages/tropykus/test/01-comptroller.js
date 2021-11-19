@@ -11,9 +11,9 @@ const { expect } = chai;
 
 const mnemonic = 'elegant ripple curve exhibit capital oblige off inform recall describe warrior earn';
 
-const comptrollerAddress = '0xeaa28bc9D395a92da610cDdD689eD11643968175';
-const crbtcMarketAddress = '0xd93C47A0aeeF70587B8da3420239EE378541d5c1';
-const cdocAddress = '0xF44Bda0F59B99faB24E39B8D1e563CFa562cAD22';
+const comptrollerAddress = '0xB173b5EE67b9F38263413Bc29440f89cC5BC3C39';
+const crbtcMarketAddress = '0xE498D1E3A0d7fdb80a2d7591D997aFDA34F8c5C5';
+const cdocAddress = '0x1CbD672Ac9d98F4f033e12eDE3c55f5CB02B983C';
 
 
 describe('Comptroller', () => {
@@ -30,15 +30,13 @@ describe('Comptroller', () => {
     });
 
     it('should instance a CRBTC Market', async () => {
-        const crbtc = new Market(tropykus.ethersProvider);
-        crbtc.setMarket(crbtcMarketAddress);
-        expect(crbtc.market).instanceOf(CRBTCMarket);
+        tropykus.setMarket(crbtcMarketAddress);
+        expect(tropykus.market).instanceOf(CRBTCMarket);
     })
 
     it('should instance a CTocken Market', async () => {
-        const ctoken = new Market(tropykus.ethersProvider);
-        ctoken.setMarket(cdocAddress, false);
-        expect(ctoken.market).instanceOf(CTokenMarket);
+        tropykus.setMarket(cdocAddress, false);
+        expect(tropykus.market).instanceOf(CTokenMarket);
     });
 
     it.skip('should list the markets', async () => {
@@ -71,11 +69,10 @@ describe('Comptroller', () => {
         const markets = await tropykus.comptroller.allMarkets();
         await tropykus.comptroller.enterMarkets(tropykus.account, markets);
 
-        const crbtc = new Market(tropykus.ethersProvider);
-        crbtc.setMarket(crbtcMarketAddress);
+        tropykus.setMarket(crbtcMarketAddress);
 
-        await crbtc.supply(tropykus.account, '1000');
-        console.log('Balance in crbtc market:', (await crbtc.balanceOfUnderlying(tropykus.account)).toString());
+        await tropykus.market.mint(tropykus.account, '1000');
+        console.log('Balance in crbtc market:', (await tropykus.market.balanceOfUnderlying(tropykus.account)).toString());
     });
 
     it.skip('should deposit in any token market', async () => {
@@ -88,7 +85,7 @@ describe('Comptroller', () => {
         const crbtc = new Market(tropykus.ethersProvider);
         crbtc.setMarket(crbtcMarketAddress, false);
 
-        await crbtc.supply(tropykus.account, '1000');
+        await crbtc.mint(tropykus.account, '1000');
         console.log((await crbtc.balanceOfUnderlying(tropykus.account)).toString());
     });
 });

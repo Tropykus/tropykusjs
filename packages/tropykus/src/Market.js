@@ -1,27 +1,22 @@
-import CRBTCMarket from "./Markets/CRBTCMarket";
-import CTokenMarket from "./Markets/CTokenMarket";
-
 export default class Market {
-    constructor(ethersProvider) {
+    constructor(ethersProvider, instance) {
         this.ethersProvider = ethersProvider;
-        this.internalMarket = null;
-    }
-
-    get market() { return this.internalMarket; }
-
-    setMarket(contractAddress, isCRBTCMarket = true) {
-        if (isCRBTCMarket) {
-            this.internalMarket = new CRBTCMarket(contractAddress, this.ethersProvider);
-        } else {
-            this.internalMarket = new CTokenMarket(contractAddress, this.ethersProvider);
-        }
+        this.instance = instance;
     }
 
     balanceOfUnderlying(account) {
-        return this.market.balanceOfUnderlying(account);
+        return new Promise((resolve, reject) => {
+            this.instance.callStatic.balanceOf(account.address)
+            .then(resolve)
+            .catch(reject);
+        });
     }
 
-    supply(account, amount) {
-        return this.internalMarket.supply(account, amount);
+    mint(account, amount) {
+        return new Promise((resolve, reject) => {
+            this.instance.connect(account).mint({ value: amount, gasLimit: this.gasLimit })
+            .then(resolve)
+            .catch(reject);
+        });
     }
 }
