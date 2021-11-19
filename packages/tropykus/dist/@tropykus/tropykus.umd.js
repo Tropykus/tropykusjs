@@ -4168,8 +4168,8 @@
         }
       }, {
         key: "setAccount",
-        value: function setAccount(mnemonic) {
-          this.internalAccount = ethers.Wallet.fromMnemonic(mnemonic, "m/44'/60'/0'/0/0").connect(this.ethersProvider);
+        value: function setAccount(mnemonic, derivationPath) {
+          this.internalAccount = ethers.Wallet.fromMnemonic(mnemonic, derivationPath).connect(this.ethersProvider);
         }
       }, {
         key: "comptroller",

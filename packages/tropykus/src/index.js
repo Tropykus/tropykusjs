@@ -21,8 +21,8 @@ export default class Tropykus {
      * By providing the mnemonic, a wallet instance is made available.
      * @param {string} mnemonic to generate the wallet.
      */
-    setAccount(mnemonic) {
-        this.internalAccount = Wallet.fromMnemonic(mnemonic, `m/44'/60'/0'/0/0`).connect(this.ethersProvider);
+    setAccount(mnemonic, derivationPath) {
+        this.internalAccount = Wallet.fromMnemonic(mnemonic, derivationPath).connect(this.ethersProvider);
     }
 
     /**

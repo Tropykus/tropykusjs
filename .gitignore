@@ -1,2 +1,4 @@
 node_modules/
-packages/node_modules/
+packages/tropykus/.nyc_output/
+packages/tropykus/dist/
+packages/tropykus/node_modules/

@@ -4255,8 +4255,8 @@ var Tropykus = function () {
     }
   }, {
     key: "setAccount",
-    value: function setAccount(mnemonic) {
-      this.internalAccount = Wallet.fromMnemonic(mnemonic, "m/44'/60'/0'/0/0").connect(this.ethersProvider);
+    value: function setAccount(mnemonic, derivationPath) {
+      this.internalAccount = Wallet.fromMnemonic(mnemonic, derivationPath).connect(this.ethersProvider);
     }
   }, {
     key: "comptroller",

@@ -10,6 +10,7 @@ chai.use(chaiAsPromised);
 const { expect } = chai;
 
 const mnemonic = 'elegant ripple curve exhibit capital oblige off inform recall describe warrior earn';
+const derivationPath = `m/44'/60'/0'/0/0`;
 
 const comptrollerAddress = '0xB173b5EE67b9F38263413Bc29440f89cC5BC3C39';
 const crbtcMarketAddress = '0xE498D1E3A0d7fdb80a2d7591D997aFDA34F8c5C5';
@@ -20,7 +21,7 @@ describe('Comptroller', () => {
     const tropykus = new Tropykus('http://localhost:8545');
 
     it.skip('should generate an account', async () => {
-        tropykus.setAccount(mnemonic);
+        tropykus.setAccount(mnemonic, derivationPath);
         expect(tropykus.account.address.toLowerCase()).equals('0xe317349c7279ffF242cc8ADCb575EbA0153760BA'.toLowerCase());
     });
 
@@ -47,7 +48,7 @@ describe('Comptroller', () => {
 
     it.skip('should enter the markets', async () => {
         tropykus.setComptroller(comptrollerAddress);
-        tropykus.setAccount(mnemonic);
+        tropykus.setAccount(mnemonic, derivationPath);
 
         let assetsIn = await tropykus.comptroller.getAssetsIn(tropykus.account);
         expect(assetsIn.length).equals(0);
@@ -64,7 +65,7 @@ describe('Comptroller', () => {
 
     it('should deposit in the crbtc market', async () => {
         tropykus.setComptroller(comptrollerAddress);
-        tropykus.setAccount(mnemonic);
+        tropykus.setAccount(mnemonic, derivationPath);
 
         const markets = await tropykus.comptroller.allMarkets();
         await tropykus.comptroller.enterMarkets(tropykus.account, markets);
@@ -77,7 +78,7 @@ describe('Comptroller', () => {
 
     it.skip('should deposit in any token market', async () => {
         tropykus.setComptroller(comptrollerAddress);
-        tropykus.setAccount(mnemonic);
+        tropykus.setAccount(mnemonic, derivationPath);
 
         const markets = await tropykus.comptroller.allMarkets();
         await tropykus.comptroller.enterMarkets(tropykus.account, markets);
