@@ -3965,17 +3965,65 @@ var Market = function () {
     value: function balanceOfUnderlying(account) {
       var _this = this;
       return new Promise(function (resolve, reject) {
-        _this.instance.connect(account).callStatic.balanceOf(account.address).then(resolve)["catch"](reject);
+        _this.instance.connect(account).callStatic.balanceOfUnderlying(account.address).then(function (balance) {
+          return Number(balance) / 1e18;
+        }).then(resolve)["catch"](reject);
       });
     }
   }, {
-    key: "mint",
-    value: function mint(account, amount) {
+    key: "balanceOf",
+    value: function balanceOf(account) {
       var _this2 = this;
       return new Promise(function (resolve, reject) {
-        _this2.instance.connect(account).mint({
-          value: amount,
-          gasLimit: _this2.tropykus.gasLimit
+        _this2.instance.connect(account).callStatic.balanceOf(account.address).then(function (balance) {
+          return Number(balance) / 1e18;
+        }).then(resolve)["catch"](reject);
+      });
+    }
+  }, {
+    key: "borrowBalanceCurrent",
+    value: function () {
+      var _borrowBalanceCurrent = _asyncToGenerator( regeneratorRuntime.mark(function _callee(account) {
+        var _this3 = this;
+        return regeneratorRuntime.wrap(function _callee$(_context) {
+          while (1) {
+            switch (_context.prev = _context.next) {
+              case 0:
+                return _context.abrupt("return", new Promise(function (resolve, reject) {
+                  _this3.instance.connect(account).callStatic.borrowBalanceCurrent(account.address).then(function (balance) {
+                    return Number(balance) / 1e18;
+                  }).then(resolve)["catch"](reject);
+                }));
+              case 1:
+              case "end":
+                return _context.stop();
+            }
+          }
+        }, _callee);
+      }));
+      function borrowBalanceCurrent(_x) {
+        return _borrowBalanceCurrent.apply(this, arguments);
+      }
+      return borrowBalanceCurrent;
+    }()
+  }, {
+    key: "mint",
+    value: function mint(account, amount) {
+      var _this4 = this;
+      return new Promise(function (resolve, reject) {
+        _this4.instance.connect(account).mint({
+          value: ethers.utils.parseEther(amount.toString()),
+          gasLimit: _this4.tropykus.gasLimit
+        }).then(resolve)["catch"](reject);
+      });
+    }
+  }, {
+    key: "borrow",
+    value: function borrow(account, amount) {
+      var _this5 = this;
+      return new Promise(function (resolve, reject) {
+        _this5.instance.connect(account).borrow(ethers.utils.parseEther(amount.toString()), {
+          gasLimit: _this5.tropykus.gasLimit
         }).then(resolve)["catch"](reject);
       });
     }
@@ -5919,9 +5967,9 @@ var CToken = function (_Market) {
             switch (_context.prev = _context.next) {
               case 0:
                 _context.next = 2;
-                return this.erc20Instance.connect(account).approve(this.address, amount);
+                return this.erc20Instance.connect(account).approve(this.address, ethers.utils.parseEther(amount.toString()));
               case 2:
-                return _context.abrupt("return", this.instance.connect(account).mint(amount, {
+                return _context.abrupt("return", this.instance.connect(account).mint(ethers.utils.parseEther(amount.toString()), {
                   gasLimit: this.tropykus.gasLimit
                 }));
               case 3:

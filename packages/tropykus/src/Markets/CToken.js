@@ -17,7 +17,9 @@ export default class CToken extends Market {
   }
 
   async mint(account, amount) {
-    await this.erc20Instance.connect(account).approve(this.address, amount);
-    return this.instance.connect(account).mint(amount, { gasLimit: this.tropykus.gasLimit });
+    await this.erc20Instance.connect(account)
+      .approve(this.address, ethers.utils.parseEther(amount.toString()));
+    return this.instance.connect(account)
+      .mint(ethers.utils.parseEther(amount.toString()), { gasLimit: this.tropykus.gasLimit });
   }
 }

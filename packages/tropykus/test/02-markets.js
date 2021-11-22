@@ -41,18 +41,40 @@ describe('Market', () => {
       await tropykus.comptroller.enterMarkets(tropykus.account, markets);
     });
 
-    it('should deposit in the crbtc market', async () => {
+    it('should deposit in the cRBTC market', async () => {
       const crbtc = tropykus.addMarket(crbtcMarketAddress);
 
-      await crbtc.mint(tropykus.account, 1000);
-      console.log('Balance in rbtc market:', (await crbtc.balanceOfUnderlying(tropykus.account)).toString());
+      await crbtc.mint(tropykus.account, 0.5);
+      const balance = await crbtc.balanceOfUnderlying(tropykus.account);
+      expect(balance).equals(0.5);
     });
 
     it('should deposit in any token market', async () => {
       const cdoc = tropykus.addMarket(cdocAddress, false, docAddress);
 
       await cdoc.mint(tropykus.account, 1000);
-      console.log('Balance in doc market:', (await cdoc.balanceOfUnderlying(tropykus.account)).toString());
+      const balance = await cdoc.balanceOfUnderlying(tropykus.account);
+      expect(balance).equals(1000);
+    });
+
+    it.skip('should borrow in cdoc an amount once he has a collateral on cdoc', async() => {
+      const crbtc = tropykus.addMarket(crbtcMarketAddress);
+      const cdoc = tropykus.addMarket(cdocAddress, false, docAddress);
+
+      await crbtc.mint(tropykus.account, 0.5);
+      await cdoc.borrow(tropykus.account, 100);
+      const balance = await cdoc.borrowBalanceCurrent(tropykus.account);
+      expect(balance).equals(100);
+    });
+
+    it('should borrow in crbtc market an amount once he has a collateral on crbtc', async() => {
+      const crbtc = tropykus.addMarket(crbtcMarketAddress);
+      const cdoc = tropykus.addMarket(cdocAddress, false, docAddress);
+
+      await cdoc.mint(tropykus.account, 1000);
+      await crbtc.borrow(tropykus.account, 0.005);
+      const balance = await crbtc.borrowBalanceCurrent(tropykus.account);
+      expect(balance).equals(0.005);
     });
   });
 });
