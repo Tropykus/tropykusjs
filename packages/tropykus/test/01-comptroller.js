@@ -3,8 +3,8 @@ import chaiAsPromised from 'chai-as-promised';
 import Tropykus from "../src";
 import Comptroller from "../src/Comptroller";
 import Market from '../src/Market';
-import CRBTCMarket from '../src/Markets/CRBTCMarket';
-import CTokenMarket from '../src/Markets/CTokenMarket';
+import CRBTCMarket from '../src/Markets/CRBTC.js';
+import CTokenMarket from '../src/Markets/CToken';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -15,6 +15,7 @@ const derivationPath = `m/44'/60'/0'/0/0`;
 const comptrollerAddress = '0xB173b5EE67b9F38263413Bc29440f89cC5BC3C39';
 const crbtcMarketAddress = '0xE498D1E3A0d7fdb80a2d7591D997aFDA34F8c5C5';
 const cdocAddress = '0x1CbD672Ac9d98F4f033e12eDE3c55f5CB02B983C';
+const docAddress = '0xC3b5a61f8fc55fef790165d9f12AD23D47F7De99';
 
 
 describe('Comptroller', () => {
@@ -30,13 +31,13 @@ describe('Comptroller', () => {
         expect(tropykus.comptroller).instanceOf(Comptroller);
     });
 
-    it('should instance a CRBTC Market', async () => {
+    it.skip('should instance a CRBTC Market', async () => {
         tropykus.setMarket(crbtcMarketAddress);
         expect(tropykus.market).instanceOf(CRBTCMarket);
     })
 
-    it('should instance a CTocken Market', async () => {
-        tropykus.setMarket(cdocAddress, false);
+    it.skip('should instance a CTocken Market', async () => {
+        tropykus.setMarket(cdocAddress, false, docAddress);
         expect(tropykus.market).instanceOf(CTokenMarket);
     });
 
@@ -76,17 +77,18 @@ describe('Comptroller', () => {
         console.log('Balance in crbtc market:', (await tropykus.market.balanceOfUnderlying(tropykus.account)).toString());
     });
 
-    it.skip('should deposit in any token market', async () => {
+    it('should deposit in any token market', async () => {
         tropykus.setComptroller(comptrollerAddress);
         tropykus.setAccount(mnemonic, derivationPath);
 
         const markets = await tropykus.comptroller.allMarkets();
         await tropykus.comptroller.enterMarkets(tropykus.account, markets);
 
-        const crbtc = new Market(tropykus.ethersProvider);
-        crbtc.setMarket(crbtcMarketAddress, false);
+        tropykus.setMarket(cdocAddress, false, docAddress);
 
-        await crbtc.mint(tropykus.account, '1000');
-        console.log((await crbtc.balanceOfUnderlying(tropykus.account)).toString());
+        await tropykus.market.mint(tropykus.account, '1000');
+        console.log('Balance in doc market:', (await tropykus.market.balanceOfUnderlying(tropykus.account)).toString());
     });
+
+    //TODO: test getAssetsIn in the comptroller script
 });

@@ -1,14 +1,15 @@
 import {ethers, Wallet} from "ethers";
 import Comptroller from "./Comptroller";
-import CRBTCMarket from './Markets/CRBTCMarket';
-import CTokenMarket from './Markets/CTokenMarket';
+import CRBTCMarket from './Markets/CRBTC';
+import CTokenMarket from './Markets/CToken';
 
 export default class Tropykus {
-    constructor(providerURL) {
+    constructor(providerURL, gasLimit) {
         this.ethersProvider = new ethers.providers.JsonRpcProvider(providerURL);
         this.internalAccount = null;
         this.internalComptroller = null;
         this.currentMarket = null;
+        this.currentGasLimit = gasLimit;
     }
 
     /**
@@ -25,6 +26,8 @@ export default class Tropykus {
         this.internalAccount = Wallet.fromMnemonic(mnemonic, derivationPath).connect(this.ethersProvider);
     }
 
+    get gasLimit() { return this.currentGasLimit; }
+
     /**
      * Returns the initialized comptroller instance.
      * @return {Comptroller}
@@ -36,7 +39,7 @@ export default class Tropykus {
      * @param {string} comptrollerAddress on chain deployed comptroller address.
      */
     setComptroller(comptrollerAddress) {
-        this.internalComptroller = new Comptroller(comptrollerAddress, this.ethersProvider);
+        this.internalComptroller = new Comptroller(comptrollerAddress, this);
     }
 
     /**
@@ -50,11 +53,11 @@ export default class Tropykus {
      * @param {string} marketAddress on chain deployed market address.
      * @param {boolean} isCRBTCMarket indicating if the market is a cRBTC market
      */
-    setMarket(marketAddress, isCRBTCMarket = true) {
+    setMarket(marketAddress, isCRBTCMarket = true, erc20TokenAddress = null) {
         if (isCRBTCMarket) {
-            this.currentMarket = new CRBTCMarket(marketAddress, this.ethersProvider);
+            this.currentMarket = new CRBTCMarket(marketAddress, this);
         } else {
-            this.currentMarket = new CTokenMarket(marketAddress, this.ethersProvider);
+            this.currentMarket = new CTokenMarket(marketAddress, this, erc20TokenAddress);
         }
     }
 }
