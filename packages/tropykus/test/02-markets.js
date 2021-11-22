@@ -1,7 +1,6 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import Tropykus from "../src";
-import Comptroller from "../src/Comptroller";
 import Market from '../src/Market';
 import CRBTCMarket from '../src/Markets/CRBTC.js';
 import CTokenMarket from '../src/Markets/CToken';

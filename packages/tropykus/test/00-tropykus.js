@@ -15,7 +15,7 @@ describe('Core tropykus', () => {
     tropykus = new Tropykus('http://localhost:8545', 400000);
 
   });
-  it.skip('should generate an account', async () => {
+  it('should generate an account', async () => {
     tropykus.setAccount(mnemonic, derivationPath);
     expect(tropykus.account.address.toLowerCase()).equals('0xe317349c7279ffF242cc8ADCb575EbA0153760BA'.toLowerCase());
   });
