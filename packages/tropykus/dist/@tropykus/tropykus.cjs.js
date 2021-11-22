@@ -3845,7 +3845,7 @@ var Market = function () {
     value: function balanceOfUnderlying(account) {
       var _this = this;
       return new Promise(function (resolve, reject) {
-        _this.instance.callStatic.balanceOf(account.address).then(resolve).catch(reject);
+        _this.instance.connect(account).callStatic.balanceOf(account.address).then(resolve).catch(reject);
       });
     }
   }, {
@@ -3868,7 +3868,7 @@ function _isNativeReflectConstruct$1() { if (typeof Reflect === "undefined" || !
 var CRBTC = function (_Market) {
   _inherits__default["default"](CRBTC, _Market);
   var _super = _createSuper$1(CRBTC);
-  function CRBTC(contractAddress, tropykus) {
+  function CRBTC(tropykus, contractAddress) {
     _classCallCheck__default["default"](this, CRBTC);
     return _super.call(this, tropykus, contractAddress, CRBTCAbi);
   }
@@ -5784,12 +5784,12 @@ function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Re
 var CToken = function (_Market) {
   _inherits__default["default"](CToken, _Market);
   var _super = _createSuper(CToken);
-  function CToken(contractAddress, tropykus, erc20TokenAddress) {
+  function CToken(tropykus, contractAddress, erc20TokenAddress) {
     var _this;
     _classCallCheck__default["default"](this, CToken);
     _this = _super.call(this, tropykus, contractAddress, CTokenAbi);
     if (erc20TokenAddress === null || erc20TokenAddress === undefined) {
-      throw new Error("Must provide a valid erc20 token address");
+      throw new Error('Must provide a valid erc20 token address');
     }
     _this.erc20Instance = new ethers.ethers.Contract(erc20TokenAddress, StandartTokenAbi, _this.tropykus.ethersProvider);
     return _this;
@@ -5832,6 +5832,7 @@ var Tropykus = function () {
     this.internalComptroller = null;
     this.currentMarket = null;
     this.currentGasLimit = gasLimit;
+    this.markets = [];
   }
   _createClass__default["default"](Tropykus, [{
     key: "account",
@@ -5864,15 +5865,17 @@ var Tropykus = function () {
       return this.currentMarket;
     }
   }, {
-    key: "setMarket",
-    value: function setMarket(marketAddress) {
+    key: "addMarket",
+    value: function addMarket(marketAddress) {
       var isCRBTCMarket = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
       var erc20TokenAddress = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
       if (isCRBTCMarket) {
-        this.currentMarket = new CRBTC(marketAddress, this);
+        this.currentMarket = new CRBTC(this, marketAddress);
       } else {
-        this.currentMarket = new CToken(marketAddress, this, erc20TokenAddress);
+        this.currentMarket = new CToken(this, marketAddress, erc20TokenAddress);
       }
+      this.markets.push(this.currentMarket);
+      return this.currentMarket;
     }
   }]);
   return Tropykus;
