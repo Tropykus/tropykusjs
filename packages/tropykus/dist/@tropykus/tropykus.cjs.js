@@ -6,6 +6,8 @@ var ethers = require('ethers');
 var _inherits = require('@babel/runtime/helpers/inherits');
 var _possibleConstructorReturn = require('@babel/runtime/helpers/possibleConstructorReturn');
 var _getPrototypeOf = require('@babel/runtime/helpers/getPrototypeOf');
+var _asyncToGenerator = require('@babel/runtime/helpers/asyncToGenerator');
+var _regeneratorRuntime = require('@babel/runtime/regenerator');
 
 function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
@@ -14,6 +16,8 @@ var _createClass__default = /*#__PURE__*/_interopDefaultLegacy(_createClass);
 var _inherits__default = /*#__PURE__*/_interopDefaultLegacy(_inherits);
 var _possibleConstructorReturn__default = /*#__PURE__*/_interopDefaultLegacy(_possibleConstructorReturn);
 var _getPrototypeOf__default = /*#__PURE__*/_interopDefaultLegacy(_getPrototypeOf);
+var _asyncToGenerator__default = /*#__PURE__*/_interopDefaultLegacy(_asyncToGenerator);
+var _regeneratorRuntime__default = /*#__PURE__*/_interopDefaultLegacy(_regeneratorRuntime);
 
 var ComptrollerAbi = [
 	{
@@ -2267,10 +2271,10 @@ var ComptrollerAbi = [
 ];
 
 var Comptroller = function () {
-  function Comptroller(contractAddress, ethersProvider) {
+  function Comptroller(contractAddress, tropykus) {
     _classCallCheck__default["default"](this, Comptroller);
-    this.ethersProvider = ethersProvider;
-    this.instance = new ethers.ethers.Contract(contractAddress, ComptrollerAbi, this.ethersProvider);
+    this.tropykus = tropykus;
+    this.instance = new ethers.ethers.Contract(contractAddress, ComptrollerAbi, this.tropykus.ethersProvider);
   }
   _createClass__default["default"](Comptroller, [{
     key: "allMarkets",
@@ -3830,10 +3834,11 @@ var CRBTCAbi = [
 ];
 
 var Market = function () {
-  function Market(ethersProvider, instance) {
+  function Market(tropykus, marketAddress, ABI) {
     _classCallCheck__default["default"](this, Market);
-    this.ethersProvider = ethersProvider;
-    this.instance = instance;
+    this.tropykus = tropykus;
+    this.instance = new ethers.ethers.Contract(marketAddress, ABI, this.tropykus.ethersProvider);
+    this.address = marketAddress;
   }
   _createClass__default["default"](Market, [{
     key: "balanceOfUnderlying",
@@ -3850,7 +3855,7 @@ var Market = function () {
       return new Promise(function (resolve, reject) {
         _this2.instance.connect(account).mint({
           value: amount,
-          gasLimit: _this2.gasLimit
+          gasLimit: _this2.tropykus.gasLimit
         }).then(resolve).catch(reject);
       });
     }
@@ -3860,17 +3865,1647 @@ var Market = function () {
 
 function _createSuper$1(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct$1(); return function _createSuperInternal() { var Super = _getPrototypeOf__default["default"](Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf__default["default"](this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn__default["default"](this, result); }; }
 function _isNativeReflectConstruct$1() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
-var CRBTCMarket$1 = function (_Market) {
-  _inherits__default["default"](CRBTCMarket, _Market);
-  var _super = _createSuper$1(CRBTCMarket);
-  function CRBTCMarket(contractAddress, ethersProvider) {
-    _classCallCheck__default["default"](this, CRBTCMarket);
-    return _super.call(this, ethersProvider, new ethers.ethers.Contract(contractAddress, CRBTCAbi, ethersProvider));
+var CRBTC = function (_Market) {
+  _inherits__default["default"](CRBTC, _Market);
+  var _super = _createSuper$1(CRBTC);
+  function CRBTC(contractAddress, tropykus) {
+    _classCallCheck__default["default"](this, CRBTC);
+    return _super.call(this, tropykus, contractAddress, CRBTCAbi);
   }
-  return CRBTCMarket;
+  return CRBTC;
 }(Market);
 
-var StandardTokenAbi = [
+var CTokenAbi = [
+	{
+		inputs: [
+			{
+				internalType: "address",
+				name: "underlying_",
+				type: "address"
+			},
+			{
+				internalType: "contract ComptrollerInterface",
+				name: "comptroller_",
+				type: "address"
+			},
+			{
+				internalType: "contract InterestRateModel",
+				name: "interestRateModel_",
+				type: "address"
+			},
+			{
+				internalType: "uint256",
+				name: "initialExchangeRateMantissa_",
+				type: "uint256"
+			},
+			{
+				internalType: "string",
+				name: "name_",
+				type: "string"
+			},
+			{
+				internalType: "string",
+				name: "symbol_",
+				type: "string"
+			},
+			{
+				internalType: "uint8",
+				name: "decimals_",
+				type: "uint8"
+			},
+			{
+				internalType: "address payable",
+				name: "admin_",
+				type: "address"
+			}
+		],
+		payable: false,
+		stateMutability: "nonpayable",
+		type: "constructor"
+	},
+	{
+		anonymous: false,
+		inputs: [
+			{
+				indexed: false,
+				internalType: "uint256",
+				name: "cashPrior",
+				type: "uint256"
+			},
+			{
+				indexed: false,
+				internalType: "uint256",
+				name: "interestAccumulated",
+				type: "uint256"
+			},
+			{
+				indexed: false,
+				internalType: "uint256",
+				name: "borrowIndex",
+				type: "uint256"
+			},
+			{
+				indexed: false,
+				internalType: "uint256",
+				name: "totalBorrows",
+				type: "uint256"
+			}
+		],
+		name: "AccrueInterest",
+		type: "event"
+	},
+	{
+		anonymous: false,
+		inputs: [
+			{
+				indexed: true,
+				internalType: "address",
+				name: "owner",
+				type: "address"
+			},
+			{
+				indexed: true,
+				internalType: "address",
+				name: "spender",
+				type: "address"
+			},
+			{
+				indexed: false,
+				internalType: "uint256",
+				name: "amount",
+				type: "uint256"
+			}
+		],
+		name: "Approval",
+		type: "event"
+	},
+	{
+		anonymous: false,
+		inputs: [
+			{
+				indexed: true,
+				internalType: "address",
+				name: "borrower",
+				type: "address"
+			},
+			{
+				indexed: false,
+				internalType: "uint256",
+				name: "borrowAmount",
+				type: "uint256"
+			},
+			{
+				indexed: false,
+				internalType: "uint256",
+				name: "accountBorrows",
+				type: "uint256"
+			},
+			{
+				indexed: false,
+				internalType: "uint256",
+				name: "totalBorrows",
+				type: "uint256"
+			}
+		],
+		name: "Borrow",
+		type: "event"
+	},
+	{
+		anonymous: false,
+		inputs: [
+			{
+				indexed: false,
+				internalType: "uint256",
+				name: "error",
+				type: "uint256"
+			},
+			{
+				indexed: false,
+				internalType: "uint256",
+				name: "info",
+				type: "uint256"
+			},
+			{
+				indexed: false,
+				internalType: "uint256",
+				name: "detail",
+				type: "uint256"
+			}
+		],
+		name: "Failure",
+		type: "event"
+	},
+	{
+		anonymous: false,
+		inputs: [
+			{
+				indexed: true,
+				internalType: "address",
+				name: "liquidator",
+				type: "address"
+			},
+			{
+				indexed: true,
+				internalType: "address",
+				name: "borrower",
+				type: "address"
+			},
+			{
+				indexed: false,
+				internalType: "uint256",
+				name: "repayAmount",
+				type: "uint256"
+			},
+			{
+				indexed: true,
+				internalType: "address",
+				name: "cTokenCollateral",
+				type: "address"
+			},
+			{
+				indexed: false,
+				internalType: "uint256",
+				name: "seizeTokens",
+				type: "uint256"
+			}
+		],
+		name: "LiquidateBorrow",
+		type: "event"
+	},
+	{
+		anonymous: false,
+		inputs: [
+			{
+				indexed: true,
+				internalType: "address",
+				name: "minter",
+				type: "address"
+			},
+			{
+				indexed: false,
+				internalType: "uint256",
+				name: "mintAmount",
+				type: "uint256"
+			},
+			{
+				indexed: false,
+				internalType: "uint256",
+				name: "mintTokens",
+				type: "uint256"
+			}
+		],
+		name: "Mint",
+		type: "event"
+	},
+	{
+		anonymous: false,
+		inputs: [
+			{
+				indexed: false,
+				internalType: "address",
+				name: "oldAdmin",
+				type: "address"
+			},
+			{
+				indexed: false,
+				internalType: "address",
+				name: "newAdmin",
+				type: "address"
+			}
+		],
+		name: "NewAdmin",
+		type: "event"
+	},
+	{
+		anonymous: false,
+		inputs: [
+			{
+				indexed: false,
+				internalType: "contract ComptrollerInterface",
+				name: "oldComptroller",
+				type: "address"
+			},
+			{
+				indexed: false,
+				internalType: "contract ComptrollerInterface",
+				name: "newComptroller",
+				type: "address"
+			}
+		],
+		name: "NewComptroller",
+		type: "event"
+	},
+	{
+		anonymous: false,
+		inputs: [
+			{
+				indexed: false,
+				internalType: "contract InterestRateModel",
+				name: "oldInterestRateModel",
+				type: "address"
+			},
+			{
+				indexed: false,
+				internalType: "contract InterestRateModel",
+				name: "newInterestRateModel",
+				type: "address"
+			}
+		],
+		name: "NewMarketInterestRateModel",
+		type: "event"
+	},
+	{
+		anonymous: false,
+		inputs: [
+			{
+				indexed: false,
+				internalType: "address",
+				name: "oldPendingAdmin",
+				type: "address"
+			},
+			{
+				indexed: false,
+				internalType: "address",
+				name: "newPendingAdmin",
+				type: "address"
+			}
+		],
+		name: "NewPendingAdmin",
+		type: "event"
+	},
+	{
+		anonymous: false,
+		inputs: [
+			{
+				indexed: false,
+				internalType: "uint256",
+				name: "oldReserveFactorMantissa",
+				type: "uint256"
+			},
+			{
+				indexed: false,
+				internalType: "uint256",
+				name: "newReserveFactorMantissa",
+				type: "uint256"
+			}
+		],
+		name: "NewReserveFactor",
+		type: "event"
+	},
+	{
+		anonymous: false,
+		inputs: [
+			{
+				indexed: true,
+				internalType: "address",
+				name: "redeemer",
+				type: "address"
+			},
+			{
+				indexed: false,
+				internalType: "uint256",
+				name: "redeemAmount",
+				type: "uint256"
+			},
+			{
+				indexed: false,
+				internalType: "uint256",
+				name: "redeemTokens",
+				type: "uint256"
+			}
+		],
+		name: "Redeem",
+		type: "event"
+	},
+	{
+		anonymous: false,
+		inputs: [
+			{
+				indexed: true,
+				internalType: "address",
+				name: "payer",
+				type: "address"
+			},
+			{
+				indexed: true,
+				internalType: "address",
+				name: "borrower",
+				type: "address"
+			},
+			{
+				indexed: false,
+				internalType: "uint256",
+				name: "repayAmount",
+				type: "uint256"
+			},
+			{
+				indexed: false,
+				internalType: "uint256",
+				name: "accountBorrows",
+				type: "uint256"
+			},
+			{
+				indexed: false,
+				internalType: "uint256",
+				name: "totalBorrows",
+				type: "uint256"
+			}
+		],
+		name: "RepayBorrow",
+		type: "event"
+	},
+	{
+		anonymous: false,
+		inputs: [
+			{
+				indexed: false,
+				internalType: "address",
+				name: "benefactor",
+				type: "address"
+			},
+			{
+				indexed: false,
+				internalType: "uint256",
+				name: "addAmount",
+				type: "uint256"
+			},
+			{
+				indexed: false,
+				internalType: "uint256",
+				name: "newTotalReserves",
+				type: "uint256"
+			}
+		],
+		name: "ReservesAdded",
+		type: "event"
+	},
+	{
+		anonymous: false,
+		inputs: [
+			{
+				indexed: false,
+				internalType: "address",
+				name: "admin",
+				type: "address"
+			},
+			{
+				indexed: false,
+				internalType: "uint256",
+				name: "reduceAmount",
+				type: "uint256"
+			},
+			{
+				indexed: false,
+				internalType: "uint256",
+				name: "newTotalReserves",
+				type: "uint256"
+			}
+		],
+		name: "ReservesReduced",
+		type: "event"
+	},
+	{
+		anonymous: false,
+		inputs: [
+			{
+				indexed: false,
+				internalType: "address",
+				name: "benefactor",
+				type: "address"
+			},
+			{
+				indexed: false,
+				internalType: "uint256",
+				name: "addAmount",
+				type: "uint256"
+			},
+			{
+				indexed: false,
+				internalType: "uint256",
+				name: "newSubsidyFund",
+				type: "uint256"
+			}
+		],
+		name: "SubsidyAdded",
+		type: "event"
+	},
+	{
+		anonymous: false,
+		inputs: [
+			{
+				indexed: true,
+				internalType: "address",
+				name: "from",
+				type: "address"
+			},
+			{
+				indexed: true,
+				internalType: "address",
+				name: "to",
+				type: "address"
+			},
+			{
+				indexed: false,
+				internalType: "uint256",
+				name: "amount",
+				type: "uint256"
+			}
+		],
+		name: "Transfer",
+		type: "event"
+	},
+	{
+		constant: false,
+		inputs: [
+		],
+		name: "_acceptAdmin",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "nonpayable",
+		type: "function"
+	},
+	{
+		constant: false,
+		inputs: [
+			{
+				internalType: "uint256",
+				name: "addAmount",
+				type: "uint256"
+			}
+		],
+		name: "_addReserves",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "nonpayable",
+		type: "function"
+	},
+	{
+		constant: false,
+		inputs: [
+			{
+				internalType: "uint256",
+				name: "reduceAmount",
+				type: "uint256"
+			}
+		],
+		name: "_reduceReserves",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "nonpayable",
+		type: "function"
+	},
+	{
+		constant: false,
+		inputs: [
+			{
+				internalType: "contract ComptrollerInterface",
+				name: "newComptroller",
+				type: "address"
+			}
+		],
+		name: "_setComptroller",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "nonpayable",
+		type: "function"
+	},
+	{
+		constant: false,
+		inputs: [
+			{
+				internalType: "contract InterestRateModel",
+				name: "newInterestRateModel",
+				type: "address"
+			}
+		],
+		name: "_setInterestRateModel",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "nonpayable",
+		type: "function"
+	},
+	{
+		constant: false,
+		inputs: [
+			{
+				internalType: "address payable",
+				name: "newPendingAdmin",
+				type: "address"
+			}
+		],
+		name: "_setPendingAdmin",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "nonpayable",
+		type: "function"
+	},
+	{
+		constant: false,
+		inputs: [
+			{
+				internalType: "uint256",
+				name: "newReserveFactorMantissa",
+				type: "uint256"
+			}
+		],
+		name: "_setReserveFactor",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "nonpayable",
+		type: "function"
+	},
+	{
+		constant: true,
+		inputs: [
+		],
+		name: "accrualBlockNumber",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "view",
+		type: "function"
+	},
+	{
+		constant: false,
+		inputs: [
+		],
+		name: "accrueInterest",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "nonpayable",
+		type: "function"
+	},
+	{
+		constant: true,
+		inputs: [
+		],
+		name: "admin",
+		outputs: [
+			{
+				internalType: "address payable",
+				name: "",
+				type: "address"
+			}
+		],
+		payable: false,
+		stateMutability: "view",
+		type: "function"
+	},
+	{
+		constant: true,
+		inputs: [
+			{
+				internalType: "address",
+				name: "owner",
+				type: "address"
+			},
+			{
+				internalType: "address",
+				name: "spender",
+				type: "address"
+			}
+		],
+		name: "allowance",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "view",
+		type: "function"
+	},
+	{
+		constant: false,
+		inputs: [
+			{
+				internalType: "address",
+				name: "spender",
+				type: "address"
+			},
+			{
+				internalType: "uint256",
+				name: "amount",
+				type: "uint256"
+			}
+		],
+		name: "approve",
+		outputs: [
+			{
+				internalType: "bool",
+				name: "",
+				type: "bool"
+			}
+		],
+		payable: false,
+		stateMutability: "nonpayable",
+		type: "function"
+	},
+	{
+		constant: true,
+		inputs: [
+			{
+				internalType: "address",
+				name: "owner",
+				type: "address"
+			}
+		],
+		name: "balanceOf",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "view",
+		type: "function"
+	},
+	{
+		constant: false,
+		inputs: [
+			{
+				internalType: "address",
+				name: "owner",
+				type: "address"
+			}
+		],
+		name: "balanceOfUnderlying",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "nonpayable",
+		type: "function"
+	},
+	{
+		constant: false,
+		inputs: [
+			{
+				internalType: "uint256",
+				name: "borrowAmount",
+				type: "uint256"
+			}
+		],
+		name: "borrow",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "nonpayable",
+		type: "function"
+	},
+	{
+		constant: false,
+		inputs: [
+			{
+				internalType: "address",
+				name: "account",
+				type: "address"
+			}
+		],
+		name: "borrowBalanceCurrent",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "nonpayable",
+		type: "function"
+	},
+	{
+		constant: true,
+		inputs: [
+			{
+				internalType: "address",
+				name: "account",
+				type: "address"
+			}
+		],
+		name: "borrowBalanceStored",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "view",
+		type: "function"
+	},
+	{
+		constant: true,
+		inputs: [
+		],
+		name: "borrowIndex",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "view",
+		type: "function"
+	},
+	{
+		constant: true,
+		inputs: [
+		],
+		name: "borrowRatePerBlock",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "view",
+		type: "function"
+	},
+	{
+		constant: true,
+		inputs: [
+		],
+		name: "comptroller",
+		outputs: [
+			{
+				internalType: "contract ComptrollerInterface",
+				name: "",
+				type: "address"
+			}
+		],
+		payable: false,
+		stateMutability: "view",
+		type: "function"
+	},
+	{
+		constant: true,
+		inputs: [
+		],
+		name: "decimals",
+		outputs: [
+			{
+				internalType: "uint8",
+				name: "",
+				type: "uint8"
+			}
+		],
+		payable: false,
+		stateMutability: "view",
+		type: "function"
+	},
+	{
+		constant: false,
+		inputs: [
+		],
+		name: "exchangeRateCurrent",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "nonpayable",
+		type: "function"
+	},
+	{
+		constant: true,
+		inputs: [
+		],
+		name: "exchangeRateStored",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "view",
+		type: "function"
+	},
+	{
+		constant: true,
+		inputs: [
+			{
+				internalType: "address",
+				name: "account",
+				type: "address"
+			}
+		],
+		name: "getAccountSnapshot",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			},
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			},
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			},
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "view",
+		type: "function"
+	},
+	{
+		constant: true,
+		inputs: [
+			{
+				internalType: "address",
+				name: "account",
+				type: "address"
+			}
+		],
+		name: "getBorrowerPrincipalStored",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "borrowed",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "view",
+		type: "function"
+	},
+	{
+		constant: true,
+		inputs: [
+		],
+		name: "getCash",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "view",
+		type: "function"
+	},
+	{
+		constant: true,
+		inputs: [
+			{
+				internalType: "address",
+				name: "account",
+				type: "address"
+			}
+		],
+		name: "getSupplierSnapshotStored",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "tokens",
+				type: "uint256"
+			},
+			{
+				internalType: "uint256",
+				name: "underlyingAmount",
+				type: "uint256"
+			},
+			{
+				internalType: "uint256",
+				name: "suppliedAt",
+				type: "uint256"
+			},
+			{
+				internalType: "uint256",
+				name: "promisedSupplyRate",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "view",
+		type: "function"
+	},
+	{
+		constant: true,
+		inputs: [
+		],
+		name: "initialExchangeRateMantissa",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "view",
+		type: "function"
+	},
+	{
+		constant: false,
+		inputs: [
+			{
+				internalType: "address",
+				name: "underlying_",
+				type: "address"
+			},
+			{
+				internalType: "contract ComptrollerInterface",
+				name: "comptroller_",
+				type: "address"
+			},
+			{
+				internalType: "contract InterestRateModel",
+				name: "interestRateModel_",
+				type: "address"
+			},
+			{
+				internalType: "uint256",
+				name: "initialExchangeRateMantissa_",
+				type: "uint256"
+			},
+			{
+				internalType: "string",
+				name: "name_",
+				type: "string"
+			},
+			{
+				internalType: "string",
+				name: "symbol_",
+				type: "string"
+			},
+			{
+				internalType: "uint8",
+				name: "decimals_",
+				type: "uint8"
+			}
+		],
+		name: "initialize",
+		outputs: [
+		],
+		payable: false,
+		stateMutability: "nonpayable",
+		type: "function"
+	},
+	{
+		constant: false,
+		inputs: [
+			{
+				internalType: "contract ComptrollerInterface",
+				name: "comptroller_",
+				type: "address"
+			},
+			{
+				internalType: "contract InterestRateModel",
+				name: "interestRateModel_",
+				type: "address"
+			},
+			{
+				internalType: "uint256",
+				name: "initialExchangeRateMantissa_",
+				type: "uint256"
+			},
+			{
+				internalType: "string",
+				name: "name_",
+				type: "string"
+			},
+			{
+				internalType: "string",
+				name: "symbol_",
+				type: "string"
+			},
+			{
+				internalType: "uint8",
+				name: "decimals_",
+				type: "uint8"
+			}
+		],
+		name: "initialize",
+		outputs: [
+		],
+		payable: false,
+		stateMutability: "nonpayable",
+		type: "function"
+	},
+	{
+		constant: true,
+		inputs: [
+		],
+		name: "interestRateModel",
+		outputs: [
+			{
+				internalType: "contract InterestRateModel",
+				name: "",
+				type: "address"
+			}
+		],
+		payable: false,
+		stateMutability: "view",
+		type: "function"
+	},
+	{
+		constant: true,
+		inputs: [
+		],
+		name: "isCToken",
+		outputs: [
+			{
+				internalType: "bool",
+				name: "",
+				type: "bool"
+			}
+		],
+		payable: false,
+		stateMutability: "view",
+		type: "function"
+	},
+	{
+		constant: false,
+		inputs: [
+			{
+				internalType: "address",
+				name: "borrower",
+				type: "address"
+			},
+			{
+				internalType: "uint256",
+				name: "repayAmount",
+				type: "uint256"
+			},
+			{
+				internalType: "contract CTokenInterface",
+				name: "cTokenCollateral",
+				type: "address"
+			}
+		],
+		name: "liquidateBorrow",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "nonpayable",
+		type: "function"
+	},
+	{
+		constant: false,
+		inputs: [
+			{
+				internalType: "uint256",
+				name: "mintAmount",
+				type: "uint256"
+			}
+		],
+		name: "mint",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "nonpayable",
+		type: "function"
+	},
+	{
+		constant: true,
+		inputs: [
+		],
+		name: "name",
+		outputs: [
+			{
+				internalType: "string",
+				name: "",
+				type: "string"
+			}
+		],
+		payable: false,
+		stateMutability: "view",
+		type: "function"
+	},
+	{
+		constant: true,
+		inputs: [
+		],
+		name: "pendingAdmin",
+		outputs: [
+			{
+				internalType: "address payable",
+				name: "",
+				type: "address"
+			}
+		],
+		payable: false,
+		stateMutability: "view",
+		type: "function"
+	},
+	{
+		constant: false,
+		inputs: [
+			{
+				internalType: "uint256",
+				name: "redeemTokens",
+				type: "uint256"
+			}
+		],
+		name: "redeem",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "nonpayable",
+		type: "function"
+	},
+	{
+		constant: false,
+		inputs: [
+			{
+				internalType: "uint256",
+				name: "redeemAmount",
+				type: "uint256"
+			}
+		],
+		name: "redeemUnderlying",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "nonpayable",
+		type: "function"
+	},
+	{
+		constant: false,
+		inputs: [
+			{
+				internalType: "uint256",
+				name: "repayAmount",
+				type: "uint256"
+			}
+		],
+		name: "repayBorrow",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "nonpayable",
+		type: "function"
+	},
+	{
+		constant: false,
+		inputs: [
+			{
+				internalType: "address",
+				name: "borrower",
+				type: "address"
+			},
+			{
+				internalType: "uint256",
+				name: "repayAmount",
+				type: "uint256"
+			}
+		],
+		name: "repayBorrowBehalf",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "nonpayable",
+		type: "function"
+	},
+	{
+		constant: true,
+		inputs: [
+		],
+		name: "reserveFactorMantissa",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "view",
+		type: "function"
+	},
+	{
+		constant: false,
+		inputs: [
+			{
+				internalType: "address",
+				name: "liquidator",
+				type: "address"
+			},
+			{
+				internalType: "address",
+				name: "borrower",
+				type: "address"
+			},
+			{
+				internalType: "uint256",
+				name: "seizeTokens",
+				type: "uint256"
+			}
+		],
+		name: "seize",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "nonpayable",
+		type: "function"
+	},
+	{
+		constant: true,
+		inputs: [
+		],
+		name: "subsidyFund",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "view",
+		type: "function"
+	},
+	{
+		constant: true,
+		inputs: [
+		],
+		name: "supplyRatePerBlock",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "view",
+		type: "function"
+	},
+	{
+		constant: false,
+		inputs: [
+			{
+				internalType: "contract EIP20NonStandardInterface",
+				name: "token",
+				type: "address"
+			}
+		],
+		name: "sweepToken",
+		outputs: [
+		],
+		payable: false,
+		stateMutability: "nonpayable",
+		type: "function"
+	},
+	{
+		constant: true,
+		inputs: [
+		],
+		name: "symbol",
+		outputs: [
+			{
+				internalType: "string",
+				name: "",
+				type: "string"
+			}
+		],
+		payable: false,
+		stateMutability: "view",
+		type: "function"
+	},
+	{
+		constant: true,
+		inputs: [
+		],
+		name: "totalBorrows",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "view",
+		type: "function"
+	},
+	{
+		constant: false,
+		inputs: [
+		],
+		name: "totalBorrowsCurrent",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "nonpayable",
+		type: "function"
+	},
+	{
+		constant: true,
+		inputs: [
+		],
+		name: "totalReserves",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "view",
+		type: "function"
+	},
+	{
+		constant: true,
+		inputs: [
+		],
+		name: "totalSupply",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "view",
+		type: "function"
+	},
+	{
+		constant: false,
+		inputs: [
+			{
+				internalType: "address",
+				name: "dst",
+				type: "address"
+			},
+			{
+				internalType: "uint256",
+				name: "amount",
+				type: "uint256"
+			}
+		],
+		name: "transfer",
+		outputs: [
+			{
+				internalType: "bool",
+				name: "",
+				type: "bool"
+			}
+		],
+		payable: false,
+		stateMutability: "nonpayable",
+		type: "function"
+	},
+	{
+		constant: false,
+		inputs: [
+			{
+				internalType: "address",
+				name: "src",
+				type: "address"
+			},
+			{
+				internalType: "address",
+				name: "dst",
+				type: "address"
+			},
+			{
+				internalType: "uint256",
+				name: "amount",
+				type: "uint256"
+			}
+		],
+		name: "transferFrom",
+		outputs: [
+			{
+				internalType: "bool",
+				name: "",
+				type: "bool"
+			}
+		],
+		payable: false,
+		stateMutability: "nonpayable",
+		type: "function"
+	},
+	{
+		constant: true,
+		inputs: [
+			{
+				internalType: "address",
+				name: "account",
+				type: "address"
+			}
+		],
+		name: "tropykusInterestAccrued",
+		outputs: [
+			{
+				internalType: "enum CarefulMath.MathError",
+				name: "",
+				type: "uint8"
+			},
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			},
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			},
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			},
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "view",
+		type: "function"
+	},
+	{
+		constant: true,
+		inputs: [
+		],
+		name: "underlying",
+		outputs: [
+			{
+				internalType: "address",
+				name: "",
+				type: "address"
+			}
+		],
+		payable: false,
+		stateMutability: "view",
+		type: "function"
+	}
+];
+
+var StandartTokenAbi = [
 	{
 		inputs: [
 			{
@@ -4146,23 +5781,57 @@ var StandardTokenAbi = [
 
 function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf__default["default"](Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf__default["default"](this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn__default["default"](this, result); }; }
 function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
-var CRBTCMarket = function (_Market) {
-  _inherits__default["default"](CRBTCMarket, _Market);
-  var _super = _createSuper(CRBTCMarket);
-  function CRBTCMarket(contractAddress, ethersProvider) {
-    _classCallCheck__default["default"](this, CRBTCMarket);
-    return _super.call(this, ethersProvider, new ethers.ethers.Contract(contractAddress, StandardTokenAbi, ethersProvider));
+var CToken = function (_Market) {
+  _inherits__default["default"](CToken, _Market);
+  var _super = _createSuper(CToken);
+  function CToken(contractAddress, tropykus, erc20TokenAddress) {
+    var _this;
+    _classCallCheck__default["default"](this, CToken);
+    _this = _super.call(this, tropykus, contractAddress, CTokenAbi);
+    if (erc20TokenAddress === null || erc20TokenAddress === undefined) {
+      throw new Error("Must provide a valid erc20 token address");
+    }
+    _this.erc20Instance = new ethers.ethers.Contract(erc20TokenAddress, StandartTokenAbi, _this.tropykus.ethersProvider);
+    return _this;
   }
-  return CRBTCMarket;
+  _createClass__default["default"](CToken, [{
+    key: "mint",
+    value: function () {
+      var _mint = _asyncToGenerator__default["default"]( _regeneratorRuntime__default["default"].mark(function _callee(account, amount) {
+        return _regeneratorRuntime__default["default"].wrap(function _callee$(_context) {
+          while (1) {
+            switch (_context.prev = _context.next) {
+              case 0:
+                _context.next = 2;
+                return this.erc20Instance.connect(account).approve(this.address, amount);
+              case 2:
+                return _context.abrupt("return", this.instance.connect(account).mint(amount, {
+                  gasLimit: this.tropykus.gasLimit
+                }));
+              case 3:
+              case "end":
+                return _context.stop();
+            }
+          }
+        }, _callee, this);
+      }));
+      function mint(_x, _x2) {
+        return _mint.apply(this, arguments);
+      }
+      return mint;
+    }()
+  }]);
+  return CToken;
 }(Market);
 
 var Tropykus = function () {
-  function Tropykus(providerURL) {
+  function Tropykus(providerURL, gasLimit) {
     _classCallCheck__default["default"](this, Tropykus);
     this.ethersProvider = new ethers.ethers.providers.JsonRpcProvider(providerURL);
     this.internalAccount = null;
     this.internalComptroller = null;
     this.currentMarket = null;
+    this.currentGasLimit = gasLimit;
   }
   _createClass__default["default"](Tropykus, [{
     key: "account",
@@ -4175,6 +5844,11 @@ var Tropykus = function () {
       this.internalAccount = ethers.Wallet.fromMnemonic(mnemonic, derivationPath).connect(this.ethersProvider);
     }
   }, {
+    key: "gasLimit",
+    get: function get() {
+      return this.currentGasLimit;
+    }
+  }, {
     key: "comptroller",
     get: function get() {
       return this.internalComptroller;
@@ -4182,7 +5856,7 @@ var Tropykus = function () {
   }, {
     key: "setComptroller",
     value: function setComptroller(comptrollerAddress) {
-      this.internalComptroller = new Comptroller(comptrollerAddress, this.ethersProvider);
+      this.internalComptroller = new Comptroller(comptrollerAddress, this);
     }
   }, {
     key: "market",
@@ -4193,10 +5867,11 @@ var Tropykus = function () {
     key: "setMarket",
     value: function setMarket(marketAddress) {
       var isCRBTCMarket = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+      var erc20TokenAddress = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
       if (isCRBTCMarket) {
-        this.currentMarket = new CRBTCMarket$1(marketAddress, this.ethersProvider);
+        this.currentMarket = new CRBTC(marketAddress, this);
       } else {
-        this.currentMarket = new CRBTCMarket(marketAddress, this.ethersProvider);
+        this.currentMarket = new CToken(marketAddress, this, erc20TokenAddress);
       }
     }
   }]);
