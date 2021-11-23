@@ -58,7 +58,7 @@ export default class Market {
   /**
    * function that allows us to make a deposit in the market
    * @param account type account
-   * @param amount type Number
+   * @param amount type Number - value to be minted
    */
   mint(account, amount) {
     return new Promise((resolve, reject) => {
@@ -74,7 +74,7 @@ export default class Market {
   /**
    * function that allows us to make a borrow in the market
    * @param account type account
-   * @param amount type Number
+   * @param amount type Number - value to be borrowed
    */
   borrow(account, amount) {
     return new Promise((resolve, reject) => {
@@ -83,5 +83,28 @@ export default class Market {
         .then(resolve)
         .catch(reject);
     });
+  }
+
+  /**
+   * function that allows us to redeem from the market
+   * @param account type account
+   * @param amount type Number - value to be redeemed
+   */
+   redeem(account, amount) {
+    return new Promise((resolve, reject) => {
+      this.instance.connect(account)
+        .redeemUnderlying(ethers.utils.parseEther(amount.toString()), { gasLimit: this.tropykus.gasLimit })
+        .then(resolve)
+        .catch(reject);
+    });
+  }
+
+  /**
+   * function that allows us to repay a borrow from the market
+   * @param account type account
+   * @param amount type Number - value to be repayed
+   */
+  repayBorrow(account, amount) {
+    console.log('bye');
   }
 }

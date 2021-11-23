@@ -3907,6 +3907,16 @@ var Market = function () {
         }).then(resolve).catch(reject);
       });
     }
+  }, {
+    key: "redeem",
+    value: function redeem(account, amount) {
+      var _this6 = this;
+      return new Promise(function (resolve, reject) {
+        _this6.instance.connect(account).redeemUnderlying(ethers.ethers.utils.parseEther(amount.toString()), {
+          gasLimit: _this6.tropykus.gasLimit
+        }).then(resolve).catch(reject);
+      });
+    }
   }]);
   return Market;
 }();

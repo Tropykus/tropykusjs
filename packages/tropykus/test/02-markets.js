@@ -16,10 +16,10 @@ const { expect } = chai;
 const mnemonic = 'elegant ripple curve exhibit capital oblige off inform recall describe warrior earn';
 const derivationPath = `m/44'/60'/0'/0/0`;
 
-const comptrollerAddress = '0xB173b5EE67b9F38263413Bc29440f89cC5BC3C39';
-const crbtcMarketAddress = '0xE498D1E3A0d7fdb80a2d7591D997aFDA34F8c5C5';
-const cdocAddress = '0x1CbD672Ac9d98F4f033e12eDE3c55f5CB02B983C';
-const docAddress = '0xC3b5a61f8fc55fef790165d9f12AD23D47F7De99';
+const comptrollerAddress = '0xE22a4c41B94FD91F0c5D52f69b17ed650b334664';
+const crbtcMarketAddress = '0x573CA238dB081A8BCBD096340111dE83Cb827a5B';
+const cdocAddress = '0x9ED27fcC7A6929fBCa41FD4fe115FA88A022c205';
+const docAddress = '0x7C8eAd9Ad135E0a8405FF31ae702771d266f6c11';
 const crdocAddress = '0x1a389e93be8ef2B5D105DEa44271d4426736A484';
 const rdocAddress = '0x301b50CD6E1a31c56122463aA306290baD3428cf';
 const cdocInterestRateModelAddress = '0x17cFe95D999961dAd27E47Af8B9b8A8Ef07832e4';
@@ -107,6 +107,32 @@ describe('Market', () => {
       await crbtc.borrow(tropykus.account, 0.005);
       const balance = await crbtc.borrowBalanceCurrent(tropykus.account);
       expect(balance).equals(0.005);
+    });
+
+    it('should redeem from crbtc market', async() => {
+      const crbtc = await tropykus.addMarket('CRBTC', true, crbtcMarketAddress);
+
+      await crbtc.mint(tropykus.account, 0.5);
+      const balance = await crbtc.balanceOfUnderlying(tropykus.account);
+      expect(balance).equals(0.5);
+
+      const balanceBefore = await crbtc.balanceOfUnderlying(tropykus.account);
+      await crbtc.redeem(tropykus.account, 0.025);
+      const balanceAfter = await crbtc.balanceOfUnderlying(tropykus.account);
+      expect(balanceAfter).equals(balanceBefore - 0.025);
+    });
+
+    it('should redeem from cdoc market', async() => {
+      const cdoc = await tropykus.addMarket('CErc20Immutable', true, cdocAddress, docAddress);
+
+      await cdoc.mint(tropykus.account, 500);
+      const balance = await cdoc.balanceOfUnderlying(tropykus.account);
+      expect(balance).equals(500);
+
+      const balanceBefore = await cdoc.balanceOfUnderlying(tropykus.account);
+      await cdoc.redeem(tropykus.account, 250);
+      const balanceAfter = await cdoc.balanceOfUnderlying(tropykus.account);
+      expect(balanceAfter).equals(balanceBefore - 250);
     });
   });
 });
