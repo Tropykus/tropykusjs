@@ -5,6 +5,11 @@ import CRDOC from './Markets/CRDOC';
 import CToken from './Markets/CToken';
 
 export default class Tropykus {
+  /**
+   * Construct a new Tropykus instance
+   * @param providerURL network url to be connected with
+   * @param gasLimit limit of gas to be used in each transaction
+   */
   constructor(providerURL, gasLimit) {
     this.ethersProvider = new ethers.providers.JsonRpcProvider(providerURL);
     this.internalAccount = null;
@@ -29,6 +34,10 @@ export default class Tropykus {
       .fromMnemonic(mnemonic, derivationPath).connect(this.ethersProvider);
   }
 
+  /**
+   * Returns the set gas limit.
+   * @return {Number}
+   */
   get gasLimit() { return this.currentGasLimit; }
 
   /**
@@ -38,13 +47,15 @@ export default class Tropykus {
   get comptroller() { return this.internalComptroller; }
 
   /**
-   * By providing the contract address and if it is a cRBTC market,
-   * a Market instance is made available.
-   * @param artifact
-   * @param deployed
+   * By providing the contract artifact, its address, its corresponding erc20 token address
+   * and some additional market information a Market instance is added to the protocol and is made available.
+   * @param artifact to use for the contract instantiation
+   * @param deployed flag to indicate if the contract is already deployed 
    * @param marketAddress on chain deployed market address.
-   * @param erc20TokenAddress
-   * @param args
+   * @param erc20TokenAddress on chain deployed erc20 token address.
+   * @param args additional args to initialize market
+   * * Returns the added market instance.
+   * @return {Market}
    */
   async addMarket(
     artifact,
