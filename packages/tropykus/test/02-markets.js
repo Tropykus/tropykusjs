@@ -3,7 +3,12 @@ import chaiAsPromised from 'chai-as-promised';
 import Tropykus from "../src";
 import Market from '../src/Market';
 import CRBTCMarket from '../src/Markets/CRBTC.js';
+import CRDOCMarket from '../src/Markets/CRDOC.js';
 import CTokenMarket from '../src/Markets/CToken';
+import CRBTCAbi from '../abis/CRBTC.json';
+import CErc20Abi from '../abis/CErc20Immutable.json';
+import CRDOCAbi from '../abis/CRDOC.json';
+
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -15,7 +20,12 @@ const comptrollerAddress = '0xB173b5EE67b9F38263413Bc29440f89cC5BC3C39';
 const crbtcMarketAddress = '0xE498D1E3A0d7fdb80a2d7591D997aFDA34F8c5C5';
 const cdocAddress = '0x1CbD672Ac9d98F4f033e12eDE3c55f5CB02B983C';
 const docAddress = '0xC3b5a61f8fc55fef790165d9f12AD23D47F7De99';
-
+const crdocAddress = '0x1a389e93be8ef2B5D105DEa44271d4426736A484';
+const rdocAddress = '0x301b50CD6E1a31c56122463aA306290baD3428cf';
+const cdocInterestRateModelAddress = '0x17cFe95D999961dAd27E47Af8B9b8A8Ef07832e4';
+const crdocInterestRateModelAddress = '0x46342D72503A41f797CC47D5B89C8Cc8F592f5a3';
+const crbtcInterestRateModelAddress = '0x466BBE5C0368Ba75EBA90c2f4643c9DbC226B4d7';
+const csatInterestRateModelAddress = '0xD0Ed8135F9Ceb504A0484eEF9700D17622569Df2';
 
 describe('Market', () => {
   let tropykus;
@@ -25,13 +35,35 @@ describe('Market', () => {
     await tropykus.setComptroller(comptrollerAddress);
   });
 
+  it('should deployed a new CRBTC market', async () => {
+    // const crbtc = await tropykus.addMarket(
+    //   'CRBTC',
+    //   false,
+    //   null,
+    //   null,
+    //   {
+    //     comptrollerAddress,
+    //     interestRateModelAddress: crbtcInterestRateModelAddress,
+    //     initialExchangeRate: 0.02,
+    //     name: 'New CRBTC',
+    //     symbol: 'CRBTC',
+    //     decimals: 18,
+    //   });
+    // expect(crbtc).instanceOf(CRBTCMarket);
+    // expect(crbtc.address).to.match(/0x[a-fA-F0-9]{40}/);
+  });
+
+  it('should deployed a new CRDOC market');
+
+  it('should deployed a new CToken market');
+
   it('should instance a CRBTC Market', async () => {
-    const crbtc = tropykus.addMarket(crbtcMarketAddress);
+    const crbtc = await tropykus.addMarket('CRBTC', true, crbtcMarketAddress);
     expect(crbtc).instanceOf(CRBTCMarket);
   })
 
   it('should instance a CTocken Market', async () => {
-    const cdoc = tropykus.addMarket(cdocAddress, false, docAddress);
+    const cdoc = await tropykus.addMarket('CErc20Immutable', true, cdocAddress, docAddress);
     expect(cdoc).instanceOf(CTokenMarket);
   });
 
@@ -42,7 +74,7 @@ describe('Market', () => {
     });
 
     it('should deposit in the cRBTC market', async () => {
-      const crbtc = tropykus.addMarket(crbtcMarketAddress);
+      const crbtc = await tropykus.addMarket('CRBTC', true, crbtcMarketAddress);
 
       await crbtc.mint(tropykus.account, 0.5);
       const balance = await crbtc.balanceOfUnderlying(tropykus.account);
@@ -50,16 +82,16 @@ describe('Market', () => {
     });
 
     it('should deposit in any token market', async () => {
-      const cdoc = tropykus.addMarket(cdocAddress, false, docAddress);
+      const cdoc = await tropykus.addMarket('CErc20Immutable', true, cdocAddress, docAddress);
 
       await cdoc.mint(tropykus.account, 1000);
       const balance = await cdoc.balanceOfUnderlying(tropykus.account);
       expect(balance).equals(1000);
     });
 
-    it.skip('should borrow in cdoc an amount once he has a collateral on cdoc', async() => {
-      const crbtc = tropykus.addMarket(crbtcMarketAddress);
-      const cdoc = tropykus.addMarket(cdocAddress, false, docAddress);
+    it('should borrow in cdoc an amount once he has a collateral on cdoc', async() => {
+      const crbtc = await tropykus.addMarket('CRBTC', true, crbtcMarketAddress);
+      const cdoc = await tropykus.addMarket('CErc20Immutable', true, cdocAddress, docAddress);
 
       await crbtc.mint(tropykus.account, 0.5);
       await cdoc.borrow(tropykus.account, 100);
@@ -68,8 +100,8 @@ describe('Market', () => {
     });
 
     it('should borrow in crbtc market an amount once he has a collateral on crbtc', async() => {
-      const crbtc = tropykus.addMarket(crbtcMarketAddress);
-      const cdoc = tropykus.addMarket(cdocAddress, false, docAddress);
+      const crbtc = await tropykus.addMarket('CRBTC', true, crbtcMarketAddress);
+      const cdoc = await tropykus.addMarket('CErc20Immutable', true, cdocAddress, docAddress);
 
       await cdoc.mint(tropykus.account, 1000);
       await crbtc.borrow(tropykus.account, 0.005);

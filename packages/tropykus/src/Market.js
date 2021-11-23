@@ -1,10 +1,10 @@
 import { ethers } from 'ethers';
 
 export default class Market {
-  constructor(tropykus, marketAddress, ABI) {
+  constructor(tropykus, abi, marketAddress) {
     this.tropykus = tropykus;
-    this.instance = new ethers.Contract(marketAddress, ABI, this.tropykus.ethersProvider);
     this.address = marketAddress;
+    this.instance = new ethers.Contract(marketAddress, abi, this.tropykus.ethersProvider);
   }
 
   balanceOfUnderlying(account) {
