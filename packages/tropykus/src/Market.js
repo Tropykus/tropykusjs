@@ -48,7 +48,22 @@ export default class Market {
   borrow(account, amount) {
     return new Promise((resolve, reject) => {
       this.instance.connect(account)
-        .borrow(ethers.utils.parseEther(amount.toString()), { gasLimit: this.tropykus.gasLimit })
+        .borrow(
+          ethers.utils.parseEther(amount.toString()),
+          { gasLimit: this.tropykus.gasLimit },
+        )
+        .then(resolve)
+        .catch(reject);
+    });
+  }
+
+  setReserveFactor(reserveFactor) {
+    return new Promise((resolve, reject) => {
+      // eslint-disable-next-line no-underscore-dangle
+      this.instance.connect(this.tropykus.account)
+        ._setReserveFactor(
+          ethers.utils.parseEther(reserveFactor.toString()),
+        )
         .then(resolve)
         .catch(reject);
     });

@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import StandartTokenAbi from '../../abis/StandardToken.json';
+import StandartTokenArtifact from '../../artifacts/StandardToken.json';
 import Market from '../Market';
 
 export default class CErc20 extends Market {
@@ -10,7 +10,7 @@ export default class CErc20 extends Market {
     }
     this.erc20Instance = new ethers.Contract(
       erc20TokenAddress,
-      StandartTokenAbi,
+      StandartTokenArtifact.abi,
       this.tropykus.ethersProvider,
     );
   }
