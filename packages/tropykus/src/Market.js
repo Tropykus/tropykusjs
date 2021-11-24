@@ -120,8 +120,22 @@ export default class Market {
    * function that allows us to repay a borrow from the market
    * @param account type account
    * @param amount type Number - value to be repayed
+   * @param maxValue
    */
-  repayBorrow(account, amount) {
-    console.log('bye', account, amount, this);
+  repayBorrow(account, amount, maxValue = false) {
+    return new Promise((resolve, reject) => {
+      if (maxValue) {
+        this.instance.connect(account)
+          .repayBorrowAll()
+          .then(resolve)
+          .catch(reject);
+      } else {
+        this.instance.connect(account)
+          .repayBorrow({
+            value: ethers.utils.parseEther(amount.toString()),
+            gasLimit: this.tropykus.gasLimit,
+          });
+      }
+    });
   }
 }

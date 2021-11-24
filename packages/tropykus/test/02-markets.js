@@ -135,7 +135,7 @@ describe('Market', () => {
       expect(balanceAfter).equals(balanceBefore - 250);
     });
 
-    it('should redeem all kTokens from crbtc market', async() => {
+    it.skip('should redeem all kTokens from crbtc market', async() => {
       const crbtc = await tropykus.addMarket('CRBTC', true, crbtcMarketAddress);
 
       await crbtc.mint(tropykus.account, 0.5);
@@ -149,6 +149,38 @@ describe('Market', () => {
       expect(balanceAfter).equals(0);
       const kRBTCBalanceAfter = await crbtc.balanceOf(tropykus.account);
       expect(kRBTCBalanceAfter).equals(0);
+    });
+
+    it.skip('should repay a portion of debt on cdoc market', async() => {
+      const cdoc = await tropykus.addMarket('CErc20Immutable', true, cdocAddress, docAddress);
+
+      await cdoc.mint(tropykus.account, 1000);
+      const balance = await cdoc.balanceOfUnderlying(tropykus.account);
+      expect(balance).equals(1000);
+
+      await cdoc.borrow(tropykus.account, 500);
+      const borrowBalanceBefore = await cdoc.borrowBalanceCurrent(tropykus.account);
+      expect(borrowBalanceBefore).to.be.closeTo(500, 1);
+
+      await cdoc.repayBorrow(tropykus.account, 250);
+      const borrowBalanceAfter = await cdoc.borrowBalanceCurrent(tropykus.account);
+      expect(borrowBalanceAfter).to.be.closeTo(250, 1);
+    });
+
+    it('should repay all debt from crbtc market', async() => {
+      const crbtc = await tropykus.addMarket('CRBTC', true, crbtcMarketAddress);
+
+      await crbtc.mint(tropykus.account, 1);
+      const balance = await crbtc.balanceOfUnderlying(tropykus.account);
+      expect(balance).equals(1);
+
+      await crbtc.borrow(tropykus.account, 0.5);
+      const borrowBalanceBefore = await crbtc.borrowBalanceCurrent(tropykus.account);
+      expect(borrowBalanceBefore).to.be.closeTo(0.5, 1);
+
+      await crbtc.repayBorrow(tropykus.account, 0, true);
+      const borrowBalanceAfter = await crbtc.borrowBalanceCurrent(tropykus.account);
+      expect(borrowBalanceAfter).equals(0);
     });
   });
 });

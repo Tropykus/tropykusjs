@@ -3929,7 +3929,18 @@ var Market = function () {
   }, {
     key: "repayBorrow",
     value: function repayBorrow(account, amount) {
-      console.log('bye', account, amount, this);
+      var _this7 = this;
+      var maxValue = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+      return new Promise(function (resolve, reject) {
+        if (maxValue) {
+          _this7.instance.connect(account).repayBorrowAll().then(resolve).catch(reject);
+        } else {
+          _this7.instance.connect(account).repayBorrow({
+            value: ethers.ethers.utils.parseEther(amount.toString()),
+            gasLimit: _this7.tropykus.gasLimit
+          });
+        }
+      });
     }
   }]);
   return Market;
@@ -4263,6 +4274,55 @@ var CErc20 = function (_Market) {
         return _mint.apply(this, arguments);
       }
       return mint;
+    }()
+  }, {
+    key: "repayBorrow",
+    value: function () {
+      var _repayBorrow = _asyncToGenerator__default["default"]( _regeneratorRuntime__default["default"].mark(function _callee2(account, amount) {
+        var maxValue,
+            borrowBalance,
+            borrowBalancePlusDelta,
+            _args2 = arguments;
+        return _regeneratorRuntime__default["default"].wrap(function _callee2$(_context2) {
+          while (1) {
+            switch (_context2.prev = _context2.next) {
+              case 0:
+                maxValue = _args2.length > 2 && _args2[2] !== undefined ? _args2[2] : false;
+                if (!maxValue) {
+                  _context2.next = 11;
+                  break;
+                }
+                _context2.t0 = Number;
+                _context2.next = 5;
+                return this.instance.connect(account).callStatic.borrowBalanceCurrent(account.address);
+              case 5:
+                _context2.t1 = _context2.sent;
+                borrowBalance = (0, _context2.t0)(_context2.t1);
+                borrowBalancePlusDelta = borrowBalance + 1e18;
+                _context2.next = 10;
+                return this.erc20Instance.connect(account).approve(this.address, ethers.ethers.utils.parseEther(borrowBalancePlusDelta.toString()));
+              case 10:
+                return _context2.abrupt("return", this.instance.connect(account).repayBorrow(ethers.ethers.constants.MaxUint256, {
+                  gasLimit: this.tropykus.gasLimit
+                }));
+              case 11:
+                _context2.next = 13;
+                return this.erc20Instance.connect(account).approve(this.address, ethers.ethers.utils.parseEther(amount.toString()));
+              case 13:
+                return _context2.abrupt("return", this.instance.connect(account).repayBorrow(ethers.ethers.utils.parseEther(amount.toString()), {
+                  gasLimit: this.tropykus.gasLimit
+                }));
+              case 14:
+              case "end":
+                return _context2.stop();
+            }
+          }
+        }, _callee2, this);
+      }));
+      function repayBorrow(_x3, _x4) {
+        return _repayBorrow.apply(this, arguments);
+      }
+      return repayBorrow;
     }()
   }]);
   return CErc20;
