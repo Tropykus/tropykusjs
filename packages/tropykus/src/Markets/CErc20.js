@@ -21,4 +21,29 @@ export default class CErc20 extends Market {
     return this.instance.connect(account)
       .mint(ethers.utils.parseEther(amount.toString()), { gasLimit: this.tropykus.gasLimit });
   }
+
+  async repayBorrow(account, amount, maxValue = false) {
+    if (maxValue) {
+      const borrowBalance = Number(await this.instance.connect(account)
+        .callStatic.borrowBalanceCurrent(account.address));
+      const borrowBalancePlusDelta = borrowBalance + 1e18;
+      await this.erc20Instance.connect(account)
+        .approve(
+          this.address,
+          ethers.utils.parseEther(borrowBalancePlusDelta.toString()),
+        );
+      return this.instance.connect(account)
+        .repayBorrow(
+          ethers.constants.MaxUint256,
+          { gasLimit: this.tropykus.gasLimit },
+        );
+    }
+    await this.erc20Instance.connect(account)
+      .approve(this.address, ethers.utils.parseEther(amount.toString()));
+    return this.instance.connect(account)
+      .repayBorrow(
+        ethers.utils.parseEther(amount.toString()),
+        { gasLimit: this.tropykus.gasLimit },
+      );
+  }
 }

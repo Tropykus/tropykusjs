@@ -12,6 +12,11 @@ import CErc20Artifact from '../artifacts/CErc20Immutable.json';
 import Unitroller from './Unitroller';
 
 export default class Tropykus {
+  /**
+   * Construct a new Tropykus instance
+   * @param providerURL network url to be connected with
+   * @param gasLimit limit of gas to be used in each transaction
+   */
   constructor(providerURL, gasLimit) {
     this.ethersProvider = new ethers.providers.JsonRpcProvider(providerURL);
     this.internalAccount = null;
@@ -37,6 +42,10 @@ export default class Tropykus {
       .fromMnemonic(mnemonic, derivationPath).connect(this.ethersProvider);
   }
 
+  /**
+   * Returns the set gas limit.
+   * @return {Number}
+   */
   get gasLimit() { return this.currentGasLimit; }
 
   /**
@@ -46,6 +55,7 @@ export default class Tropykus {
   get comptroller() { return this.internalComptroller; }
 
   /**
+<<<<<<< HEAD
    * Returns the initialized priceOracle instance.
    * @returns {PriceOracle}
    */
@@ -56,9 +66,17 @@ export default class Tropykus {
    * a Market instance is made available.
    * @param artifact
    * @param deployed
+=======
+   * By providing the contract artifact, its address, its corresponding erc20 token address
+   * and some additional market information a Market instance is added to the protocol and is made available.
+   * @param artifact to use for the contract instantiation
+   * @param deployed flag to indicate if the contract is already deployed
+>>>>>>> develop
    * @param marketAddress on chain deployed market address.
-   * @param erc20TokenAddress
-   * @param args
+   * @param erc20TokenAddress on chain deployed erc20 token address.
+   * @param args additional args to initialize market
+   * * Returns the added market instance.
+   * @return {Market}
    */
   async addMarket(
     artifact,
@@ -172,9 +190,9 @@ export default class Tropykus {
       await this.internalComptroller.setCloseFactor(args.closeFactor);
       await this.internalComptroller
         .setLiquidationIncentive(args.liquidationIncentive);
-      markets.forEach((marketAddress) => {
-        await this.internalComptroller.supportMarket(marketAddress)
-      });
+      // markets.forEach((marketAddress) => {
+      //   await this.internalComptroller.supportMarket(marketAddress)
+      // });
     } else {
       this.internalComptroller = new Comptroller(comptrollerAddress, this);
     }

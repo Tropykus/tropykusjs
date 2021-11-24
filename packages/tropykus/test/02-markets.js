@@ -188,34 +188,90 @@ describe('Market', () => {
       await crbtc.mint(tropykus.account, 0.5);
       const balance = await crbtc.balanceOfUnderlying(tropykus.account);
       expect(balance).equals(0.5);
-      const kTokenBalance = await crbtc.balanceOf(tropykus.account);
-      expect(kTokenBalance).equals(25);
     });
 
     it('should deposit in any token market', async () => {
       await cdoc.mint(tropykus.account, 1000);
       const balance = await cdoc.balanceOfUnderlying(tropykus.account);
       expect(balance).equals(1000);
-      const kTokenBalance = await cdoc.balanceOf(tropykus.account);
-      expect(kTokenBalance).to.be.closeTo(50000, 0.1);
     });
 
-    it('should borrow in cdoc an amount once he has a collateral on crbtc', async() => {
+    it('should borrow in cdoc an amount once he has a collateral on cdoc', async() => {
       await crbtc.mint(tropykus.account, 0.5);
-      expect(await cdoc.balanceOfUnderlying(tropykus.account)).equals(0.5);
-      console.log("trying to borrow");
-      const tmp = await cdoc.borrow(tropykus.account, 100);
-      console.log("Did it work?", tmp);
+      await cdoc.borrow(tropykus.account, 100);
       const balance = await cdoc.borrowBalanceCurrent(tropykus.account);
       expect(balance).equals(100);
     });
 
-    it('should borrow in crbtc market an amount once he has a collateral on cdoc', async() => {
-      await crdoc.mint(tropykus.account, 1000);
-      expect(await cdoc.balanceOfUnderlying(tropykus.account)).equals(1000);
+    it('should borrow in crbtc market an amount once he has a collateral on crbtc', async() => {
+      await cdoc.mint(tropykus.account, 1000);
       await crbtc.borrow(tropykus.account, 0.005);
       const balance = await crbtc.borrowBalanceCurrent(tropykus.account);
       expect(balance).equals(0.005);
+    });
+
+    it('should redeem from crbtc market', async() => {
+      await crbtc.mint(tropykus.account, 0.5);
+      const balance = await crbtc.balanceOfUnderlying(tropykus.account);
+      expect(balance).equals(0.5);
+
+      const balanceBefore = await crbtc.balanceOfUnderlying(tropykus.account);
+      await crbtc.redeem(tropykus.account, 0.025);
+      const balanceAfter = await crbtc.balanceOfUnderlying(tropykus.account);
+      expect(balanceAfter).equals(balanceBefore - 0.025);
+    });
+
+    it('should redeem from cdoc market', async() => {
+      await cdoc.mint(tropykus.account, 500);
+      const balance = await cdoc.balanceOfUnderlying(tropykus.account);
+      expect(balance).equals(500);
+
+      const balanceBefore = await cdoc.balanceOfUnderlying(tropykus.account);
+      await cdoc.redeem(tropykus.account, 250);
+      const balanceAfter = await cdoc.balanceOfUnderlying(tropykus.account);
+      expect(balanceAfter).equals(balanceBefore - 250);
+    });
+
+    it('should redeem all kTokens from crbtc market', async() => {
+      await crbtc.mint(tropykus.account, 0.5);
+      const balance = await crbtc.balanceOfUnderlying(tropykus.account);
+      expect(balance).equals(0.5);
+      const kRBTCBalance = await crbtc.balanceOf(tropykus.account);
+      expect(kRBTCBalance).equals(25);
+
+      await crbtc.redeem(tropykus.account, 0, true);
+      const balanceAfter = await crbtc.balanceOfUnderlying(tropykus.account);
+      expect(balanceAfter).equals(0);
+      const kRBTCBalanceAfter = await crbtc.balanceOf(tropykus.account);
+      expect(kRBTCBalanceAfter).equals(0);
+    });
+
+    it('should repay a portion of debt on cdoc market', async() => {
+      await cdoc.mint(tropykus.account, 1000);
+      const balance = await cdoc.balanceOfUnderlying(tropykus.account);
+      expect(balance).equals(1000);
+
+      await cdoc.borrow(tropykus.account, 500);
+      const borrowBalanceBefore = await cdoc.borrowBalanceCurrent(tropykus.account);
+      expect(borrowBalanceBefore).to.be.closeTo(500, 1);
+
+      await cdoc.repayBorrow(tropykus.account, 250);
+      const borrowBalanceAfter = await cdoc.borrowBalanceCurrent(tropykus.account);
+      expect(borrowBalanceAfter).to.be.closeTo(250, 1);
+    });
+
+    it('should repay all debt from crbtc market', async() => {
+      await crbtc.mint(tropykus.account, 1);
+      const balance = await crbtc.balanceOfUnderlying(tropykus.account);
+      expect(balance).equals(1);
+
+      await crbtc.borrow(tropykus.account, 0.5);
+      const borrowBalanceBefore = await crbtc.borrowBalanceCurrent(tropykus.account);
+      expect(borrowBalanceBefore).to.be.closeTo(0.5, 1);
+
+      await crbtc.repayBorrow(tropykus.account, 0, true);
+      const borrowBalanceAfter = await crbtc.borrowBalanceCurrent(tropykus.account);
+      expect(borrowBalanceAfter).equals(0);
     });
   });
 });

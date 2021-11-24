@@ -1,6 +1,6 @@
 {
   "name": "tropykusjs",
-  "version": "0.0.1",
+  "version": "0.0.5",
   "description": "Tropykus finance libraries",
   "main": "packages/tropykus/src/index.js",
   "scripts": {
@@ -9,7 +9,6 @@
     "bootstrap": "lerna bootstrap",
     "clean": "lerna clean",
     "format": "prettier --config ./.prettierrc --write ./packages/**/*.js",
-    "compile": "cd ./dependencies/contracts/ && truffle compile && cd ../.. && cp -R ./dependencies/contracts/build/contracts/ packages/poh",
     "lint": "eslint --cache --fix ./packages/",
     "release": "npm run version-check && lerna version --no-git-tag-version && npm run version-update",
     "version-check": ".scripts/version-check.sh",

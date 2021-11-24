@@ -39,6 +39,8 @@ describe('Comptroller', () => {
           false,
           {
               priceOracleAddress: tropykus.priceOracle.address,
+              closeFactor: 0.5,
+              liquidationIncentive: 0.07,
               markets: [
                   '0x8bfFbbC868Fe8347d1aC938527b9e56b2e1db761',
                   '0x1CbD672Ac9d98F4f033e12eDE3c55f5CB02B983C',
