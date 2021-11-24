@@ -87,15 +87,32 @@ export default class Market {
 
   /**
    * function that allows us to redeem from the market
-   * @param account type account
-   * @param amount type Number - value to be redeemed
+   * @param {account} account object with signer info
+   * @param {number} amount value to be redeemed
+   * @param {boolean} maxValue if true ignores amount and redeems all
+   * kTokens from the account, if the account has collateral compromised
+   * in debts the transactions reverts.
    */
-   redeem(account, amount) {
+  redeem(account, amount, maxValue = false) {
     return new Promise((resolve, reject) => {
-      this.instance.connect(account)
-        .redeemUnderlying(ethers.utils.parseEther(amount.toString()), { gasLimit: this.tropykus.gasLimit })
-        .then(resolve)
-        .catch(reject);
+      if (maxValue) {
+        this.instance.callStatic.balanceOf(account.address)
+          .then((kTokens) => this.instance.connect(account)
+            .redeem(
+              kTokens,
+              { gasLimit: this.tropykus.gasLimit },
+            ))
+          .then(resolve)
+          .catch(reject);
+      } else {
+        this.instance.connect(account)
+          .redeemUnderlying(
+            ethers.utils.parseEther(amount.toString()),
+            { gasLimit: this.tropykus.gasLimit },
+          )
+          .then(resolve)
+          .catch(reject);
+      }
     });
   }
 
@@ -105,6 +122,6 @@ export default class Market {
    * @param amount type Number - value to be repayed
    */
   repayBorrow(account, amount) {
-    console.log('bye');
+    console.log('bye', account, amount, this);
   }
 }

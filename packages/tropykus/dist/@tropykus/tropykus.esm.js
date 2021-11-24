@@ -4031,11 +4031,25 @@ var Market = function () {
     key: "redeem",
     value: function redeem(account, amount) {
       var _this6 = this;
+      var maxValue = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
       return new Promise(function (resolve, reject) {
-        _this6.instance.connect(account).redeemUnderlying(ethers.utils.parseEther(amount.toString()), {
-          gasLimit: _this6.tropykus.gasLimit
-        }).then(resolve)["catch"](reject);
+        if (maxValue) {
+          _this6.instance.callStatic.balanceOf(account.address).then(function (kTokens) {
+            return _this6.instance.connect(account).redeem(kTokens, {
+              gasLimit: _this6.tropykus.gasLimit
+            });
+          }).then(resolve)["catch"](reject);
+        } else {
+          _this6.instance.connect(account).redeemUnderlying(ethers.utils.parseEther(amount.toString()), {
+            gasLimit: _this6.tropykus.gasLimit
+          }).then(resolve)["catch"](reject);
+        }
       });
+    }
+  }, {
+    key: "repayBorrow",
+    value: function repayBorrow(account, amount) {
+      console.log('bye', account, amount, this);
     }
   }]);
   return Market;
