@@ -492,3 +492,5 @@ packages/tropykus/.nyc_output/**
 packages/tropykus/.nyc_output/processinfo/*.json
 packages/tropykus/dist/
 packages/tropykus/node_modules/
+node_modules
+
