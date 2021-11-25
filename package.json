@@ -1,6 +1,6 @@
 {
   "name": "tropykusjs",
-  "version": "0.0.5",
+  "version": "0.0.7",
   "description": "Tropykus finance libraries",
   "main": "packages/tropykus/src/index.js",
   "scripts": {
