@@ -487,10 +487,8 @@ healthchecksdb
 MigrationBackup/
 
 # End of https://www.gitignore.io/api/node,webstorm,visualstudio
-packages/tropykus/.nyc_output/
-packages/tropykus/.nyc_output/**
-packages/tropykus/.nyc_output/processinfo/*.json
 packages/tropykus/dist/
 packages/tropykus/node_modules/
 node_modules
+packages/tropykus/.nyc_output/
 
