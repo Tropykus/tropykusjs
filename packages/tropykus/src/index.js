@@ -55,23 +55,17 @@ export default class Tropykus {
   get comptroller() { return this.internalComptroller; }
 
   /**
-<<<<<<< HEAD
    * Returns the initialized priceOracle instance.
    * @returns {PriceOracle}
    */
   get priceOracle() { return this.internalPriceOracle; }
 
   /**
-   * By providing the contract address and if it is a cRBTC market,
-   * a Market instance is made available.
-   * @param artifact
-   * @param deployed
-=======
-   * By providing the contract artifact, its address, its corresponding erc20 token address
-   * and some additional market information a Market instance is added to the protocol and is made available.
+   * By providing the contract artifact, its address, its corresponding erc20
+   * token address and some additional market information a Market instance
+   * is added to the protocol and is made available.
    * @param artifact to use for the contract instantiation
    * @param deployed flag to indicate if the contract is already deployed
->>>>>>> develop
    * @param marketAddress on chain deployed market address.
    * @param erc20TokenAddress on chain deployed erc20 token address.
    * @param args additional args to initialize market
@@ -190,9 +184,8 @@ export default class Tropykus {
       await this.internalComptroller.setCloseFactor(args.closeFactor);
       await this.internalComptroller
         .setLiquidationIncentive(args.liquidationIncentive);
-      // markets.forEach((marketAddress) => {
-      //   await this.internalComptroller.supportMarket(marketAddress)
-      // });
+      args.markets.forEach((marketAddress) => this.internalComptroller
+        .supportMarket(marketAddress));
     } else {
       this.internalComptroller = new Comptroller(comptrollerAddress, this);
     }
