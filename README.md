@@ -62,7 +62,7 @@ console.log(tropykus.account.address);
 In order to deposit cryptos into tropykus markets is necesary to have the instance of the specific market, for that use the ***tropykus.addMarket()***.
 
 ```javascript
-tropykus.addMarket(artifact, deployed, marketAddress, erc20TokenAddress args);
+tropykus.addMarket(artifact, deployed, marketAddress, erc20TokenAddress, args);
 ```
 
 - *artifact:* string specifying the artifact to use for the contract instance
@@ -216,24 +216,24 @@ The third parameter is a flag that indicates the method that must pay all the de
 
 |  | Artifact | Address |
 | -------- | -------- | -------- |
-| Price Oracle | PriceOracleProxy | 0x17cab8546d55a7b4f36811eb61cd93414b9759ab |
+| Price Oracle | PriceOracleProxy | 0x1bdf453f72a8466ba3709b091b7658edfc550c23 |
 | tRIF Token | StandardToken | 0xc370cd19517b5a8a9f6df0958679e8cd4874c048 |
 | tDOC Token | StandardToken | 0x494154243ac77c6ab90dfa0d4d42dd411e1df5f3 |
 | trDOC Token | StandardToken | 0xc486ac998afbf1b477533dda94d950bd2190ceb5 |
 | tUSDT Token | StandardToken | 0xcf5137f039578cb10070b91bb30fd3d260bcddde |
-| RIF Interest Rate Model | WhitePaperInterestRateModel | 0x27ea412918b7129962b6c02cc165c95b58c45752 |
-| DOC Interest Rate Model | JumpRateModelV2 | 0xcebf33586a73bc758c99cc10b74dfb347115e071 |
-| rDOC Interest Rate Model | JumpRateModelV2 | 0x8e56ad60eff862be83a427d4dfa86ee11146a4c0 |
-| USDT Interest Rate Model | JumpRateModelV2 | 0x31b42d414bc46ee58279a969e3df71c4e4aa2314 |
-| RBTC Interest Rate Model | WhitePaperInterestRateModel | 0x40140771d09d8065d8e036e593aa0d6145725fd8 |
-| RBTC micro(kSAT) Interest Rate Model | HurricaneInterestRateModel | 0x0d5af5e33437b49fe61bb61d86769b159b03a3ee |
-| kRIF | CErc20Immutable | 0x6201cc9c58ea3802e92f68e732ccc889dd8b0449 |
-| kDOC | CErc20Immutable | 0x26905f629d17c6ecce71bc017a9518993bbbc579 |
-| kRDOC | CRDOC | 0x720e4c925255d7700f407804646aee7945771286 |
-| kUSDT | CErc20Immutable | 0x71775f5cc28a4dbb7965de0f772631199b5460d2 |
-| kRBTC | CRBTC | 0x2c067febb0efff52640e31bcb069f3c6b8693630 |
-| kSAT | CRBTC | 0x298dad23921024c3f090320ffdd30c9bf245d9fd |
-| Comptroller | ComptrollerG6 | 0xd8f5366b7bbe1275336fc3b929646104379e1d7d |
+| RIF Interest Rate Model | WhitePaperInterestRateModel | 0x41cbfa04ac7bad4e702fad9c92064cf503964f3a |
+| DOC Interest Rate Model | JumpRateModelV2 | 0xe8cf23e02ffb01b7f7221025e7af0ec56fa6df88 |
+| rDOC Interest Rate Model | JumpRateModelV2 | 0x385d059f3dd3dc36addd1918a75fb84d758c3f69 |
+| USDT Interest Rate Model | JumpRateModelV2 | 0x01ffd800f0d5af18b7847e52d9bdcfed81bb8f28 |
+| RBTC Interest Rate Model | WhitePaperInterestRateModel | 0x4c9e251ce7073ce1a62d696800ed07f67eace2d5 |
+| RBTC micro(kSAT) Interest Rate Model | HurricaneInterestRateModel | 0xd22de9a3f9d87e6bf58783e44b5453b3deacb0fe |
+| kRIF | CErc20Immutable | 0xd22de9a3f9d87e6bf58783e44b5453b3deacb0fe |
+| kDOC | CErc20Immutable | 0xe7b4770af8152fc1a0e13d08e70a8c9a70f4d9d9 |
+| kRDOC | CRDOC | 0x0981eb51a91e6f89063c963438cadf16c2e44962 |
+| kUSDT | CErc20Immutable | 0x495be6b6d8f35748bb8fe657f884f84342043733 |
+| kRBTC | CRBTC | 0x636b2c156d09cee9516f9afec7a4605e1f43dec1 |
+| kSAT | CRBTC | 0xf2250c3d8e81a562f55e4a207c218d50c62db087 |
+| Comptroller | ComptrollerG6 | 0x7de1ade0c4482ceab96faff408cc9dcc9015b448 |
 
 
 
