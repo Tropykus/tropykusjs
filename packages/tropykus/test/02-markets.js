@@ -1,4 +1,4 @@
-import chai from 'chai';
+import chai, { assert } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import Tropykus from "../src";
 import Market from '../src/Market';
@@ -8,6 +8,7 @@ import CTokenMarket from '../src/Markets/CToken';
 import CRBTCAbi from '../abis/CRBTC.json';
 import CErc20Abi from '../abis/CErc20Immutable.json';
 import CRDOCAbi from '../abis/CRDOC.json';
+import sinon from "sinon";
 
 
 chai.use(chaiAsPromised);
@@ -29,10 +30,16 @@ const csatInterestRateModelAddress = '0xD0Ed8135F9Ceb504A0484eEF9700D17622569Df2
 
 describe('Market', () => {
   let tropykus;
+  const sandbox = sinon.createSandbox();
+
   beforeEach(async () => {
-    tropykus = new Tropykus('http://localhost:8545', 400000);
+    tropykus = new Tropykus('http://127.0.0.1:8545', 400000);
     await tropykus.setAccount(mnemonic, derivationPath);
     await tropykus.setComptroller(comptrollerAddress);
+  });
+
+  afterEach(() => {
+    sandbox.restore();
   });
 
   it('should deployed a new CRBTC market', async () => {
@@ -181,6 +188,25 @@ describe('Market', () => {
       await crbtc.repayBorrow(tropykus.account, 0, true);
       const borrowBalanceAfter = await crbtc.borrowBalanceCurrent(tropykus.account);
       expect(borrowBalanceAfter).equals(0);
+    });
+  });
+
+  describe('Events subscription', () => {
+    it('Should subscribe on an event', async () => {
+      const crbtc = await tropykus.addMarket('CRBTC', true, crbtcMarketAddress);
+
+      const actionObj = {
+        action: () => {
+            return 'Action excecuted';
+        }
+      };
+      sandbox.spy(actionObj, "action");
+
+      crbtc.subscribeOnEvent('Mint', actionObj.action);
+      await crbtc.mint(tropykus.account, 0.0025);
+
+      expect(actionObj.action.calledOnce).equals(true);
+      expect(actionObj.action.getCall(0).returnValue).equals('Action excecuted');
     });
   });
 });

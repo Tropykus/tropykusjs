@@ -138,4 +138,13 @@ export default class Market {
       }
     });
   }
+
+  /**
+   * 
+   * @param {string} event name to subscribe on
+   * @param {function} action which shall be excecuted once the even has been listened
+   */
+  subscribeOnEvent(event, action) {
+    this.instance.on(event, action);
+  }
 }
