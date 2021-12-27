@@ -10,8 +10,10 @@ export default class Tropykus {
    * @param providerURL network url to be connected with
    * @param gasLimit limit of gas to be used in each transaction
    */
-  constructor(providerURL, gasLimit) {
+  // TODO: fix wsProviderURL = ''
+  constructor(providerURL, gasLimit, wsProviderURL = 'ws://127.0.0.1:8545') {
     this.ethersProvider = new ethers.providers.JsonRpcProvider(providerURL);
+    this.wsProvider = new ethers.providers.WebSocketProvider(wsProviderURL);
     this.internalAccount = null;
     this.internalComptroller = null;
     this.currentGasLimit = gasLimit;

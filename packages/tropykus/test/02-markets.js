@@ -197,6 +197,7 @@ describe('Market', () => {
 
       const actionObj = {
         action: () => {
+            console.log('Excecuted');
             return 'Action excecuted';
         }
       };

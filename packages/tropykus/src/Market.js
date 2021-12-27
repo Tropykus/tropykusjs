@@ -11,6 +11,7 @@ export default class Market {
     this.tropykus = tropykus;
     this.address = marketAddress;
     this.instance = new ethers.Contract(marketAddress, abi, this.tropykus.ethersProvider);
+    this.wsInstance = new ethers.Contract(marketAddress, abi, this.tropykus.wsProvider);
   }
 
   /**
@@ -145,6 +146,6 @@ export default class Market {
    * @param {function} action which shall be excecuted once the even has been listened
    */
   subscribeOnEvent(event, action) {
-    this.instance.on(event, action);
+    this.wsInstance.on(event, action);
   }
 }
