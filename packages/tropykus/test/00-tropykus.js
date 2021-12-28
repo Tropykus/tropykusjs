@@ -14,7 +14,7 @@ const priceOracleAddress = '0x4d7Cc3cdb88Fa1EEC3095C9f849c799F1f7D4031';
 const unitrollerAddress = '0xdC98d636ad43A17bDAcE402997C7c6ABA55EAa28';
 
 describe('Core tropykus', () => {
-  const tropykus = new Tropykus('http://localhost:8545', 400000);
+  const tropykus = new Tropykus('http://127.0.0.1:8545', 400000);
 
   it('should generate an account', async () => {
     const dep = tropykus.setAccount(mnemonic, derivationPath);

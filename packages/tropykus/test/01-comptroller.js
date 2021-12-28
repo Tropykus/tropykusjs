@@ -17,7 +17,7 @@ const crdocAddress = '0x1a389e93be8ef2B5D105DEa44271d4426736A484';
 const unitrollerAddress = '0xdC98d636ad43A17bDAcE402997C7c6ABA55EAa28';
 
 describe('Comptroller', () => {
-    const tropykus = new Tropykus('http://localhost:8545', 600000);
+    const tropykus = new Tropykus('http://127.0.0.1:8545', 600000);
     let comptroller;
     let dep;
     beforeEach(async () => {

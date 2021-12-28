@@ -18,19 +18,15 @@ export default class Tropykus {
    * @param providerURL network url to be connected with
    * @param gasLimit limit of gas to be used in each transaction
    */
-  constructor(providerURL, gasLimit) {
+  // TODO: fix wsProviderURL = ''
+  constructor(providerURL, gasLimit, wsProviderURL = 'ws://127.0.0.1:8545') {
     this.ethersProvider = new ethers.providers.JsonRpcProvider(providerURL);
+    this.wsProvider = new ethers.providers.WebSocketProvider(wsProviderURL);
     this.internalComptroller = null;
     this.internalPriceOracle = null;
     this.currentGasLimit = gasLimit;
     this.markets = [];
   }
-
-  /**
-   * Returns the initialized account instance.
-   * @return {Object}
-   */
-  get account() { return this.internalAccount; }
 
   /**
    * By providing the mnemonic, a wallet instance is made available.
