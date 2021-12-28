@@ -33,7 +33,7 @@ describe('Market', () => {
   const sandbox = sinon.createSandbox();
 
   beforeEach(async () => {
-    tropykus = new Tropykus('http://127.0.0.1:8545', 400000);
+    tropykus = new Tropykus('http://127.0.0.1:8545', 400000, 'http://127.0.0.1:8545');
     await tropykus.setAccount(mnemonic, derivationPath);
     await tropykus.setComptroller(comptrollerAddress);
   });
@@ -96,7 +96,7 @@ describe('Market', () => {
       expect(balance).equals(1000);
     });
 
-    it.skip('should borrow in cdoc an amount once he has a collateral on cdoc', async() => {
+    it.skip('should borrow in cdoc an amount once he has a collateral on cdoc', async () => {
       const crbtc = await tropykus.addMarket('CRBTC', true, crbtcMarketAddress);
       const cdoc = await tropykus.addMarket('CErc20Immutable', true, cdocAddress, docAddress);
 
@@ -106,7 +106,7 @@ describe('Market', () => {
       expect(balance).equals(100);
     });
 
-    it.skip('should borrow in crbtc market an amount once he has a collateral on crbtc', async() => {
+    it.skip('should borrow in crbtc market an amount once he has a collateral on crbtc', async () => {
       const crbtc = await tropykus.addMarket('CRBTC', true, crbtcMarketAddress);
       const cdoc = await tropykus.addMarket('CErc20Immutable', true, cdocAddress, docAddress);
 
@@ -116,7 +116,7 @@ describe('Market', () => {
       expect(balance).equals(0.005);
     });
 
-    it.skip('should redeem from crbtc market', async() => {
+    it.skip('should redeem from crbtc market', async () => {
       const crbtc = await tropykus.addMarket('CRBTC', true, crbtcMarketAddress);
 
       await crbtc.mint(tropykus.account, 0.5);
@@ -129,7 +129,7 @@ describe('Market', () => {
       expect(balanceAfter).equals(balanceBefore - 0.025);
     });
 
-    it.skip('should redeem from cdoc market', async() => {
+    it.skip('should redeem from cdoc market', async () => {
       const cdoc = await tropykus.addMarket('CErc20Immutable', true, cdocAddress, docAddress);
 
       await cdoc.mint(tropykus.account, 500);
@@ -142,7 +142,7 @@ describe('Market', () => {
       expect(balanceAfter).equals(balanceBefore - 250);
     });
 
-    it.skip('should redeem all kTokens from crbtc market', async() => {
+    it.skip('should redeem all kTokens from crbtc market', async () => {
       const crbtc = await tropykus.addMarket('CRBTC', true, crbtcMarketAddress);
 
       await crbtc.mint(tropykus.account, 0.5);
@@ -158,7 +158,7 @@ describe('Market', () => {
       expect(kRBTCBalanceAfter).equals(0);
     });
 
-    it.skip('should repay a portion of debt on cdoc market', async() => {
+    it.skip('should repay a portion of debt on cdoc market', async () => {
       const cdoc = await tropykus.addMarket('CErc20Immutable', true, cdocAddress, docAddress);
 
       await cdoc.mint(tropykus.account, 1000);
@@ -174,7 +174,7 @@ describe('Market', () => {
       expect(borrowBalanceAfter).to.be.closeTo(250, 1);
     });
 
-    it('should repay all debt from crbtc market', async() => {
+    it('should repay all debt from crbtc market', async () => {
       const crbtc = await tropykus.addMarket('CRBTC', true, crbtcMarketAddress);
 
       await crbtc.mint(tropykus.account, 1);
@@ -192,22 +192,108 @@ describe('Market', () => {
   });
 
   describe('Events subscription', () => {
-    it('Should subscribe on an event', async () => {
+    it('Should subscribe on mint event', async () => {
       const crbtc = await tropykus.addMarket('CRBTC', true, crbtcMarketAddress);
 
       const actionObj = {
         action: () => {
-            console.log('Excecuted');
-            return 'Action excecuted';
+          return 'Action excecuted, mint';
         }
       };
       sandbox.spy(actionObj, "action");
 
       crbtc.subscribeOnEvent('Mint', actionObj.action);
       await crbtc.mint(tropykus.account, 0.0025);
+      // This is necessary when using ganache to force the blockchain to move one block
+      await tropykus.comptroller.allMarkets();
 
       expect(actionObj.action.calledOnce).equals(true);
-      expect(actionObj.action.getCall(0).returnValue).equals('Action excecuted');
+      expect(actionObj.action.getCall(0).returnValue).equals('Action excecuted, mint');
+
+      await crbtc.mint(tropykus.account, 0.0025);
+      await tropykus.comptroller.allMarkets();
+
+      expect(actionObj.action.calledOnce).equals(false);
+      expect(actionObj.action.calledTwice).equals(true);
+    });
+
+    it('Should subscribe on redeem event', async () => {
+      const crbtc = await tropykus.addMarket('CRBTC', true, crbtcMarketAddress);
+
+      const actionObj = {
+        action: () => {
+          return 'Action excecuted, redeem';
+        }
+      };
+      sandbox.spy(actionObj, "action");
+
+      crbtc.subscribeOnEvent('Redeem', actionObj.action);
+      await crbtc.mint(tropykus.account, 0.0025);
+      await crbtc.redeem(tropykus.account, 0.002);
+      // This is necessary when using ganache to force the blockchain to move one block
+      await tropykus.comptroller.allMarkets();
+
+      expect(actionObj.action.calledOnce).equals(true);
+      expect(actionObj.action.getCall(0).returnValue).equals('Action excecuted, redeem');
+
+      await crbtc.redeem(tropykus.account, 0.0005);
+      await tropykus.comptroller.allMarkets();
+
+      expect(actionObj.action.calledOnce).equals(false);
+      expect(actionObj.action.calledTwice).equals(true);
+    });
+
+    it.skip('Should subscribe on borrow event', async () => {
+      const crbtc = await tropykus.addMarket('CRBTC', true, crbtcMarketAddress);
+
+      const actionObj = {
+        action: () => {
+          return 'Action excecuted, borrow';
+        }
+      };
+      sandbox.spy(actionObj, "action");
+
+      crbtc.subscribeOnEvent('Borrow', actionObj.action);
+      await crbtc.mint(tropykus.account, 0.0025);
+      await crbtc.borrow(tropykus.account, 0.00001);
+      // This is necessary when using ganache to force the blockchain to move one block
+      await tropykus.comptroller.allMarkets();
+
+      expect(actionObj.action.calledOnce).equals(true);
+      expect(actionObj.action.getCall(0).returnValue).equals('Action excecuted, borrow');
+
+      await crbtc.borrow(tropykus.account, 0.00001);
+      await tropykus.comptroller.allMarkets();
+
+      expect(actionObj.action.calledOnce).equals(false);
+      expect(actionObj.action.calledTwice).equals(true);
+    });
+
+    it.skip('Should subscribe on repayBorrow event', async () => {
+      const crbtc = await tropykus.addMarket('CRBTC', true, crbtcMarketAddress);
+
+      const actionObj = {
+        action: () => {
+          return 'Action excecuted, repayBorrow';
+        }
+      };
+      sandbox.spy(actionObj, "action");
+
+      crbtc.subscribeOnEvent('RepayBorrow', actionObj.action);
+      await crbtc.mint(tropykus.account, 0.0025);
+      await crbtc.borrow(tropykus.account, 0.00001);
+      await crbtc.repayBorrow(tropykus.account, 0.00001);
+      // This is necessary when using ganache to force the blockchain to move one block
+      await tropykus.comptroller.allMarkets();
+
+      expect(actionObj.action.calledOnce).equals(true);
+      expect(actionObj.action.getCall(0).returnValue).equals('Action excecuted, repayBorrow');
+
+      await crbtc.repayBorrow(tropykus.account, 0, true);
+      await tropykus.comptroller.allMarkets();
+
+      expect(actionObj.action.calledOnce).equals(false);
+      expect(actionObj.action.calledTwice).equals(true);
     });
   });
 });
