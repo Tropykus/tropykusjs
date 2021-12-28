@@ -9,6 +9,7 @@ export default class Comptroller {
    */
   constructor(contractAddress, tropykus) {
     this.tropykus = tropykus;
+    this.address = contractAddress;
     this.instance = new ethers.Contract(
       contractAddress,
       ComptrollerArtifact.abi,
@@ -18,24 +19,11 @@ export default class Comptroller {
 
   /**
    * gets all the markets the comptroller has
-   * @return {Array} markets directions
+   * @return {Promise<Array>} markets directions
    */
   allMarkets() {
     return new Promise((resolve, reject) => {
       this.instance.callStatic.getAllMarkets()
-        .then(resolve)
-        .catch(reject);
-    });
-  }
-
-  /**
-   * gets the markets where the account has collateral
-   * @param account to be consulted for the markets
-   * @return {Promise} with the array of markets the account has entered as collateral
-   */
-  getAssetsIn(account) {
-    return new Promise((resolve, reject) => {
-      this.instance.callStatic.getAssetsIn(account.address)
         .then(resolve)
         .catch(reject);
     });
@@ -55,23 +43,24 @@ export default class Comptroller {
     });
   }
 
-  supportMarket(marketAddresses) {
+  supportMarket(marketAddress) {
     return new Promise((resolve, reject) => {
       // eslint-disable-next-line no-underscore-dangle
       this.instance.connect(this.tropykus.account)
-        ._supportMarket(marketAddresses)
+        ._supportMarket(marketAddress)
         .then(resolve)
         .catch(reject);
     });
   }
 
-  setCollateralFactor(marketAddresses, collateralFactor) {
+  setCollateralFactor(marketAddress, collateralFactor) {
     return new Promise((resolve, reject) => {
       // eslint-disable-next-line no-underscore-dangle
       this.instance.connect(this.tropykus.account)
         ._setCollateralFactor(
-          marketAddresses,
+          marketAddress,
           ethers.utils.parseEther(collateralFactor.toString()),
+          { gasLimit: this.tropykus.gasLimit },
         )
         .then(resolve)
         .catch(reject);
@@ -102,7 +91,9 @@ export default class Comptroller {
     return new Promise((resolve, reject) => {
       // eslint-disable-next-line no-underscore-dangle
       this.instance.connect(this.tropykus.account)
-        ._setCloseFactor(ethers.utils.parseEther(closeFactor.toString()))
+        ._setCloseFactor(
+          ethers.utils.parseEther(closeFactor.toString()),
+        )
         .then(resolve)
         .catch(reject);
     });
@@ -112,7 +103,68 @@ export default class Comptroller {
     return new Promise((resolve, reject) => {
       // eslint-disable-next-line no-underscore-dangle
       this.instance.connect(this.tropykus.account)
-        ._setLiquidationIncentive(ethers.utils.parseEther(liquidationIncentive.toString()))
+        ._setLiquidationIncentive(
+          ethers.utils.parseEther(liquidationIncentive.toString()),
+        )
+        .then(resolve)
+        .catch(reject);
+    });
+  }
+
+  /**
+   * gets the markets where the account has collateral
+   * @param account to be consulted for the markets
+   * @return {Promise} with the array of markets the account has entered as collateral
+   */
+  getAssetsIn(account) {
+    return new Promise((resolve, reject) => {
+      this.instance.callStatic.getAssetsIn(account.address)
+        .then(resolve)
+        .catch(reject);
+    });
+  }
+
+  getOracle() {
+    return new Promise((resolve, reject) => {
+      this.instance.callStatic.oracle()
+        .then(resolve)
+        .catch(reject);
+    });
+  }
+
+  getCollateralFactor(marketAddress) {
+    return new Promise((resolve, reject) => {
+      this.instance.callStatic.markets(marketAddress)
+        .then((market) => market.collateralFactorMantissa)
+        .then((cFMantissa) => Number(cFMantissa / 1e18))
+        .then(resolve)
+        .catch(reject);
+    });
+  }
+
+  getCloseFactor() {
+    return new Promise((resolve, reject) => {
+      this.instance.callStatic.closeFactorMantissa()
+        .then((cF) => Number(cF / 1e18))
+        .then(resolve)
+        .catch(reject);
+    });
+  }
+
+  getLiquidationIncentive() {
+    return new Promise((resolve, reject) => {
+      this.instance.callStatic.liquidationIncentiveMantissa()
+        .then((lF) => Number(lF / 1e18))
+        .then(resolve)
+        .catch(reject);
+    });
+  }
+
+  getAccountLiquidity(account) {
+    return new Promise((resolve, reject) => {
+      this.instance.connect(account).callStatic
+        .getAccountLiquidity(account.address)
+        .then((res) => Number(res[1] / 1e18))
         .then(resolve)
         .catch(reject);
     });

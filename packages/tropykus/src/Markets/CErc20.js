@@ -15,35 +15,77 @@ export default class CErc20 extends Market {
     );
   }
 
-  async mint(account, amount) {
-    await this.erc20Instance.connect(account)
-      .approve(this.address, ethers.utils.parseEther(amount.toString()));
-    return this.instance.connect(account)
-      .mint(ethers.utils.parseEther(amount.toString()), { gasLimit: this.tropykus.gasLimit });
+  mint(account, amount) {
+    return new Promise((resolve, reject) => {
+      this.erc20Instance.connect(account)
+        .approve(this.address, ethers.utils.parseEther(amount.toString()))
+        .then(() => this.instance.connect(account)
+          .mint(ethers.utils.parseEther(amount.toString()), { gasLimit: this.tropykus.gasLimit }))
+        .then(resolve)
+        .catch(reject);
+    });
   }
 
-  async repayBorrow(account, amount, maxValue = false) {
-    if (maxValue) {
-      const borrowBalance = Number(await this.instance.connect(account)
-        .callStatic.borrowBalanceCurrent(account.address));
-      const borrowBalancePlusDelta = borrowBalance + 1e18;
-      await this.erc20Instance.connect(account)
-        .approve(
-          this.address,
-          ethers.utils.parseEther(borrowBalancePlusDelta.toString()),
-        );
+  repayBorrow(account, amount, maxValue = false) {
+    return new Promise((resolve, reject) => {
+      if (maxValue) {
+        this.instance.connect(account)
+          .callStatic.borrowBalanceCurrent(account.address)
+          .then((borrowBalance) => Number(borrowBalance) + 1e18)
+          .then((borrowBalancePlusDelta) => this.erc20Instance
+            .connect(account).approve(
+              this.address,
+              ethers.utils.parseEther(borrowBalancePlusDelta.toString()),
+            ))
+          .then(() => this.instance.connect(account)
+            .repayBorrow(
+              ethers.constants.MaxUint256,
+              { gasLimit: this.tropykus.gasLimit },
+            ))
+          .then(resolve)
+          .catch(reject);
+      }
+      this.erc20Instance.connect(account)
+        .approve(this.address, ethers.utils.parseEther(amount.toString()))
+        .then(() => this.instance.connect(account)
+          .repayBorrow(
+            ethers.utils.parseEther(amount.toString()),
+            { gasLimit: this.tropykus.gasLimit },
+          ))
+        .catch(reject);
       return this.instance.connect(account)
         .repayBorrow(
-          ethers.constants.MaxUint256,
+          ethers.utils.parseEther(amount.toString()),
           { gasLimit: this.tropykus.gasLimit },
         );
-    }
-    await this.erc20Instance.connect(account)
-      .approve(this.address, ethers.utils.parseEther(amount.toString()));
-    return this.instance.connect(account)
-      .repayBorrow(
-        ethers.utils.parseEther(amount.toString()),
-        { gasLimit: this.tropykus.gasLimit },
-      );
+    });
+    // if (maxValue) {
+    //   this.instance.connect(account)
+    //       .callStatic.borrowBalanceCurrent(account.address)
+    //   .then((borrowBalance) => Number(borrowBalance) + 1e18)
+    //       .then()
+    //       .catch(reject);
+    //
+    //   const borrowBalance = Number(await this.instance.connect(account)
+    //     .callStatic.borrowBalanceCurrent(account.address));
+    //   const borrowBalancePlusDelta = borrowBalance + 1e18;
+    //   await this.erc20Instance.connect(account)
+    //       .approve(
+    //           this.address,
+    //           ethers.utils.parseEther(borrowBalancePlusDelta.toString()),
+    //       );
+    //   return this.instance.connect(account)
+    //     .repayBorrow(
+    //       ethers.constants.MaxUint256,
+    //       { gasLimit: this.tropykus.gasLimit },
+    //     );
+    // }
+    // await this.erc20Instance.connect(account)
+    //   .approve(this.address, ethers.utils.parseEther(amount.toString()));
+    // return this.instance.connect(account)
+    //   .repayBorrow(
+    //     ethers.utils.parseEther(amount.toString()),
+    //     { gasLimit: this.tropykus.gasLimit },
+    //   );
   }
 }

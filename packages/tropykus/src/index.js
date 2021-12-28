@@ -149,27 +149,13 @@ export default class Tropykus {
    * @param {string} comptrollerAddress on chain deployed comptroller address.
    * @param {boolean} deployed flag that indicates if is provided a comptroller
    * address of a deployed contract, if false deploys a new Comptroller.
-   * @param {object} args
    */
   async setComptroller(
     comptrollerAddress,
-    deployed = true,
-    args = {
-      priceOracleAddress: '',
-      closeFactor: 0.5,
-      liquidationIncentive: 0.07,
-      markets: [],
-    },
+    unitrollerAddress = '',
   ) {
-    if (!deployed) {
-      const unitrollerFactory = new ethers
-        .ContractFactory(
-          UnitrollerArtifact.abi,
-          UnitrollerArtifact.bytecode,
-          this.account,
-        );
-      const unitrollerDeployed = await unitrollerFactory.deploy();
-      const unitroller = new Unitroller(unitrollerDeployed.address, this);
+    if (!comptrollerAddress) {
+      const unitroller = new Unitroller(unitrollerAddress, this);
       const comptrollerFactory = new ethers
         .ContractFactory(
           ComptrollerArtifact.abi,
@@ -177,15 +163,9 @@ export default class Tropykus {
           this.account,
         );
       const comptrollerDeployed = await comptrollerFactory.deploy();
-      await unitroller.setPendingImplementation(comptrollerDeployed.address);
+      await unitroller.setComptrollerPendingImplementation(comptrollerDeployed.address);
       this.internalComptroller = new Comptroller(comptrollerDeployed.address, this);
       await this.internalComptroller.become(unitroller.address);
-      await this.internalComptroller.setOracle(args.priceOracleAddress);
-      await this.internalComptroller.setCloseFactor(args.closeFactor);
-      await this.internalComptroller
-        .setLiquidationIncentive(args.liquidationIncentive);
-      args.markets.forEach((marketAddress) => this.internalComptroller
-        .supportMarket(marketAddress));
     } else {
       this.internalComptroller = new Comptroller(comptrollerAddress, this);
     }

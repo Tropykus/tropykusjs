@@ -16,7 +16,7 @@ export default class Market {
   /**
    * Market Balance
    * @param account type account
-   * @return {Number} the balance deposited in the market
+   * @return {Promise<Number>} the balance deposited in the market
    */
   balanceOfUnderlying(account) {
     return new Promise((resolve, reject) => {
@@ -44,11 +44,12 @@ export default class Market {
   /**
    * Borrow Balance
    * @param account type account
-   * @return {Number} the amount that has been borrowed in the market
+   * @return {Promise<Number>} the amount that has been borrowed in the market
    */
-  async borrowBalanceCurrent(account) {
+  borrowBalanceCurrent(account) {
     return new Promise((resolve, reject) => {
-      this.instance.connect(account).callStatic.borrowBalanceCurrent(account.address)
+      this.instance.connect(account).callStatic
+        .borrowBalanceCurrent(account.address)
         .then((balance) => Number(balance) / 1e18)
         .then(resolve)
         .catch(reject);
@@ -82,18 +83,6 @@ export default class Market {
         .borrow(
           ethers.utils.parseEther(amount.toString()),
           { gasLimit: this.tropykus.gasLimit },
-        )
-        .then(resolve)
-        .catch(reject);
-    });
-  }
-
-  setReserveFactor(reserveFactor) {
-    return new Promise((resolve, reject) => {
-      // eslint-disable-next-line no-underscore-dangle
-      this.instance.connect(this.tropykus.account)
-        ._setReserveFactor(
-          ethers.utils.parseEther(reserveFactor.toString()),
         )
         .then(resolve)
         .catch(reject);
@@ -151,6 +140,52 @@ export default class Market {
             gasLimit: this.tropykus.gasLimit,
           });
       }
+    });
+  }
+
+  setReserveFactor(reserveFactor) {
+    return new Promise((resolve, reject) => {
+      // eslint-disable-next-line no-underscore-dangle
+      this.instance.connect(this.tropykus.account)
+        ._setReserveFactor(ethers.utils.parseEther(reserveFactor.toString()))
+        .then(resolve)
+        .catch(reject);
+    });
+  }
+
+  setComptroller(comptrollerAddress) {
+    return new Promise((resolve, reject) => {
+      // eslint-disable-next-line no-underscore-dangle
+      this.instance.connect(this.tropykus.account)
+        ._setComptroller(comptrollerAddress)
+        .then(resolve)
+        .catch(reject);
+    });
+  }
+
+  getReserveFactor() {
+    return new Promise((resolve, reject) => {
+      this.instance.reserveFactorMantissa()
+        .then((rf) => Number(rf) / 1e18)
+        .then(resolve)
+        .catch(reject);
+    });
+  }
+
+  getComptroller() {
+    return new Promise((resolve, reject) => {
+      this.instance.comptroller()
+        .then(resolve)
+        .catch(reject);
+    });
+  }
+
+  getExchangeRateCurrent(account) {
+    return new Promise((resolve, reject) => {
+      this.instance.connect(account).callStatic.exchangeRateCurrent()
+        .then((er) => Number(er) / 1e18)
+        .then(resolve)
+        .catch(reject);
     });
   }
 }
