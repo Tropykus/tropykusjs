@@ -1,4 +1,4 @@
-import { ethers } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 
 export default class Market {
   /**
@@ -129,8 +129,13 @@ export default class Market {
   repayBorrow(account, amount, maxValue = false) {
     return new Promise((resolve, reject) => {
       if (maxValue) {
-        this.instance.connect(account)
-          .repayBorrowAll()
+        this.instance.connect(account).callStatic
+          .borrowBalanceCurrent(account.address)
+          .then((borrowBalance) => {
+            const delta = BigNumber.from(0.0001e18);
+            return this.instance.connect(account)
+              .repayBorrowAll({ value: borrowBalance.add(delta) });
+          })
           .then(resolve)
           .catch(reject);
       } else {
@@ -143,20 +148,20 @@ export default class Market {
     });
   }
 
-  setReserveFactor(reserveFactor) {
+  setReserveFactor(account, reserveFactor) {
     return new Promise((resolve, reject) => {
       // eslint-disable-next-line no-underscore-dangle
-      this.instance.connect(this.tropykus.account)
+      this.instance.connect(account)
         ._setReserveFactor(ethers.utils.parseEther(reserveFactor.toString()))
         .then(resolve)
         .catch(reject);
     });
   }
 
-  setComptroller(comptrollerAddress) {
+  setComptroller(account, comptrollerAddress) {
     return new Promise((resolve, reject) => {
       // eslint-disable-next-line no-underscore-dangle
-      this.instance.connect(this.tropykus.account)
+      this.instance.connect(account)
         ._setComptroller(comptrollerAddress)
         .then(resolve)
         .catch(reject);

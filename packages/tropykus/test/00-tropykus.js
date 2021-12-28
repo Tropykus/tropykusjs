@@ -17,26 +17,27 @@ describe('Core tropykus', () => {
   const tropykus = new Tropykus('http://localhost:8545', 400000);
 
   it('should generate an account', async () => {
-    tropykus.setAccount(mnemonic, derivationPath);
-    expect(tropykus.account.address.toLowerCase())
+    const dep = tropykus.setAccount(mnemonic, derivationPath);
+    expect(dep.address.toLowerCase())
         .equals('0xe317349c7279ffF242cc8ADCb575EbA0153760BA'.toLowerCase());
   });
 
   it('should get internal comptroller instance', async () => {
-    await tropykus.setComptroller(comptrollerAddress);
+    const dep = tropykus.setAccount(mnemonic, derivationPath);
+    await tropykus.setComptroller(dep, comptrollerAddress);
     expect(tropykus.comptroller.address).to.equal(comptrollerAddress);
   });
 
   it('should deploy a new comptroller', async () => {
-    tropykus.setAccount(mnemonic, derivationPath);
+    const dep = tropykus.setAccount(mnemonic, derivationPath);
     const newComptroller = await tropykus.setComptroller(
-        null, unitrollerAddress);
+        dep, null, unitrollerAddress);
     expect(newComptroller).instanceOf(Comptroller);
     expect(newComptroller.address).to.match(/0x[a-fA-F0-9]{40}/);
   });
 
   it('should set package price oracle instance', async () => {
-    tropykus.setAccount(mnemonic, derivationPath);
+    const dep = tropykus.setAccount(mnemonic, derivationPath);
     expect(tropykus.internalPriceOracle).to.be.null;
     tropykus.setPriceOracle(priceOracleAddress);
     expect(tropykus.internalPriceOracle.address)

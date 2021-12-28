@@ -5,11 +5,12 @@ import CRBTC from './Markets/CRBTC';
 import CRDOC from './Markets/CRDOC';
 import CToken from './Markets/CToken';
 import ComptrollerArtifact from '../artifacts/ComptrollerG6.json';
-import UnitrollerArtifact from '../artifacts/Unitroller.json';
 import CRBTCArtifact from '../artifacts/CRBTC.json';
 import CRDOCArtifact from '../artifacts/CRDOC.json';
 import CErc20Artifact from '../artifacts/CErc20Immutable.json';
 import Unitroller from './Unitroller';
+
+ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
 export default class Tropykus {
   /**
@@ -19,7 +20,6 @@ export default class Tropykus {
    */
   constructor(providerURL, gasLimit) {
     this.ethersProvider = new ethers.providers.JsonRpcProvider(providerURL);
-    this.internalAccount = null;
     this.internalComptroller = null;
     this.internalPriceOracle = null;
     this.currentGasLimit = gasLimit;
@@ -38,7 +38,7 @@ export default class Tropykus {
    * @param derivationPath
    */
   setAccount(mnemonic, derivationPath) {
-    this.internalAccount = Wallet
+    return Wallet
       .fromMnemonic(mnemonic, derivationPath).connect(this.ethersProvider);
   }
 
@@ -73,6 +73,7 @@ export default class Tropykus {
    * @return {Market}
    */
   async addMarket(
+    account,
     artifact,
     deployed = true,
     marketAddress = null,
@@ -94,7 +95,7 @@ export default class Tropykus {
       switch (artifact) {
         case 'CRBTC':
           marketFactory = new ethers
-            .ContractFactory(CRBTCArtifact.abi, CRBTCArtifact.bytecode, this.account);
+            .ContractFactory(CRBTCArtifact.abi, CRBTCArtifact.bytecode, account);
           marketDeployed = await marketFactory.deploy(
             args.comptrollerAddress,
             args.interestRateModelAddress,
@@ -102,16 +103,16 @@ export default class Tropykus {
             args.name,
             args.symbol,
             args.decimals,
-            this.account.address,
+            account.address,
           );
           break;
         case 'CRDOC':
           marketFactory = new ethers
-            .ContractFactory(CRDOCArtifact.abi, CRDOCArtifact.bytecode, this.account);
+            .ContractFactory(CRDOCArtifact.abi, CRDOCArtifact.bytecode, account);
           break;
         default:
           marketFactory = new ethers
-            .ContractFactory(CErc20Artifact.abi, CErc20Artifact.bytecode, this.account);
+            .ContractFactory(CErc20Artifact.abi, CErc20Artifact.bytecode, account);
           break;
       }
       if (artifact !== 'CRBTC') {
@@ -123,7 +124,7 @@ export default class Tropykus {
           args.name,
           args.symbol,
           args.decimals,
-          this.account.address,
+          account.address,
         );
       }
       address = marketDeployed.address;
@@ -146,11 +147,13 @@ export default class Tropykus {
   /**
    * By providing the on chain deployed comptroller address,
    * a comptroller instance is made available.
+   * @param account
    * @param {string} comptrollerAddress on chain deployed comptroller address.
-   * @param {boolean} deployed flag that indicates if is provided a comptroller
+   * @param unitrollerAddress
    * address of a deployed contract, if false deploys a new Comptroller.
    */
   async setComptroller(
+    account,
     comptrollerAddress,
     unitrollerAddress = '',
   ) {
@@ -160,12 +163,12 @@ export default class Tropykus {
         .ContractFactory(
           ComptrollerArtifact.abi,
           ComptrollerArtifact.bytecode,
-          this.account,
+          account,
         );
       const comptrollerDeployed = await comptrollerFactory.deploy();
-      await unitroller.setComptrollerPendingImplementation(comptrollerDeployed.address);
+      await unitroller.setComptrollerPendingImplementation(account, comptrollerDeployed.address);
       this.internalComptroller = new Comptroller(comptrollerDeployed.address, this);
-      await this.internalComptroller.become(unitroller.address);
+      await this.internalComptroller.become(account, unitroller.address);
     } else {
       this.internalComptroller = new Comptroller(comptrollerAddress, this);
     }

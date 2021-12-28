@@ -19,32 +19,33 @@ const unitrollerAddress = '0xdC98d636ad43A17bDAcE402997C7c6ABA55EAa28';
 describe('Comptroller', () => {
     const tropykus = new Tropykus('http://localhost:8545', 600000);
     let comptroller;
+    let dep;
     beforeEach(async () => {
-        await tropykus.setAccount(mnemonic, derivationPath);
+        dep = await tropykus.setAccount(mnemonic, derivationPath);
     });
 
     it('should instance a comptroller handler', async () => {
-        comptroller = await tropykus.setComptroller(comptrollerAddress);
+        comptroller = await tropykus.setComptroller(dep, comptrollerAddress);
         expect(comptroller).instanceOf(Comptroller);
         expect(comptroller.address).to.equal(comptrollerAddress);
     });
 
     it('should list the markets', async () => {
-        comptroller = await tropykus.setComptroller(comptrollerAddress);
+        comptroller = await tropykus.setComptroller(dep, comptrollerAddress);
         return comptroller.allMarkets()
             .then((markets) => markets.forEach((market) => expect(market).to.match(/0x[a-fA-F0-9]{40}/)));
     });
 
     it('should enter the markets', async () => {
-        comptroller = await tropykus.setComptroller(null, unitrollerAddress);
+        comptroller = await tropykus.setComptroller(dep,null, unitrollerAddress);
 
-        let assetsIn = await comptroller.getAssetsIn(tropykus.account);
+        let assetsIn = await comptroller.getAssetsIn(dep);
         expect(assetsIn.length).equals(0);
 
         const markets = await comptroller.allMarkets();
-        await comptroller.enterMarkets(tropykus.account, markets);
+        await comptroller.enterMarkets(dep, markets);
 
-        assetsIn = await comptroller.getAssetsIn(tropykus.account);
+        assetsIn = await comptroller.getAssetsIn(dep);
         expect(assetsIn.length).equals(markets.length);
         assetsIn.forEach((asset, idx) => {
             expect(asset).equals(markets[idx]);
@@ -52,15 +53,16 @@ describe('Comptroller', () => {
     });
     describe('Setups', () => {
         let newComptroller;
+        let dep;
         beforeEach(async () => {
-            await tropykus.setAccount(mnemonic, derivationPath);
+            dep = await tropykus.setAccount(mnemonic, derivationPath);
             newComptroller = await tropykus.setComptroller(
-                null, unitrollerAddress);
+                dep, null, unitrollerAddress);
         });
 
         it('should add a market to be supported by a comptroller', async () => {
             expect(await newComptroller.allMarkets()).to.be.an('array').that.is.empty;
-            await newComptroller.supportMarket(crdocAddress);
+            await newComptroller.supportMarket(dep, crdocAddress);
             const mkts = await newComptroller.allMarkets();
             expect(mkts[0]).to.equal(crdocAddress);
         });
@@ -68,43 +70,43 @@ describe('Comptroller', () => {
         it('should confirm to unitroller\'s a new comptroller', async () => {
             const unitroller = new Unitroller(unitrollerAddress, tropykus);
             const newComptroller = await tropykus.setComptroller(
-                null, unitrollerAddress);
+                dep, null, unitrollerAddress);
             expect(await unitroller.getComptrollerPendingImplementation())
                 .to.not.equal(newComptroller.address);
             await unitroller
-                .setComptrollerPendingImplementation(newComptroller.address);
+                .setComptrollerPendingImplementation(dep, newComptroller.address);
             expect(await unitroller.getComptrollerPendingImplementation())
                 .to.equal(newComptroller.address);
-            await newComptroller.become(unitroller.address);
+            await newComptroller.become(dep, unitroller.address);
             expect(await unitroller.getComptrollerImplementation())
                 .to.equal(newComptroller.address);
         });
 
         it('should set a comptroller\'s price oracle', async () => {
             expect(await newComptroller.getOracle()).to.equal(ethers.constants.AddressZero);
-            await newComptroller.setOracle(priceOracleAddress);
+            await newComptroller.setOracle(dep, priceOracleAddress);
             expect(await newComptroller.getOracle()).to.equal(priceOracleAddress);
         });
 
         it('should set a market\'s collateral factor', async () => {
-            await newComptroller.supportMarket(crdocAddress);
-            await newComptroller.setOracle(priceOracleAddress);
+            await newComptroller.supportMarket(dep, crdocAddress);
+            await newComptroller.setOracle(dep, priceOracleAddress);
             expect(await newComptroller.getCollateralFactor(crdocAddress)).to.equal(0);
-            await newComptroller.setCollateralFactor(crdocAddress, 0.7);
+            await newComptroller.setCollateralFactor(dep, crdocAddress, 0.7);
             expect(await newComptroller.getCollateralFactor(crdocAddress)).to.equal(0.7);
         });
 
         it('should set comptroller\'s close factor', async () => {
-            await newComptroller.supportMarket(crdocAddress);
+            await newComptroller.supportMarket(dep, crdocAddress);
             expect(await newComptroller.getCloseFactor()).to.equal(0);
-            await newComptroller.setCloseFactor(0.07);
+            await newComptroller.setCloseFactor(dep,0.07);
             expect(await newComptroller.getCloseFactor()).to.equal(0.07);
         });
 
         it('should set comptroller\'s liquidation incentive', async () => {
-            await newComptroller.supportMarket(crdocAddress);
+            await newComptroller.supportMarket(dep, crdocAddress);
             expect(await newComptroller.getLiquidationIncentive()).to.equal(0);
-            await newComptroller.setLiquidationIncentive(0.07);
+            await newComptroller.setLiquidationIncentive(dep,0.07);
             expect(await newComptroller.getLiquidationIncentive()).to.equal(0.07);
         });
     });

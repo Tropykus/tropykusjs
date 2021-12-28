@@ -15,9 +15,10 @@ const comptrollerAddress = '0xB173b5EE67b9F38263413Bc29440f89cC5BC3C39';
 const priceOracleAddress = '0x4d7Cc3cdb88Fa1EEC3095C9f849c799F1f7D4031';
 
 describe('Unitroller', () => {
+    let dep;
     const tropykus = new Tropykus('http://localhost:8545', 400000);
     beforeEach(async () => {
-        await tropykus.setAccount(mnemonic, derivationPath);
+        dep = await tropykus.setAccount(mnemonic, derivationPath);
     });
 
     it('should instance a unitroller handler', async () => {
@@ -29,9 +30,9 @@ describe('Unitroller', () => {
     it('should set a pending implementation of comptroller', async () => {
         const unitroller = new Unitroller(unitrollerAddress, tropykus);
         const newComptroller = await tropykus.setComptroller(
-            null, unitrollerAddress)
+            dep, null, unitrollerAddress)
         expect(await unitroller.getComptrollerPendingImplementation()).to.not.equal(newComptroller.address);
-        await unitroller.setComptrollerPendingImplementation(newComptroller.address);
+        await unitroller.setComptrollerPendingImplementation(dep, newComptroller.address);
         expect(await unitroller.getComptrollerPendingImplementation()).to.equal(newComptroller.address);
     });
 

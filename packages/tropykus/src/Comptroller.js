@@ -43,20 +43,20 @@ export default class Comptroller {
     });
   }
 
-  supportMarket(marketAddress) {
+  supportMarket(account, marketAddress) {
     return new Promise((resolve, reject) => {
       // eslint-disable-next-line no-underscore-dangle
-      this.instance.connect(this.tropykus.account)
+      this.instance.connect(account)
         ._supportMarket(marketAddress)
         .then(resolve)
         .catch(reject);
     });
   }
 
-  setCollateralFactor(marketAddress, collateralFactor) {
+  setCollateralFactor(account, marketAddress, collateralFactor) {
     return new Promise((resolve, reject) => {
       // eslint-disable-next-line no-underscore-dangle
-      this.instance.connect(this.tropykus.account)
+      this.instance.connect(account)
         ._setCollateralFactor(
           marketAddress,
           ethers.utils.parseEther(collateralFactor.toString()),
@@ -67,30 +67,30 @@ export default class Comptroller {
     });
   }
 
-  become(unitrollerAddress) {
+  become(account, unitrollerAddress) {
     return new Promise((resolve, reject) => {
       // eslint-disable-next-line no-underscore-dangle
-      this.instance.connect(this.tropykus.account)
+      this.instance.connect(account)
         ._become(unitrollerAddress)
         .then(resolve)
         .catch(reject);
     });
   }
 
-  setOracle(priceOracleAddress) {
+  setOracle(account, priceOracleAddress) {
     return new Promise((resolve, reject) => {
       // eslint-disable-next-line no-underscore-dangle
-      this.instance.connect(this.tropykus.account)
+      this.instance.connect(account)
         ._setPriceOracle(priceOracleAddress)
         .then(resolve)
         .catch(reject);
     });
   }
 
-  setCloseFactor(closeFactor) {
+  setCloseFactor(account, closeFactor) {
     return new Promise((resolve, reject) => {
       // eslint-disable-next-line no-underscore-dangle
-      this.instance.connect(this.tropykus.account)
+      this.instance.connect(account)
         ._setCloseFactor(
           ethers.utils.parseEther(closeFactor.toString()),
         )
@@ -99,10 +99,10 @@ export default class Comptroller {
     });
   }
 
-  setLiquidationIncentive(liquidationIncentive) {
+  setLiquidationIncentive(account, liquidationIncentive) {
     return new Promise((resolve, reject) => {
       // eslint-disable-next-line no-underscore-dangle
-      this.instance.connect(this.tropykus.account)
+      this.instance.connect(account)
         ._setLiquidationIncentive(
           ethers.utils.parseEther(liquidationIncentive.toString()),
         )

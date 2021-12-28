@@ -29,304 +29,331 @@ const crdocAdapterAddress = '0xB572eee464bFEc3f92189A09fBbb7D7BCD3540C5';
 const unitrollerAddress = '0xdC98d636ad43A17bDAcE402997C7c6ABA55EAa28';
 
 describe('Market', () => {
-  let tropykus;
-  let comptroller;
-  beforeEach(async () => {
-    tropykus = new Tropykus('http://localhost:8545', 400000);
-    await tropykus.setAccount(mnemonic, derivationPath);
-    comptroller = await tropykus.setComptroller(comptrollerAddress);
-  });
-
-  it('should deployed a new CRBTC market', async () => {
-    const crbtc = await tropykus.addMarket(
-      'CRBTC',
-      false,
-      null,
-      null,
-      {
-        comptrollerAddress,
-        interestRateModelAddress: crbtcInterestRateModelAddress,
-        initialExchangeRate: 0.02,
-        name: 'New CRBTC',
-        symbol: 'CRBTC',
-        decimals: 18,
-      });
-    expect(crbtc).instanceOf(CRBTCMarket);
-    expect(crbtc.address).to.match(/0x[a-fA-F0-9]{40}/);
-  });
-
-  it('should deployed a new CRDOC market', async () => {
-    const crdoc = await tropykus.addMarket(
-      'CRDOC',
-      false,
-      null,
-      rdocAddress,
-      {
-        comptrollerAddress,
-        interestRateModelAddress: crdocInterestRateModelAddress,
-        initialExchangeRate: 0.02,
-        name: 'New CRDOC',
-        symbol: 'CRDOC',
-        decimals: 18,
-      });
-    expect(crdoc).instanceOf(CRDOCMarket);
-    expect(crdoc.address).to.match(/0x[a-fA-F0-9]{40}/);
-  });
-
-  it('should deployed a new CToken market', async () => {
-    const cdoc = await tropykus.addMarket(
-      'CRDOC',
-      false,
-      null,
-      docAddress,
-      {
-        comptrollerAddress,
-        interestRateModelAddress: cdocInterestRateModelAddress,
-        initialExchangeRate: 0.02,
-        name: 'New CDOC',
-        symbol: 'CDOC',
-        decimals: 18,
-      });
-    expect(cdoc).instanceOf(CErc20Market);
-    expect(cdoc.address).to.match(/0x[a-fA-F0-9]{40}/);
-  });
-
-  it('should instance a CRBTC Market with an existing contract address', async () => {
-    const crbtc = await tropykus.addMarket('CRBTC', true, crbtcMarketAddress);
-    expect(crbtc).instanceOf(CRBTCMarket);
-    expect(crbtc.address).equals(crbtcMarketAddress);
-  })
-
-  it('should instance a CToken Market with an existing contract address', async () => {
-    const cdoc = await tropykus.addMarket('CErc20Immutable', true, cdocAddress, docAddress);
-    expect(cdoc).instanceOf(CErc20Market);
-    expect(cdoc.address).equals(cdocAddress);
-  });
-
-  it('should instance a CRDOC Market wit an existing contract address', async () => {
-    const crdoc = await tropykus.addMarket('CRDOC', true, crdocAddress, rdocAddress);
-    expect(crdoc).instanceOf(CRDOCMarket);
-    expect(crdoc.address).equals(crdocAddress);
-  });
-
-  describe('Market setups', () => {
-      let crbtc;
-      let newComptroller;
-      it('should set market\'s comptroller', async () => {
-          newComptroller = await tropykus.setComptroller(null, unitrollerAddress);
-          crbtc = await tropykus.addMarket(
-              'CRBTC',
-              false,
-              null,
-              null,
-              {
-                  comptrollerAddress,
-                  interestRateModelAddress: crbtcInterestRateModelAddress,
-                  initialExchangeRate: 0.02,
-                  name: 'New CRBTC',
-                  symbol: 'CRBTC',
-                  decimals: 18,
-              }
-          );
-          expect(await crbtc.getComptroller()).to.not.equal(newComptroller.address);
-          await crbtc.setComptroller(newComptroller.address);
-          expect(await crbtc.getComptroller()).equals(newComptroller.address);
-      });
-
-      it('should set market\'s reserve factor', async () => {
-          expect(await crbtc.getReserveFactor()).to.equal(0);
-          await crbtc.setReserveFactor(0.5);
-          expect(await crbtc.getReserveFactor()).to.equal(0.5);
-      });
-  });
-
-  describe(('Markets operations'), () => {
-    let crbtc;
-    let cdoc;
-    let crdoc;
-    let newComptroller;
+    let tropykus;
+    let dep;
+    let comptroller;
     beforeEach(async () => {
-      newComptroller = await tropykus.setComptroller(null, unitrollerAddress);
-      crbtc = await tropykus.addMarket(
-        'CRBTC',
-        false,
-        null,
-        null,
-        {
-          comptrollerAddress: newComptroller.address,
-          interestRateModelAddress: crbtcInterestRateModelAddress,
-          initialExchangeRate: 0.02,
-          name: 'New CRBTC',
-          symbol: 'CRBTC',
-          decimals: 18,
+        tropykus = new Tropykus('http://localhost:8545', 400000);
+        dep = await tropykus.setAccount(mnemonic, derivationPath);
+        comptroller = await tropykus.setComptroller(dep, comptrollerAddress);
+    });
+
+    it('should deployed a new CRBTC market', async () => {
+        const crbtc = await tropykus.addMarket(
+            dep,
+            'CRBTC',
+            false,
+            null,
+            null,
+            {
+                comptrollerAddress,
+                interestRateModelAddress: crbtcInterestRateModelAddress,
+                initialExchangeRate: 0.02,
+                name: 'New CRBTC',
+                symbol: 'CRBTC',
+                decimals: 18,
+            });
+        expect(crbtc).instanceOf(CRBTCMarket);
+        expect(crbtc.address).to.match(/0x[a-fA-F0-9]{40}/);
+    });
+
+    it('should deployed a new CRDOC market', async () => {
+        const crdoc = await tropykus.addMarket(
+            dep,
+            'CRDOC',
+            false,
+            null,
+            rdocAddress,
+            {
+                comptrollerAddress,
+                interestRateModelAddress: crdocInterestRateModelAddress,
+                initialExchangeRate: 0.02,
+                name: 'New CRDOC',
+                symbol: 'CRDOC',
+                decimals: 18,
+            });
+        expect(crdoc).instanceOf(CRDOCMarket);
+        expect(crdoc.address).to.match(/0x[a-fA-F0-9]{40}/);
+    });
+
+    it('should deployed a new CToken market', async () => {
+        const cdoc = await tropykus.addMarket(
+            dep,
+            'CRDOC',
+            false,
+            null,
+            docAddress,
+            {
+                comptrollerAddress,
+                interestRateModelAddress: cdocInterestRateModelAddress,
+                initialExchangeRate: 0.02,
+                name: 'New CDOC',
+                symbol: 'CDOC',
+                decimals: 18,
+            });
+        expect(cdoc).instanceOf(CErc20Market);
+        expect(cdoc.address).to.match(/0x[a-fA-F0-9]{40}/);
+    });
+
+    it('should instance a CRBTC Market with an existing contract address', async () => {
+        const crbtc = await tropykus.addMarket(dep, 'CRBTC', true, crbtcMarketAddress);
+        expect(crbtc).instanceOf(CRBTCMarket);
+        expect(crbtc.address).equals(crbtcMarketAddress);
+    })
+
+    it('should instance a CToken Market with an existing contract address', async () => {
+        const cdoc = await tropykus.addMarket(dep, 'CErc20Immutable', true, cdocAddress, docAddress);
+        expect(cdoc).instanceOf(CErc20Market);
+        expect(cdoc.address).equals(cdocAddress);
+    });
+
+    it('should instance a CRDOC Market wit an existing contract address', async () => {
+        const crdoc = await tropykus.addMarket(dep, 'CRDOC', true, crdocAddress, rdocAddress);
+        expect(crdoc).instanceOf(CRDOCMarket);
+        expect(crdoc.address).equals(crdocAddress);
+    });
+
+    describe('Market setups', () => {
+        let crbtc;
+        let newComptroller;
+        it('should set market\'s comptroller', async () => {
+            newComptroller = await tropykus.setComptroller(dep, null, unitrollerAddress);
+            crbtc = await tropykus.addMarket(
+                dep,
+                'CRBTC',
+                false,
+                null,
+                null,
+                {
+                    comptrollerAddress,
+                    interestRateModelAddress: crbtcInterestRateModelAddress,
+                    initialExchangeRate: 0.02,
+                    name: 'New CRBTC',
+                    symbol: 'CRBTC',
+                    decimals: 18,
+                }
+            );
+            expect(await crbtc.getComptroller()).to.not.equal(newComptroller.address);
+            await crbtc.setComptroller(dep, newComptroller.address);
+            expect(await crbtc.getComptroller()).equals(newComptroller.address);
         });
-      cdoc = await tropykus.addMarket(
-        'CRDOC',
-        false,
-        null,
-        docAddress,
-        {
-          comptrollerAddress: newComptroller.address,
-          interestRateModelAddress: cdocInterestRateModelAddress,
-          initialExchangeRate: 0.02,
-          name: 'New CDOC',
-          symbol: 'CDOC',
-          decimals: 18,
+
+        it('should set market\'s reserve factor', async () => {
+            expect(await crbtc.getReserveFactor()).to.equal(0);
+            await crbtc.setReserveFactor(dep, 0.5);
+            expect(await crbtc.getReserveFactor()).to.equal(0.5);
         });
-      crdoc = await tropykus.addMarket(
-        'CRDOC',
-        false,
-        null,
-        rdocAddress,
-        {
-          comptrollerAddress: newComptroller.address,
-          interestRateModelAddress: crdocInterestRateModelAddress,
-          initialExchangeRate: 0.02,
-          name: 'New CRDOC',
-          symbol: 'CRDOC',
-          decimals: 18,
+    });
+
+    describe(('Markets operations'), () => {
+        let crbtc;
+        let cdoc;
+        let crdoc;
+        let newComptroller;
+        let alice;
+        beforeEach(async () => {
+            newComptroller = await tropykus.setComptroller(dep, null, unitrollerAddress);
+            crbtc = await tropykus.addMarket(
+                dep,
+                'CRBTC',
+                false,
+                null,
+                null,
+                {
+                    comptrollerAddress: newComptroller.address,
+                    interestRateModelAddress: crbtcInterestRateModelAddress,
+                    initialExchangeRate: 0.02,
+                    name: 'New CRBTC',
+                    symbol: 'CRBTC',
+                    decimals: 18,
+                });
+            cdoc = await tropykus.addMarket(
+                dep,
+                'CRDOC',
+                false,
+                null,
+                docAddress,
+                {
+                    comptrollerAddress: newComptroller.address,
+                    interestRateModelAddress: cdocInterestRateModelAddress,
+                    initialExchangeRate: 0.02,
+                    name: 'New CDOC',
+                    symbol: 'CDOC',
+                    decimals: 18,
+                });
+            crdoc = await tropykus.addMarket(
+                dep,
+                'CRDOC',
+                false,
+                null,
+                rdocAddress,
+                {
+                    comptrollerAddress: newComptroller.address,
+                    interestRateModelAddress: crdocInterestRateModelAddress,
+                    initialExchangeRate: 0.02,
+                    name: 'New CRDOC',
+                    symbol: 'CRDOC',
+                    decimals: 18,
+                });
+
+            await newComptroller.setOracle(dep, priceOracleAddress);
+            await newComptroller.setLiquidationIncentive(dep,0.07);
+            await newComptroller.setCloseFactor(dep, 0.5);
+
+            await tropykus.setPriceOracle(priceOracleAddress);
+            await tropykus.priceOracle.setAdapterToToken(dep, crbtc.address, crbtcAdapterAddress);
+            await tropykus.priceOracle.setAdapterToToken(dep, cdoc.address, cdocAdapterAddress);
+            await tropykus.priceOracle.setAdapterToToken(dep, crdoc.address, crdocAdapterAddress);
+
+            await crbtc.setComptroller(dep, newComptroller.address);
+            await cdoc.setComptroller(dep, newComptroller.address);
+            await crdoc.setComptroller(dep, newComptroller.address);
+
+            await newComptroller.supportMarket(dep, crbtc.address);
+            await newComptroller.supportMarket(dep, cdoc.address);
+            await newComptroller.supportMarket(dep, crdoc.address);
+
+            await newComptroller.setCollateralFactor(dep, crbtc.address, 0.6);
+            await newComptroller.setCollateralFactor(dep, cdoc.address, 0.75);
+            await newComptroller.setCollateralFactor(dep, crdoc.address, 0.7);
+
+            await crbtc.setReserveFactor(dep, 0.2);
+            await cdoc.setReserveFactor(dep, 0.5);
+            await crdoc.setReserveFactor(dep, 0.5);
+
+            await crbtc.mint(dep, 1);
+            await cdoc.mint(dep, 10000);
+            await crdoc.mint(dep, 10000);
+
+            alice = await tropykus.setAccount(mnemonic, `m/44'/60'/0'/0/1`);
+
+            const mkts = [
+                crbtc.address,
+                cdoc.address,
+                crdoc.address,
+            ];
+
+            await newComptroller.enterMarkets(dep, mkts);
+            await newComptroller.enterMarkets(alice, mkts);
         });
 
-      await newComptroller.setOracle(priceOracleAddress);
-      await newComptroller.setLiquidationIncentive(0.07);
-      await newComptroller.setCloseFactor(0.5);
+        it('should transfer underlying to the given address', async () => {
+            expect(await cdoc.balanceOfUnderlyingInWallet(dep)).to.be.at.least(10);
+            expect(await crdoc.balanceOfUnderlyingInWallet(dep)).to.be.at.least(10);
 
-      await tropykus.setPriceOracle(priceOracleAddress);
-      await tropykus.priceOracle.setAdapterToToken(crbtc.address, crbtcAdapterAddress);
-      await tropykus.priceOracle.setAdapterToToken(cdoc.address, cdocAdapterAddress);
-      await tropykus.priceOracle.setAdapterToToken(crdoc.address, crdocAdapterAddress);
+            await crdoc.transferUnderlying(dep, alice.address, 10);
+            expect(await crdoc.balanceOfUnderlyingInWallet(alice)).to.be.at.least(10);
+            await cdoc.transferUnderlying(dep, alice.address, 10);
+            expect(await cdoc.balanceOfUnderlyingInWallet(alice)).to.be.at.least(10);
+        });
 
-      await crbtc.setComptroller(newComptroller.address);
-      await cdoc.setComptroller(newComptroller.address);
-      await crdoc.setComptroller(newComptroller.address);
+        it('should get a user\'s kTokens balance', async () => {
+            expect(await crdoc.balanceOf(alice)).to.equal(0);
+        });
 
-      await newComptroller.supportMarket(crbtc.address);
-      await newComptroller.supportMarket(cdoc.address);
-      await newComptroller.supportMarket(crdoc.address);
+        it('should get a market\'s current exchange rate', async () => {
+            expect(await crbtc.getExchangeRateCurrent(alice)).to.equal(0.02);
+        });
 
-      await newComptroller.setCollateralFactor(crbtc.address, 0.6);
-      await newComptroller.setCollateralFactor(cdoc.address, 0.75);
-      await newComptroller.setCollateralFactor(crdoc.address, 0.7);
+        it('should get a user\'s liquidity', async () => {
+            expect(await newComptroller.getAccountLiquidity(alice)).to.equal(0);
+            await crbtc.mint(alice, 0.5);
+            expect(await crbtc.balanceOfUnderlying(alice)).equals(0.5);
+            const price = await tropykus.priceOracle.getUnderlyingPrice(crbtc.address);
+            const collateralFactor = await newComptroller.getCollateralFactor(crbtc.address);
+            expect(await newComptroller.getAccountLiquidity(alice))
+                .to.equal(0.5 * price * collateralFactor);
+        });
 
-      await crbtc.setReserveFactor(0.2);
-      await cdoc.setReserveFactor(0.5);
-      await crdoc.setReserveFactor(0.5);
+        it('should deposit in the cRBTC market', async () => {
+            await crbtc.mint(alice, 0.5);
+            expect(await crbtc.balanceOfUnderlying(alice)).equals(0.5);
+        });
 
-      await newComptroller.enterMarkets(
-        tropykus.account,
-        [
-          crbtc.address,
-          cdoc.address,
-          crdoc.address,
-        ]
-      );
+        it('should deposit in any token market', async () => {
+            await crdoc.transferUnderlying(dep, alice.address, 1000);
+            await cdoc.mint(alice, 1000);
+            expect(await cdoc.balanceOfUnderlying(alice)).equals(1000);
+        });
+
+        it('should borrow in cdoc an amount once he has a collateral on cdoc', async() => {
+            await cdoc.transferUnderlying(dep, alice.address, 1000);
+            await cdoc.mint(alice, 0.8);
+            expect(await cdoc.balanceOfUnderlying(alice)).equals(0.8);
+            await cdoc.borrow(alice, 0.05);
+            expect(await cdoc.borrowBalanceCurrent(alice)).equals(0.05);
+        });
+
+        it('should borrow in crbtc market an amount once he has a collateral on crbtc', async() => {
+            await cdoc.transferUnderlying(dep, alice.address, 1000);
+            await cdoc.mint(alice, 1000);
+            await crbtc.borrow(alice, 0.005);
+            const balance = await crbtc.borrowBalanceCurrent(alice);
+            expect(balance).equals(0.005);
+        });
+
+        it('should redeem from crbtc market', async() => {
+            await crbtc.mint(alice, 0.5);
+            const balance = await crbtc.balanceOfUnderlying(alice);
+            expect(balance).equals(0.5);
+
+            const balanceBefore = await crbtc.balanceOfUnderlying(alice);
+            await crbtc.redeem(alice, 0.025);
+            const balanceAfter = await crbtc.balanceOfUnderlying(alice);
+            expect(balanceAfter).equals(balanceBefore - 0.025);
+        });
+
+        it('should redeem from cdoc market', async() => {
+            await cdoc.transferUnderlying(dep, alice.address, 500);
+            await cdoc.mint(alice, 500);
+            expect(await cdoc.balanceOfUnderlying(alice)).equals(500);
+
+            const balanceBefore = await cdoc.balanceOfUnderlying(alice);
+            await cdoc.redeem(alice, 250);
+            const balanceAfter = await cdoc.balanceOfUnderlying(alice);
+            expect(balanceAfter).equals(balanceBefore - 250);
+        });
+
+        it('should redeem all kTokens from crbtc market', async() => {
+            await crbtc.mint(alice, 0.5);
+            const balance = await crbtc.balanceOfUnderlying(alice);
+            expect(balance).equals(0.5);
+            const kRBTCBalance = await crbtc.balanceOf(alice);
+            expect(kRBTCBalance).equals(25);
+
+            await crbtc.redeem(alice, 0, true);
+            const balanceAfter = await crbtc.balanceOfUnderlying(alice);
+            expect(balanceAfter).equals(0);
+            const kRBTCBalanceAfter = await crbtc.balanceOf(alice);
+            expect(kRBTCBalanceAfter).equals(0);
+        });
+
+        it('should repay a portion of debt on cdoc market', async() => {
+            await crbtc.mint(alice, 0.5);
+            const balance = await crbtc.balanceOfUnderlying(alice);
+            expect(balance).equals(0.5);
+
+            await cdoc.borrow(alice, 500);
+            const borrowBalanceBefore = await cdoc.borrowBalanceCurrent(alice);
+            expect(borrowBalanceBefore).to.be.closeTo(500, 1);
+
+            await cdoc.repayBorrow(alice, 250);
+            const borrowBalanceAfter = await cdoc.borrowBalanceCurrent(alice);
+            expect(borrowBalanceAfter).to.be.closeTo(250, 1);
+        });
+
+        it('should repay all debt from crbtc market', async() => {
+            await crbtc.mint(alice, 1);
+            const balance = await crbtc.balanceOfUnderlying(alice);
+            expect(balance).equals(1);
+
+            await crbtc.borrow(alice, 0.5);
+            const borrowBalanceBefore = await crbtc.borrowBalanceCurrent(alice);
+            expect(borrowBalanceBefore).to.be.closeTo(0.5, 1);
+
+            await crbtc.repayBorrow(alice, 0, true);
+            const borrowBalanceAfter = await crbtc.borrowBalanceCurrent(alice);
+            expect(borrowBalanceAfter).equals(0);
+        });
     });
-
-    it('should get a user\'s kTokens balance', async () => {
-      const crdoc = await tropykus.addMarket('CRDOC', true, crdocAddress, rdocAddress);
-      expect(await crdoc.balanceOf(tropykus.account)).to.equal(0);
-    });
-
-    it('should get a market\'s current exchange rate', async () => {
-        expect(await crbtc.getExchangeRateCurrent(tropykus.account)).to.equal(0.02);
-    });
-
-    it('should get a user\'s liquidity', async () => {
-      expect(await newComptroller.getAccountLiquidity(tropykus.account))
-        .to.equal(0);
-      await crbtc.mint(tropykus.account, 0.5);
-      const price = await tropykus.priceOracle.getUnderlyingPrice(crbtc.address);
-      const collateralFactor = await newComptroller.getCollateralFactor(crbtc.address);
-      expect(await newComptroller.getAccountLiquidity(tropykus.account))
-          .to.equal(0.5 * price * collateralFactor);
-    });
-
-    it('should deposit in the cRBTC market', async () => {
-      await crbtc.mint(tropykus.account, 0.5);
-      expect(await crbtc.balanceOfUnderlying(tropykus.account)).equals(0.5);
-    });
-
-    it('should deposit in any token market', async () => {
-      await cdoc.mint(tropykus.account, 1000);
-      expect(await cdoc.balanceOfUnderlying(tropykus.account)).equals(1000);
-    });
-
-    it('should borrow in cdoc an amount once he has a collateral on cdoc', async() => {
-      await crbtc.mint(tropykus.account, 0.8);
-      expect(await crbtc.balanceOfUnderlying(tropykus.account)).equals(0.8);
-      await cdoc.borrow(tropykus.account, 100);
-      expect(await cdoc.borrowBalanceCurrent(tropykus.account)).equals(100);
-    });
-
-    it.skip('should borrow in crbtc market an amount once he has a collateral on crbtc', async() => {
-      await cdoc.mint(tropykus.account, 1000);
-      await crbtc.borrow(tropykus.account, 0.005);
-      const balance = await crbtc.borrowBalanceCurrent(tropykus.account);
-      expect(balance).equals(0.005);
-    });
-
-    it.skip('should redeem from crbtc market', async() => {
-      await crbtc.mint(tropykus.account, 0.5);
-      const balance = await crbtc.balanceOfUnderlying(tropykus.account);
-      expect(balance).equals(0.5);
-
-      const balanceBefore = await crbtc.balanceOfUnderlying(tropykus.account);
-      await crbtc.redeem(tropykus.account, 0.025);
-      const balanceAfter = await crbtc.balanceOfUnderlying(tropykus.account);
-      expect(balanceAfter).equals(balanceBefore - 0.025);
-    });
-
-    it.skip('should redeem from cdoc market', async() => {
-      await cdoc.mint(tropykus.account, 500);
-      const balance = await cdoc.balanceOfUnderlying(tropykus.account);
-      expect(balance).equals(500);
-
-      const balanceBefore = await cdoc.balanceOfUnderlying(tropykus.account);
-      await cdoc.redeem(tropykus.account, 250);
-      const balanceAfter = await cdoc.balanceOfUnderlying(tropykus.account);
-      expect(balanceAfter).equals(balanceBefore - 250);
-    });
-
-    it.skip('should redeem all kTokens from crbtc market', async() => {
-      await crbtc.mint(tropykus.account, 0.5);
-      const balance = await crbtc.balanceOfUnderlying(tropykus.account);
-      expect(balance).equals(0.5);
-      const kRBTCBalance = await crbtc.balanceOf(tropykus.account);
-      expect(kRBTCBalance).equals(25);
-
-      await crbtc.redeem(tropykus.account, 0, true);
-      const balanceAfter = await crbtc.balanceOfUnderlying(tropykus.account);
-      expect(balanceAfter).equals(0);
-      const kRBTCBalanceAfter = await crbtc.balanceOf(tropykus.account);
-      expect(kRBTCBalanceAfter).equals(0);
-    });
-
-    it.skip('should repay a portion of debt on cdoc market', async() => {
-      await cdoc.mint(tropykus.account, 1000);
-      const balance = await cdoc.balanceOfUnderlying(tropykus.account);
-      expect(balance).equals(1000);
-
-      await cdoc.borrow(tropykus.account, 500);
-      const borrowBalanceBefore = await cdoc.borrowBalanceCurrent(tropykus.account);
-      expect(borrowBalanceBefore).to.be.closeTo(500, 1);
-
-      await cdoc.repayBorrow(tropykus.account, 250);
-      const borrowBalanceAfter = await cdoc.borrowBalanceCurrent(tropykus.account);
-      expect(borrowBalanceAfter).to.be.closeTo(250, 1);
-    });
-
-    it.skip('should repay all debt from crbtc market', async() => {
-      await crbtc.mint(tropykus.account, 1);
-      const balance = await crbtc.balanceOfUnderlying(tropykus.account);
-      expect(balance).equals(1);
-
-      await crbtc.borrow(tropykus.account, 0.5);
-      const borrowBalanceBefore = await crbtc.borrowBalanceCurrent(tropykus.account);
-      expect(borrowBalanceBefore).to.be.closeTo(0.5, 1);
-
-      await crbtc.repayBorrow(tropykus.account, 0, true);
-      const borrowBalanceAfter = await crbtc.borrowBalanceCurrent(tropykus.account);
-      expect(borrowBalanceAfter).equals(0);
-    });
-  });
 });

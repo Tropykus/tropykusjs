@@ -12,9 +12,9 @@ export default class PriceOracle {
     );
   }
 
-  setAdapterToToken(marketAddress, adapterMarketAddress) {
+  setAdapterToToken(account, marketAddress, adapterMarketAddress) {
     return new Promise((resolve, reject) => {
-      this.instance.connect(this.tropykus.account)
+      this.instance.connect(account)
         .setAdapterToToken(marketAddress, adapterMarketAddress)
         .then(resolve)
         .catch(reject);
@@ -23,7 +23,7 @@ export default class PriceOracle {
 
   getUnderlyingPrice(marketAddress) {
     return new Promise((resolve, reject) => {
-      this.instance.connect(this.tropykus.account).callStatic
+      this.instance.callStatic
         .getUnderlyingPrice(marketAddress)
         .then((p) => Number(p) / 1e18)
         .then(resolve)

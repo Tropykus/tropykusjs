@@ -12,10 +12,10 @@ export default class Unitroller {
     );
   }
 
-  setComptrollerPendingImplementation(comptrollerAddress) {
+  setComptrollerPendingImplementation(account, comptrollerAddress) {
     return new Promise((resolve, reject) => {
       // eslint-disable-next-line no-underscore-dangle
-      this.instance.connect(this.tropykus.account)
+      this.instance.connect(account)
         ._setPendingImplementation(comptrollerAddress)
         .then(resolve)
         .catch(reject);
