@@ -102,11 +102,10 @@ export default class Market {
     return new Promise((resolve, reject) => {
       if (maxValue) {
         this.instance.callStatic.balanceOf(account.address)
-          .then((kTokens) => this.instance.connect(account)
-            .redeem(
-              kTokens,
-              { gasLimit: this.tropykus.gasLimit },
-            ))
+          .then((kTokens) => this.instance.connect(account).redeem(
+            kTokens,
+            { gasLimit: this.tropykus.gasLimit },
+          ))
           .then(resolve)
           .catch(reject);
       } else {
@@ -144,7 +143,9 @@ export default class Market {
           .repayBorrow({
             value: ethers.utils.parseEther(amount.toString()),
             gasLimit: this.tropykus.gasLimit,
-          });
+          })
+          .then(resolve)
+          .catch(reject);
       }
     });
   }
@@ -196,7 +197,7 @@ export default class Market {
   }
 
   /**
-   * 
+   *
    * @param {string} event name to subscribe on
    * @param {function} action which shall be excecuted once the even has been listened
    */

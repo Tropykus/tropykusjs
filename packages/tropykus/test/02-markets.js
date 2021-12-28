@@ -335,6 +335,21 @@ describe('Market', () => {
       expect(kRBTCBalanceAfter).equals(0);
     });
 
+    it('should redeem all kTokens from cdoc market', async () => {
+      await cdoc.transferUnderlying(dep, alice.address, 500);
+      await cdoc.mint(alice, 500);
+      const balance = await cdoc.balanceOfUnderlying(alice);
+      expect(balance).equals(500);
+      const kDocBeforeBalance = await cdoc.balanceOf(alice);
+      expect(kDocBeforeBalance).to.be.closeTo(25000, 1);
+
+      await cdoc.redeem(alice, null, true);
+      const balanceAfter = await cdoc.balanceOfUnderlying(alice);
+      expect(balanceAfter).equals(0);
+      const kDocAfterBalance = await cdoc.balanceOf(alice);
+      expect(kDocAfterBalance).equals(0);
+    });
+
     it('should repay a portion of debt on cdoc market', async () => {
       await crbtc.mint(alice, 0.5);
       const balance = await crbtc.balanceOfUnderlying(alice);
@@ -349,17 +364,47 @@ describe('Market', () => {
       expect(borrowBalanceAfter).to.be.closeTo(250, 1);
     });
 
+    it('should repay a portion of debt on crbtc market', async () => {
+      await cdoc.transferUnderlying(dep, alice.address, 500);
+      await cdoc.mint(alice, 500);
+      const balance = await cdoc.balanceOfUnderlying(alice);
+      expect(balance).equals(500);
+
+      await crbtc.borrow(alice, 0.005);
+      const borrowBalanceBefore = await crbtc.borrowBalanceCurrent(alice);
+      expect(borrowBalanceBefore).to.be.closeTo(0.005, 1);
+
+      await crbtc.repayBorrow(alice, 0.0025);
+      const borrowBalanceAfter = await crbtc.borrowBalanceCurrent(alice);
+      expect(borrowBalanceAfter).to.be.closeTo(0.0025, 1);
+    });
+
     it('should repay all debt from crbtc market', async () => {
+      await cdoc.transferUnderlying(dep, alice.address, 5000);
+      await cdoc.mint(alice, 5000);
+      const balance = await cdoc.balanceOfUnderlying(alice);
+      expect(balance).equals(5000);
+
+      await crbtc.borrow(alice, 0.005);
+      const borrowBalanceBefore = await crbtc.borrowBalanceCurrent(alice);
+      expect(borrowBalanceBefore).to.be.closeTo(0.005, 1);
+
+      await crbtc.repayBorrow(alice, null, true);
+      const borrowBalanceAfter = await crbtc.borrowBalanceCurrent(alice);
+      expect(borrowBalanceAfter).equals(0);
+    });
+
+    it('should repay all debt from crdoc market', async () => {
       await crbtc.mint(alice, 1);
       const balance = await crbtc.balanceOfUnderlying(alice);
       expect(balance).equals(1);
 
-      await crbtc.borrow(alice, 0.5);
-      const borrowBalanceBefore = await crbtc.borrowBalanceCurrent(alice);
-      expect(borrowBalanceBefore).to.be.closeTo(0.5, 1);
+      await crdoc.borrow(alice, 1000);
+      const borrowBalanceBefore = await crdoc.borrowBalanceCurrent(alice);
+      expect(borrowBalanceBefore).to.be.closeTo(1000, 1);
 
-      await crbtc.repayBorrow(alice, 0, true);
-      const borrowBalanceAfter = await crbtc.borrowBalanceCurrent(alice);
+      await crdoc.repayBorrow(alice, null, true);
+      const borrowBalanceAfter = await crdoc.borrowBalanceCurrent(alice);
       expect(borrowBalanceAfter).equals(0);
     });
 
@@ -444,11 +489,8 @@ describe('Market', () => {
         sandbox.spy(actionObj, "action");
 
         crbtc.subscribeOnEvent('RepayBorrow', actionObj.action);
-        console.log('Before mint');
         await crbtc.mint(dep, 0.0025);
-        console.log('Before Borrow');
         await crbtc.borrow(dep, 0.001);
-        console.log('Before Repay');
         await crbtc.repayBorrow(dep, 0.0005);
         // This is necessary when using ganache to force the blockchain to move one block
         await newComptroller.allMarkets();

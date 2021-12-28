@@ -1,4 +1,4 @@
-import { ethers } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import StandartTokenArtifact from '../../artifacts/StandardToken.json';
 import Market from '../Market';
 
@@ -29,14 +29,11 @@ export default class CErc20 extends Market {
 
   async repayBorrow(account, amount, maxValue = false) {
     if (maxValue) {
-      const borrowBalance = Number(await this.instance.connect(account)
-        .callStatic.borrowBalanceCurrent(account.address));
-      const borrowBalancePlusDelta = borrowBalance + 1e18;
+      const borrowBalance = await this.instance.connect(account).callStatic
+        .borrowBalanceCurrent(account.address);
+      const delta = BigNumber.from(1e18.toString());
       await this.erc20Instance.connect(account)
-        .approve(
-          this.address,
-          ethers.utils.parseEther(borrowBalancePlusDelta.toString()),
-        );
+        .approve(this.address, borrowBalance.add(delta));
       return this.instance.connect(account)
         .repayBorrow(
           ethers.constants.MaxUint256,
