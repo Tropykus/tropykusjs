@@ -1,8 +1,16 @@
 import { ethers, Wallet } from 'ethers';
 import Comptroller from './Comptroller';
+import PriceOracle from './PriceOracle';
 import CRBTC from './Markets/CRBTC';
 import CRDOC from './Markets/CRDOC';
 import CToken from './Markets/CToken';
+import ComptrollerArtifact from '../artifacts/ComptrollerG6.json';
+import CRBTCArtifact from '../artifacts/CRBTC.json';
+import CRDOCArtifact from '../artifacts/CRDOC.json';
+import CErc20Artifact from '../artifacts/CErc20Immutable.json';
+import Unitroller from './Unitroller';
+
+ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
 export default class Tropykus {
   /**
@@ -12,8 +20,8 @@ export default class Tropykus {
    */
   constructor(providerURL, gasLimit) {
     this.ethersProvider = new ethers.providers.JsonRpcProvider(providerURL);
-    this.internalAccount = null;
     this.internalComptroller = null;
+    this.internalPriceOracle = null;
     this.currentGasLimit = gasLimit;
     this.markets = [];
   }
@@ -30,7 +38,7 @@ export default class Tropykus {
    * @param derivationPath
    */
   setAccount(mnemonic, derivationPath) {
-    this.internalAccount = Wallet
+    return Wallet
       .fromMnemonic(mnemonic, derivationPath).connect(this.ethersProvider);
   }
 
@@ -47,10 +55,17 @@ export default class Tropykus {
   get comptroller() { return this.internalComptroller; }
 
   /**
-   * By providing the contract artifact, its address, its corresponding erc20 token address
-   * and some additional market information a Market instance is added to the protocol and is made available.
+   * Returns the initialized priceOracle instance.
+   * @returns {PriceOracle}
+   */
+  get priceOracle() { return this.internalPriceOracle; }
+
+  /**
+   * By providing the contract artifact, its address, its corresponding erc20
+   * token address and some additional market information a Market instance
+   * is added to the protocol and is made available.
    * @param artifact to use for the contract instantiation
-   * @param deployed flag to indicate if the contract is already deployed 
+   * @param deployed flag to indicate if the contract is already deployed
    * @param marketAddress on chain deployed market address.
    * @param erc20TokenAddress on chain deployed erc20 token address.
    * @param args additional args to initialize market
@@ -58,6 +73,7 @@ export default class Tropykus {
    * @return {Market}
    */
   async addMarket(
+    account,
     artifact,
     deployed = true,
     marketAddress = null,
@@ -75,18 +91,31 @@ export default class Tropykus {
     let address = marketAddress;
     if (!deployed) {
       let marketDeployed;
-      const marketFactory = new ethers.ContractFactory(artifact);
-      if (artifact === 'CRBTC') {
-        marketDeployed = await marketFactory.deploy(
-          args.comptrollerAddress,
-          args.interestRateModelAddress,
-          ethers.utils.parseEther(args.initialExchangeRate.toString()),
-          args.name,
-          args.symbol,
-          args.decimals,
-          this.account.address,
-        );
-      } else {
+      let marketFactory;
+      switch (artifact) {
+        case 'CRBTC':
+          marketFactory = new ethers
+            .ContractFactory(CRBTCArtifact.abi, CRBTCArtifact.bytecode, account);
+          marketDeployed = await marketFactory.deploy(
+            args.comptrollerAddress,
+            args.interestRateModelAddress,
+            ethers.utils.parseEther(args.initialExchangeRate.toString()),
+            args.name,
+            args.symbol,
+            args.decimals,
+            account.address,
+          );
+          break;
+        case 'CRDOC':
+          marketFactory = new ethers
+            .ContractFactory(CRDOCArtifact.abi, CRDOCArtifact.bytecode, account);
+          break;
+        default:
+          marketFactory = new ethers
+            .ContractFactory(CErc20Artifact.abi, CErc20Artifact.bytecode, account);
+          break;
+      }
+      if (artifact !== 'CRBTC') {
         marketDeployed = await marketFactory.deploy(
           erc20TokenAddress,
           args.comptrollerAddress,
@@ -95,7 +124,7 @@ export default class Tropykus {
           args.name,
           args.symbol,
           args.decimals,
-          this.account.address,
+          account.address,
         );
       }
       address = marketDeployed.address;
@@ -118,9 +147,40 @@ export default class Tropykus {
   /**
    * By providing the on chain deployed comptroller address,
    * a comptroller instance is made available.
+   * @param account
    * @param {string} comptrollerAddress on chain deployed comptroller address.
+   * @param unitrollerAddress
+   * address of a deployed contract, if false deploys a new Comptroller.
    */
-  setComptroller(comptrollerAddress) {
-    this.internalComptroller = new Comptroller(comptrollerAddress, this);
+  async setComptroller(
+    account,
+    comptrollerAddress,
+    unitrollerAddress = '',
+  ) {
+    if (!comptrollerAddress) {
+      const unitroller = new Unitroller(unitrollerAddress, this);
+      const comptrollerFactory = new ethers
+        .ContractFactory(
+          ComptrollerArtifact.abi,
+          ComptrollerArtifact.bytecode,
+          account,
+        );
+      const comptrollerDeployed = await comptrollerFactory.deploy();
+      await unitroller.setComptrollerPendingImplementation(account, comptrollerDeployed.address);
+      this.internalComptroller = new Comptroller(comptrollerDeployed.address, this);
+      await this.internalComptroller.become(account, unitroller.address);
+    } else {
+      this.internalComptroller = new Comptroller(comptrollerAddress, this);
+    }
+    return this.internalComptroller;
+  }
+
+  /**
+   * By providing the on chain deployed price oracle address,
+   * a price oracle instance is made available.
+   * @param {string} priceOracleAddress on chain deployed Price Oracle address.
+   */
+  setPriceOracle(priceOracleAddress) {
+    this.internalPriceOracle = new PriceOracle(priceOracleAddress, this);
   }
 }

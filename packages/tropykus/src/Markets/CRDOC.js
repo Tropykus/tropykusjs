@@ -1,11 +1,11 @@
-import CRDOCAbi from '../../abis/CRDOC.json';
+import CRDOCArtifact from '../../artifacts/CRDOC.json';
 import CErc20 from './CErc20';
 
 export default class CRDOC extends CErc20 {
   constructor(tropykus, contractAddress, erc20TokenAddress) {
     super(
       tropykus,
-      CRDOCAbi,
+      CRDOCArtifact.abi,
       contractAddress,
       erc20TokenAddress,
     );
