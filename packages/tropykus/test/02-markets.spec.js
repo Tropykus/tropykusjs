@@ -299,6 +299,28 @@ describe('Market', () => {
       expect(balance).equals(0.005);
     });
 
+    it('should return the market\'s kSymbol', async () => {
+      expect(await cdoc.getSymbol()).to.equal('CDOC');
+    });
+
+    it('should return the market\'s Symbol', async () => {
+      expect(await cdoc.getUnderlyingSymbol()).to.equal('DOC');
+    });
+
+    it('should return the borrow Annual Percentage Rate', async () => {
+      expect(await cdoc.getBorrowAnnualRate()).to.be.closeTo(0.08, 18);
+    });
+
+    it('should return the supply Annual Percentage Rate', async () => {
+      await cdoc.transferUnderlying(dep, alice.address, 1000);
+      expect(await cdoc.getSupplyAnnualRate()).to.equal(0);
+      await cdoc.mint(alice, 1000);
+      await cdoc.borrow(alice, 500);
+      const br = await cdoc.getBorrowAnnualRate();
+      const rf = await cdoc.getReserveFactor();
+      expect(await cdoc.getSupplyAnnualRate()).to.be.closeTo(br * 0.5 * (1 - rf), 18);
+    });
+
     it('should redeem from crbtc market', async () => {
       await crbtc.mint(alice, 0.5);
       const balance = await crbtc.balanceOfUnderlying(alice);

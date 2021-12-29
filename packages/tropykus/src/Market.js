@@ -1,4 +1,5 @@
 import { BigNumber, ethers } from 'ethers';
+import interestRateModelArtifact from '../artifacts/InterestRateModel.json';
 
 export default class Market {
   /**
@@ -10,6 +11,7 @@ export default class Market {
   constructor(tropykus, abi, marketAddress) {
     this.tropykus = tropykus;
     this.address = marketAddress;
+    this.internalUnderlyingSymbol = '';
     this.instance = new ethers.Contract(marketAddress, abi, this.tropykus.ethersProvider);
     this.wsInstance = new ethers.Contract(marketAddress, abi, this.tropykus.wsProvider);
   }
@@ -179,6 +181,14 @@ export default class Market {
     });
   }
 
+  getSymbol() {
+    return new Promise((resolve, reject) => {
+      this.instance.callStatic.symbol()
+        .then(resolve)
+        .catch(reject);
+    });
+  }
+
   getComptroller() {
     return new Promise((resolve, reject) => {
       this.instance.comptroller()
@@ -191,6 +201,44 @@ export default class Market {
     return new Promise((resolve, reject) => {
       this.instance.connect(account).callStatic.exchangeRateCurrent()
         .then((er) => Number(er) / 1e18)
+        .then(resolve)
+        .catch(reject);
+    });
+  }
+
+  getBorrowAnnualRate() {
+    return new Promise((resolve, reject) => {
+      this.instance.interestRateModel()
+        .then((modelAddress) => {
+          const model = new ethers.Contract(modelAddress,
+            interestRateModelArtifact.abi, this.tropykus.ethersProvider);
+          return Promise.all([
+            model.callStatic.blocksPerYear(),
+            this.instance.callStatic.borrowRatePerBlock(),
+          ]);
+        })
+        .then(([blocksPerYear, borrowRatePerBlock]) => borrowRatePerBlock
+          .mul(blocksPerYear))
+        .then((sAPY) => Number(sAPY) / 1e18)
+        .then(resolve)
+        .catch(reject);
+    });
+  }
+
+  getSupplyAnnualRate() {
+    return new Promise((resolve, reject) => {
+      this.instance.interestRateModel()
+        .then((modelAddress) => {
+          const model = new ethers.Contract(modelAddress,
+            interestRateModelArtifact.abi, this.tropykus.ethersProvider);
+          return Promise.all([
+            model.callStatic.blocksPerYear(),
+            this.instance.callStatic.supplyRatePerBlock(),
+          ]);
+        })
+        .then(([blocksPerYear, supplyRatePerBlock]) => supplyRatePerBlock
+          .mul(blocksPerYear))
+        .then((sAPY) => Number(sAPY) / 1e18)
         .then(resolve)
         .catch(reject);
     });
