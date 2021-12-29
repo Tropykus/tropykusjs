@@ -303,10 +303,6 @@ describe('Market', () => {
       expect(await cdoc.getSymbol()).to.equal('CDOC');
     });
 
-    it('should return the market\'s Symbol', async () => {
-      expect(await cdoc.getUnderlyingSymbol()).to.equal('DOC');
-    });
-
     it('should return the borrow Annual Percentage Rate', async () => {
       expect(await cdoc.getBorrowAnnualRate()).to.be.closeTo(0.08, 18);
     });
