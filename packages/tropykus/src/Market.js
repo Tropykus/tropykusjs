@@ -12,7 +12,7 @@ export default class Market {
     this.tropykus = tropykus;
     this.address = marketAddress;
     this.internalUnderlyingSymbol = '';
-    this.instance = new ethers.Contract(marketAddress, abi, this.tropykus.ethersProvider);
+    this.instance = new ethers.Contract(marketAddress, abi, this.tropykus.provider);
     this.wsInstance = new ethers.Contract(marketAddress, abi, this.tropykus.wsProvider);
   }
 
@@ -23,7 +23,8 @@ export default class Market {
    */
   balanceOfUnderlying(account) {
     return new Promise((resolve, reject) => {
-      this.instance.connect(account).callStatic.balanceOfUnderlying(account.address)
+      this.instance.connect(account.signer)
+        .callStatic.balanceOfUnderlying(account.address)
         .then((balance) => Number(balance) / 1e18)
         .then(resolve)
         .catch(reject);
@@ -31,13 +32,14 @@ export default class Market {
   }
 
   /**
-   * Tokens Blance
+   * Tokens Balance
    * @param account type account
    * @return the balance of tokens owned in the market
    */
   balanceOf(account) {
     return new Promise((resolve, reject) => {
-      this.instance.connect(account).callStatic.balanceOf(account.address)
+      this.instance.connect(account.signer)
+        .callStatic.balanceOf(account.address)
         .then((balance) => Number(balance) / 1e18)
         .then(resolve)
         .catch(reject);
@@ -51,8 +53,8 @@ export default class Market {
    */
   borrowBalanceCurrent(account) {
     return new Promise((resolve, reject) => {
-      this.instance.connect(account).callStatic
-        .borrowBalanceCurrent(account.address)
+      this.instance.connect(account.signer)
+        .callStatic.borrowBalanceCurrent(account.address)
         .then((balance) => Number(balance) / 1e18)
         .then(resolve)
         .catch(reject);
@@ -66,7 +68,7 @@ export default class Market {
    */
   mint(account, amount) {
     return new Promise((resolve, reject) => {
-      this.instance.connect(account).mint({
+      this.instance.connect(account.signer).mint({
         value: ethers.utils.parseEther(amount.toString()),
         gasLimit: this.tropykus.gasLimit,
       })
@@ -82,7 +84,7 @@ export default class Market {
    */
   borrow(account, amount) {
     return new Promise((resolve, reject) => {
-      this.instance.connect(account)
+      this.instance.connect(account.signer)
         .borrow(
           ethers.utils.parseEther(amount.toString()),
           { gasLimit: this.tropykus.gasLimit },
@@ -104,14 +106,12 @@ export default class Market {
     return new Promise((resolve, reject) => {
       if (maxValue) {
         this.instance.callStatic.balanceOf(account.address)
-          .then((kTokens) => this.instance.connect(account).redeem(
-            kTokens,
-            { gasLimit: this.tropykus.gasLimit },
-          ))
+          .then((kTokens) => this.instance.connect(account.signer)
+            .redeem(kTokens, { gasLimit: this.tropykus.gasLimit }))
           .then(resolve)
           .catch(reject);
       } else {
-        this.instance.connect(account)
+        this.instance.connect(account.signer)
           .redeemUnderlying(
             ethers.utils.parseEther(amount.toString()),
             { gasLimit: this.tropykus.gasLimit },
@@ -131,17 +131,17 @@ export default class Market {
   repayBorrow(account, amount, maxValue = false) {
     return new Promise((resolve, reject) => {
       if (maxValue) {
-        this.instance.connect(account).callStatic
+        this.instance.connect(account.signer).callStatic
           .borrowBalanceCurrent(account.address)
           .then((borrowBalance) => {
             const delta = BigNumber.from(0.0001e18);
-            return this.instance.connect(account)
+            return this.instance.connect(account.signer)
               .repayBorrowAll({ value: borrowBalance.add(delta) });
           })
           .then(resolve)
           .catch(reject);
       } else {
-        this.instance.connect(account)
+        this.instance.connect(account.signer)
           .repayBorrow({
             value: ethers.utils.parseEther(amount.toString()),
             gasLimit: this.tropykus.gasLimit,
@@ -155,32 +155,46 @@ export default class Market {
   setReserveFactor(account, reserveFactor) {
     return new Promise((resolve, reject) => {
       // eslint-disable-next-line no-underscore-dangle
-      this.instance.connect(account)
+      this.instance.connect(account.signer)
         ._setReserveFactor(ethers.utils.parseEther(reserveFactor.toString()))
         .then(resolve)
         .catch(reject);
     });
   }
 
+  /**
+   * Set's a new comptroller for this market
+   * @param account<Object> Object Signer Owner of this market
+   * @param comptrollerAddress<String> new comptroller address
+   * @returns {Promise<Object> | Promise<Error>} Object Transaction or error.
+   */
   setComptroller(account, comptrollerAddress) {
     return new Promise((resolve, reject) => {
       // eslint-disable-next-line no-underscore-dangle
-      this.instance.connect(account)
+      this.instance.connect(account.signer)
         ._setComptroller(comptrollerAddress)
         .then(resolve)
         .catch(reject);
     });
   }
 
+  /**
+   * Returns the reserved factor set for the market
+   * @returns {Promise<Number>} Reserve factor without mantissa
+   */
   getReserveFactor() {
     return new Promise((resolve, reject) => {
-      this.instance.reserveFactorMantissa()
+      this.instance.callStatic.reserveFactorMantissa()
         .then((rf) => Number(rf) / 1e18)
         .then(resolve)
         .catch(reject);
     });
   }
 
+  /**
+   * Returns the market's kToken symbol
+   * @returns {Promise<String>} Market's kSymbol
+   */
   getSymbol() {
     return new Promise((resolve, reject) => {
       this.instance.callStatic.symbol()
@@ -189,6 +203,10 @@ export default class Market {
     });
   }
 
+  /**
+   * Returns the comptroller setted from this market
+   * @returns {Promise<String>} Comptroller address
+   */
   getComptroller() {
     return new Promise((resolve, reject) => {
       this.instance.comptroller()
@@ -199,7 +217,8 @@ export default class Market {
 
   getExchangeRateCurrent(account) {
     return new Promise((resolve, reject) => {
-      this.instance.connect(account).callStatic.exchangeRateCurrent()
+      this.instance.connect(account.signer)
+        .callStatic.exchangeRateCurrent()
         .then((er) => Number(er) / 1e18)
         .then(resolve)
         .catch(reject);
@@ -211,7 +230,7 @@ export default class Market {
       this.instance.interestRateModel()
         .then((modelAddress) => {
           const model = new ethers.Contract(modelAddress,
-            interestRateModelArtifact.abi, this.tropykus.ethersProvider);
+            interestRateModelArtifact.abi, this.tropykus.provider);
           return Promise.all([
             model.callStatic.blocksPerYear(),
             this.instance.callStatic.borrowRatePerBlock(),
@@ -230,7 +249,7 @@ export default class Market {
       this.instance.interestRateModel()
         .then((modelAddress) => {
           const model = new ethers.Contract(modelAddress,
-            interestRateModelArtifact.abi, this.tropykus.ethersProvider);
+            interestRateModelArtifact.abi, this.tropykus.provider);
           return Promise.all([
             model.callStatic.blocksPerYear(),
             this.instance.callStatic.supplyRatePerBlock(),

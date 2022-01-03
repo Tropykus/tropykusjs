@@ -8,20 +8,19 @@ import Unitroller from "../src/Unitroller";
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-const mnemonic = 'elegant ripple curve exhibit capital oblige off inform recall describe warrior earn';
-const derivationPath = `m/44'/60'/0'/0/0`;
-
 const comptrollerAddress = '0xB173b5EE67b9F38263413Bc29440f89cC5BC3C39';
 const priceOracleAddress = '0x4d7Cc3cdb88Fa1EEC3095C9f849c799F1f7D4031';
 const crdocAddress = '0x1a389e93be8ef2B5D105DEa44271d4426736A484';
 const unitrollerAddress = '0xdC98d636ad43A17bDAcE402997C7c6ABA55EAa28';
 
 describe('Comptroller', () => {
-    const tropykus = new Tropykus('http://127.0.0.1:8545', 600000);
+    const provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545');
+    const wsProvider = new ethers.providers.JsonRpcProvider('ws://127.0.0.1:8545');
+    const tropykus = new Tropykus(provider, wsProvider, 400000);
     let comptroller;
     let dep;
     beforeEach(async () => {
-        dep = await tropykus.setAccount(mnemonic, derivationPath);
+        dep = await tropykus.getAccount();
     });
 
     it('should instance a comptroller handler', async () => {
@@ -39,13 +38,13 @@ describe('Comptroller', () => {
     it('should enter the markets', async () => {
         comptroller = await tropykus.setComptroller(dep,null, unitrollerAddress);
 
-        let assetsIn = await comptroller.getAssetsIn(dep);
+        let assetsIn = await comptroller.getAssetsIn(dep.address);
         expect(assetsIn.length).equals(0);
 
         const markets = await comptroller.allMarkets();
         await comptroller.enterMarkets(dep, markets);
 
-        assetsIn = await comptroller.getAssetsIn(dep);
+        assetsIn = await comptroller.getAssetsIn(dep.address);
         expect(assetsIn.length).equals(markets.length);
         assetsIn.forEach((asset, idx) => {
             expect(asset).equals(markets[idx]);
@@ -55,7 +54,7 @@ describe('Comptroller', () => {
         let newComptroller;
         let dep;
         beforeEach(async () => {
-            dep = await tropykus.setAccount(mnemonic, derivationPath);
+            dep = await tropykus.getAccount();
             newComptroller = await tropykus.setComptroller(
                 dep, null, unitrollerAddress);
         });

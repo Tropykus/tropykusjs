@@ -1,18 +1,16 @@
+import { ethers } from 'ethers';
+import sinon from 'sinon';
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import Tropykus from "../src";
 import CRBTCMarket from '../src/Markets/CRBTC.js';
 import CRDOCMarket from '../src/Markets/CRDOC.js';
 import CErc20Market from '../src/Markets/CErc20.js';
-import sinon from "sinon";
-
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
 const mnemonic = 'elegant ripple curve exhibit capital oblige off inform recall describe warrior earn';
-const derivationPath = `m/44'/60'/0'/0/0`;
-
 const comptrollerAddress = '0xB173b5EE67b9F38263413Bc29440f89cC5BC3C39';
 const crbtcMarketAddress = '0xE498D1E3A0d7fdb80a2d7591D997aFDA34F8c5C5';
 const cdocAddress = '0x1CbD672Ac9d98F4f033e12eDE3c55f5CB02B983C';
@@ -36,20 +34,17 @@ describe('Market', () => {
   const sandbox = sinon.createSandbox();
 
   beforeEach(async () => {
-    tropykus = new Tropykus('http://127.0.0.1:8545', 400000);
-    dep = await tropykus.setAccount(mnemonic, derivationPath);
+    const provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545');
+    const wsProvider = new ethers.providers.JsonRpcProvider('ws://127.0.0.1:8545');
+    tropykus = new Tropykus(provider, wsProvider, 400000);
+    dep = await tropykus.getAccount();
     comptroller = await tropykus.setComptroller(dep, comptrollerAddress);
-  });
-
-  afterEach(() => {
-    sandbox.restore();
   });
 
   it('should deployed a new CRBTC market', async () => {
     const crbtc = await tropykus.addMarket(
       dep,
       'CRBTC',
-      false,
       null,
       null,
       {
@@ -68,7 +63,6 @@ describe('Market', () => {
     const crdoc = await tropykus.addMarket(
       dep,
       'CRDOC',
-      false,
       null,
       rdocAddress,
       {
@@ -87,7 +81,6 @@ describe('Market', () => {
     const cdoc = await tropykus.addMarket(
       dep,
       'CRDOC',
-      false,
       null,
       docAddress,
       {
@@ -103,19 +96,19 @@ describe('Market', () => {
   });
 
   it('should instance a CRBTC Market with an existing contract address', async () => {
-    const crbtc = await tropykus.addMarket(dep, 'CRBTC', true, crbtcMarketAddress);
+    const crbtc = await tropykus.addMarket(dep, 'CRBTC', crbtcMarketAddress);
     expect(crbtc).instanceOf(CRBTCMarket);
     expect(crbtc.address).equals(crbtcMarketAddress);
   })
 
   it('should instance a CToken Market with an existing contract address', async () => {
-    const cdoc = await tropykus.addMarket(dep, 'CErc20Immutable', true, cdocAddress, docAddress);
+    const cdoc = await tropykus.addMarket(dep, 'CErc20Immutable', cdocAddress, docAddress);
     expect(cdoc).instanceOf(CErc20Market);
     expect(cdoc.address).equals(cdocAddress);
   });
 
   it('should instance a CRDOC Market wit an existing contract address', async () => {
-    const crdoc = await tropykus.addMarket(dep, 'CRDOC', true, crdocAddress, rdocAddress);
+    const crdoc = await tropykus.addMarket(dep, 'CRDOC', crdocAddress, rdocAddress);
     expect(crdoc).instanceOf(CRDOCMarket);
     expect(crdoc.address).equals(crdocAddress);
   });
@@ -128,7 +121,6 @@ describe('Market', () => {
       crbtc = await tropykus.addMarket(
         dep,
         'CRBTC',
-        false,
         null,
         null,
         {
@@ -163,7 +155,6 @@ describe('Market', () => {
       crbtc = await tropykus.addMarket(
         dep,
         'CRBTC',
-        false,
         null,
         null,
         {
@@ -177,7 +168,6 @@ describe('Market', () => {
       cdoc = await tropykus.addMarket(
         dep,
         'CRDOC',
-        false,
         null,
         docAddress,
         {
@@ -191,7 +181,6 @@ describe('Market', () => {
       crdoc = await tropykus.addMarket(
         dep,
         'CRDOC',
-        false,
         null,
         rdocAddress,
         {
@@ -232,7 +221,11 @@ describe('Market', () => {
       await cdoc.mint(dep, 10000);
       await crdoc.mint(dep, 10000);
 
-      alice = await tropykus.setAccount(mnemonic, `m/44'/60'/0'/0/1`);
+      const aliceAccount = await tropykus.getAccountFromMnemonic(mnemonic, `m/44'/60'/0'/0/1`);
+      alice = {
+        signer: aliceAccount,
+        address: aliceAccount.address,
+      }
 
       const mkts = [
         crbtc.address,
@@ -427,6 +420,10 @@ describe('Market', () => {
     });
 
     describe('Events subscription', () => {
+      afterEach(() => {
+        sandbox.restore();
+      });
+
       it('Should subscribe on mint event', async () => {
         const actionObj = {
           action: () => {
@@ -436,14 +433,14 @@ describe('Market', () => {
         sandbox.spy(actionObj, "action");
 
         crbtc.subscribeOnEvent('Mint', actionObj.action);
-        await crbtc.mint(dep, 0.0025);
+        await crbtc.mint(alice, 0.0025);
         // This is necessary when using ganache to force the blockchain to move one block
         await newComptroller.allMarkets();
 
         expect(actionObj.action.calledOnce).equals(true);
         expect(actionObj.action.getCall(0).returnValue).equals('Action excecuted, mint');
 
-        await crbtc.mint(dep, 0.0025);
+        await crbtc.mint(alice, 0.0025);
         await newComptroller.allMarkets();
 
         expect(actionObj.action.calledOnce).equals(false);
@@ -459,15 +456,15 @@ describe('Market', () => {
         sandbox.spy(actionObj, "action");
 
         crbtc.subscribeOnEvent('Redeem', actionObj.action);
-        await crbtc.mint(dep, 0.0025);
-        await crbtc.redeem(dep, 0.002);
+        await crbtc.mint(alice, 0.0025);
+        await crbtc.redeem(alice, 0.002);
         // This is necessary when using ganache to force the blockchain to move one block
         await newComptroller.allMarkets();
 
         expect(actionObj.action.calledOnce).equals(true);
         expect(actionObj.action.getCall(0).returnValue).equals('Action excecuted, redeem');
 
-        await crbtc.redeem(dep, 0.0005);
+        await crbtc.redeem(alice, 0.0005);
         await newComptroller.allMarkets();
 
         expect(actionObj.action.calledOnce).equals(false);
@@ -483,15 +480,15 @@ describe('Market', () => {
         sandbox.spy(actionObj, "action");
 
         crbtc.subscribeOnEvent('Borrow', actionObj.action);
-        await crbtc.mint(dep, 0.0025);
-        await crbtc.borrow(dep, 0.00001);
+        await crbtc.mint(alice, 0.0025);
+        await crbtc.borrow(alice, 0.00001);
         // This is necessary when using ganache to force the blockchain to move one block
         await newComptroller.allMarkets();
 
         expect(actionObj.action.calledOnce).equals(true);
         expect(actionObj.action.getCall(0).returnValue).equals('Action excecuted, borrow');
 
-        await crbtc.borrow(dep, 0.00001);
+        await crbtc.borrow(alice, 0.00001);
         await newComptroller.allMarkets();
 
         expect(actionObj.action.calledOnce).equals(false);
@@ -507,16 +504,16 @@ describe('Market', () => {
         sandbox.spy(actionObj, "action");
 
         crbtc.subscribeOnEvent('RepayBorrow', actionObj.action);
-        await crbtc.mint(dep, 0.0025);
-        await crbtc.borrow(dep, 0.001);
-        await crbtc.repayBorrow(dep, 0.0005);
+        await crbtc.mint(alice, 0.0025);
+        await crbtc.borrow(alice, 0.001);
+        await crbtc.repayBorrow(alice, 0.0005);
         // This is necessary when using ganache to force the blockchain to move one block
         await newComptroller.allMarkets();
 
         expect(actionObj.action.calledOnce).equals(true);
         expect(actionObj.action.getCall(0).returnValue).equals('Action excecuted, repayBorrow');
 
-        await crbtc.repayBorrow(dep, 0, true);
+        await crbtc.repayBorrow(alice, 0, true);
         await newComptroller.allMarkets();
 
         expect(actionObj.action.calledOnce).equals(false);

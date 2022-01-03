@@ -15,13 +15,13 @@ ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 export default class Tropykus {
   /**
    * Construct a new Tropykus instance
-   * @param providerURL network url to be connected with
-   * @param gasLimit limit of gas to be used in each transaction
+   * @param {object} provider ethers http provider
+   * @param {object} wsProvider ethers websocket provider
+   * @param {number} gasLimit limit of gas to be used in each transaction
    */
-  // TODO: fix wsProviderURL = ''
-  constructor(providerURL, gasLimit, wsProviderURL = 'ws://127.0.0.1:8545') {
-    this.ethersProvider = new ethers.providers.JsonRpcProvider(providerURL);
-    this.wsProvider = new ethers.providers.WebSocketProvider(wsProviderURL);
+  constructor(provider, wsProvider, gasLimit) {
+    this.provider = provider;
+    this.wsProvider = wsProvider;
     this.internalComptroller = null;
     this.internalPriceOracle = null;
     this.currentGasLimit = gasLimit;
@@ -29,18 +29,35 @@ export default class Tropykus {
   }
 
   /**
-   * By providing the mnemonic, a wallet instance is made available.
-   * @param {string} mnemonic to generate the wallet.
-   * @param derivationPath
+   * Returns Account's signer and address
+   * @returns {Promise<Object>} Object with account's signer and address
    */
-  setAccount(mnemonic, derivationPath) {
+  getAccount() {
+    return new Promise((resolve, reject) => {
+      (this.provider.getSigner()).getAddress()
+        .then((address) => ({
+          signer: this.provider.getSigner(),
+          address,
+        }))
+        .then(resolve)
+        .catch(reject);
+    });
+  }
+
+  /**
+   * Returns account given a mnemonic and a derivation path
+   * @param {string} mnemonic words
+   * @param {string} derivationPath
+   * @returns {Object} account
+   */
+  getAccountFromMnemonic(mnemonic, derivationPath) {
     return Wallet
-      .fromMnemonic(mnemonic, derivationPath).connect(this.ethersProvider);
+      .fromMnemonic(mnemonic, derivationPath).connect(this.provider);
   }
 
   /**
    * Returns the set gas limit.
-   * @return {Number}
+   * @return {number}
    */
   get gasLimit() { return this.currentGasLimit; }
 
@@ -57,21 +74,20 @@ export default class Tropykus {
   get priceOracle() { return this.internalPriceOracle; }
 
   /**
-   * By providing the contract artifact, its address, its corresponding erc20
-   * token address and some additional market information a Market instance
+   * Returns the added market instance by providing the contract artifact,
+   * its address, its corresponding erc20 token address and some additional
+   * market information a Market instance
    * is added to the protocol and is made available.
-   * @param artifact to use for the contract instantiation
-   * @param deployed flag to indicate if the contract is already deployed
-   * @param marketAddress on chain deployed market address.
-   * @param erc20TokenAddress on chain deployed erc20 token address.
-   * @param args additional args to initialize market
-   * * Returns the added market instance.
-   * @return {Market}
+   * @param {object} account Object get from tropykus.getAccount()
+   * @param {('RDOC'|'CErc20Immutable'|'CRBTC')} artifact to use for the contract instantiation
+   * @param {string | null} marketAddress on chain deployed market address.
+   * @param {string | null} erc20TokenAddress on chain deployed erc20 token address.
+   * @param {object} args additional args to initialize market
+   * @return {Market<Object>}
    */
   async addMarket(
     account,
     artifact,
-    deployed = true,
     marketAddress = null,
     erc20TokenAddress = null,
     args = {
@@ -85,13 +101,13 @@ export default class Tropykus {
   ) {
     let market;
     let address = marketAddress;
-    if (!deployed) {
+    if (!marketAddress) {
       let marketDeployed;
       let marketFactory;
       switch (artifact) {
         case 'CRBTC':
           marketFactory = new ethers
-            .ContractFactory(CRBTCArtifact.abi, CRBTCArtifact.bytecode, account);
+            .ContractFactory(CRBTCArtifact.abi, CRBTCArtifact.bytecode, account.signer);
           marketDeployed = await marketFactory.deploy(
             args.comptrollerAddress,
             args.interestRateModelAddress,
@@ -104,11 +120,11 @@ export default class Tropykus {
           break;
         case 'CRDOC':
           marketFactory = new ethers
-            .ContractFactory(CRDOCArtifact.abi, CRDOCArtifact.bytecode, account);
+            .ContractFactory(CRDOCArtifact.abi, CRDOCArtifact.bytecode, account.signer);
           break;
         default:
           marketFactory = new ethers
-            .ContractFactory(CErc20Artifact.abi, CErc20Artifact.bytecode, account);
+            .ContractFactory(CErc20Artifact.abi, CErc20Artifact.bytecode, account.signer);
           break;
       }
       if (artifact !== 'CRBTC') {
@@ -143,9 +159,9 @@ export default class Tropykus {
   /**
    * By providing the on chain deployed comptroller address,
    * a comptroller instance is made available.
-   * @param account
-   * @param {string} comptrollerAddress on chain deployed comptroller address.
-   * @param unitrollerAddress
+   * @param {object} account Object get from tropykus.getAccount()
+   * @param {string} comptrollerAddress comptroller address on chain deployed comptroller address.
+   * @param {string} [unitrollerAddress=''] unitrollerAddress
    * address of a deployed contract, if false deploys a new Comptroller.
    */
   async setComptroller(
@@ -159,7 +175,7 @@ export default class Tropykus {
         .ContractFactory(
           ComptrollerArtifact.abi,
           ComptrollerArtifact.bytecode,
-          account,
+          account.signer,
         );
       const comptrollerDeployed = await comptrollerFactory.deploy();
       await unitroller.setComptrollerPendingImplementation(account, comptrollerDeployed.address);

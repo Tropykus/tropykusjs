@@ -8,19 +8,31 @@ export default class PriceOracle {
     this.instance = new ethers.Contract(
       contractAddress,
       PriceOracleProxyArtifact.abi,
-      this.tropykus.ethersProvider,
+      this.tropykus.provider,
     );
   }
 
+  /**
+   * Sets an adapter to the given market address
+   * @param {object} account Object get from tropykus.getAccount()
+   * @param {string} marketAddress address of the market
+   * @param {string} adapterMarketAddress address of the market adapter
+   * @returns {Promise<unknown>}
+   */
   setAdapterToToken(account, marketAddress, adapterMarketAddress) {
     return new Promise((resolve, reject) => {
-      this.instance.connect(account)
+      this.instance.connect(account.signer)
         .setAdapterToToken(marketAddress, adapterMarketAddress)
         .then(resolve)
         .catch(reject);
     });
   }
 
+  /**
+   * Returns the market's price
+   * @param {string} marketAddress address of the market
+   * @returns {Promise<unknown>}
+   */
   getUnderlyingPrice(marketAddress) {
     return new Promise((resolve, reject) => {
       this.instance.callStatic
