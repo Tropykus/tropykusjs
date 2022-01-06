@@ -1,4 +1,5 @@
-import { ethers } from 'ethers';
+/* eslint-disable no-underscore-dangle */
+import { BigNumber, ethers, FixedNumber } from 'ethers';
 import ComptrollerArtifact from '../artifacts/ComptrollerG6.json';
 
 export default class Comptroller {
@@ -51,7 +52,6 @@ export default class Comptroller {
    */
   supportMarket(account, marketAddress) {
     return new Promise((resolve, reject) => {
-      // eslint-disable-next-line no-underscore-dangle
       this.instance.connect(account.signer)
         ._supportMarket(marketAddress)
         .then(resolve)

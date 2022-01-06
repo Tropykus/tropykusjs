@@ -1,24 +1,23 @@
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber, ethers, FixedNumber } from 'ethers';
 import interestRateModelArtifact from '../artifacts/InterestRateModel.json';
 
 export default class Market {
   /**
    * Construct a new Market
-   * @param tropykus instance of the tropykus protocol to be linked with
-   * @param abi from which instantiate the market
-   * @param marketAddress address of the deployed Market instance to point to
+   * @param {object} tropykus instance of the tropykus protocol to be linked with
+   * @param {object} abi from which instantiate the market
+   * @param {string} marketAddress address of the deployed Market instance to point to
    */
   constructor(tropykus, abi, marketAddress) {
     this.tropykus = tropykus;
     this.address = marketAddress;
-    this.internalUnderlyingSymbol = '';
     this.instance = new ethers.Contract(marketAddress, abi, this.tropykus.provider);
     this.wsInstance = new ethers.Contract(marketAddress, abi, this.tropykus.wsProvider);
   }
 
   /**
    * Market Balance
-   * @param account type account
+   * @param {object} account Object get from tropykus.getAccount()
    * @return {Promise<Number>} the balance deposited in the market
    */
   balanceOfUnderlying(account) {
@@ -33,7 +32,7 @@ export default class Market {
 
   /**
    * Tokens Balance
-   * @param account type account
+   * @param {object} account Object get from tropykus.getAccount()
    * @return the balance of tokens owned in the market
    */
   balanceOf(account) {
@@ -48,7 +47,7 @@ export default class Market {
 
   /**
    * Borrow Balance
-   * @param account type account
+   * @param {object} account Object get from tropykus.getAccount()
    * @return {Promise<Number>} the amount that has been borrowed in the market
    */
   borrowBalanceCurrent(account) {
@@ -63,8 +62,8 @@ export default class Market {
 
   /**
    * function that allows us to make a deposit in the market
-   * @param account type account
-   * @param amount type Number - value to be minted
+   * @param {object} account Object get from tropykus.getAccount()
+   * @param {number} amount value to be minted
    */
   mint(account, amount) {
     return new Promise((resolve, reject) => {
@@ -79,8 +78,8 @@ export default class Market {
 
   /**
    * function that allows us to make a borrow in the market
-   * @param account type account
-   * @param amount type Number - value to be borrowed
+   * @param {object} account Object get from tropykus.getAccount()
+   * @param {number} amount value to be borrowed
    */
   borrow(account, amount) {
     return new Promise((resolve, reject) => {
@@ -96,7 +95,7 @@ export default class Market {
 
   /**
    * function that allows us to redeem from the market
-   * @param {account} account object with signer info
+   * @param {object} account Object get from tropykus.getAccount()
    * @param {number} amount value to be redeemed
    * @param {boolean} maxValue if true ignores amount and redeems all
    * kTokens from the account, if the account has collateral compromised
@@ -124,9 +123,9 @@ export default class Market {
 
   /**
    * function that allows us to repay a borrow from the market
-   * @param account type account
-   * @param amount type Number - value to be repayed
-   * @param maxValue
+   * @param {object} account Object get from tropykus.getAccount()
+   * @param {number} amount value to be paid
+   * @param {boolean} maxValue true if it's the max value
    */
   repayBorrow(account, amount, maxValue = false) {
     return new Promise((resolve, reject) => {
@@ -152,6 +151,12 @@ export default class Market {
     });
   }
 
+  /**
+   * Sets a reserve factor for a market
+   * @param {object} account Object get from tropykus.getAccount()
+   * @param {number} reserveFactor percentage of reserve factor from 0 to 1
+   * @returns {Promise<Object>} transaction
+   */
   setReserveFactor(account, reserveFactor) {
     return new Promise((resolve, reject) => {
       // eslint-disable-next-line no-underscore-dangle
@@ -163,9 +168,9 @@ export default class Market {
   }
 
   /**
-   * Set's a new comptroller for this market
-   * @param account<Object> Object Signer Owner of this market
-   * @param comptrollerAddress<String> new comptroller address
+   * Sets a new comptroller for this market
+   * @param {object} account Object get from tropykus.getAccount()
+   * @param {string} comptrollerAddress new comptroller address
    * @returns {Promise<Object> | Promise<Error>} Object Transaction or error.
    */
   setComptroller(account, comptrollerAddress) {
@@ -204,7 +209,7 @@ export default class Market {
   }
 
   /**
-   * Returns the comptroller setted from this market
+   * Returns the comptroller set from this market
    * @returns {Promise<String>} Comptroller address
    */
   getComptroller() {
@@ -215,6 +220,11 @@ export default class Market {
     });
   }
 
+  /**
+   * Returns the exchange rate of the market for the given account
+   * @param {object} account Object get from tropykus.getAccount()
+   * @returns {Promise<Number>} exchange rate
+   */
   getExchangeRateCurrent(account) {
     return new Promise((resolve, reject) => {
       this.instance.connect(account.signer)
@@ -225,6 +235,10 @@ export default class Market {
     });
   }
 
+  /**
+   * Returns the borrow annual percentage rate for this market
+   * @returns {Promise<Number>} percentage of borrow annual rate
+   */
   getBorrowAnnualRate() {
     return new Promise((resolve, reject) => {
       this.instance.interestRateModel()
@@ -244,6 +258,10 @@ export default class Market {
     });
   }
 
+  /**
+   * Returns the supply annual percentage rate for this market
+   * @returns {Promise<Number>} supply rate
+   */
   getSupplyAnnualRate() {
     return new Promise((resolve, reject) => {
       this.instance.interestRateModel()
@@ -270,5 +288,109 @@ export default class Market {
    */
   subscribeOnEvent(event, action) {
     this.wsInstance.on(event, action);
+  }
+
+  /** Returns the balance of a given account on the underlying of this market
+   * @param {object} account Object get from tropykus.getAccount()
+   * @returns {Promise<Number>} balance of underlying in wallet
+   */
+  balanceOfUnderlyingInWallet(account) {
+    return new Promise((resolve, reject) => {
+      Promise.all([
+        this.tropykus.provider
+          .getBalance(account.address),
+        this.tropykus.priceOracle.instance.callStatic
+          .getUnderlyingPrice(this.address),
+      ])
+        .then(([balance, price]) => {
+          const toUSD = (balance.mul(price))
+            .div(BigNumber.from(1e18.toString()));
+          return {
+            underlying: Number(balance) / 1e18,
+            usd: Number(toUSD) / 1e18,
+          };
+        })
+        .then(resolve)
+        .catch(reject);
+    });
+  }
+
+  cash() {
+    return new Promise((resolve, reject) => {
+      Promise.all([
+        this.instance.callStatic.getCash(),
+        this.tropykus.priceOracle.instance.callStatic
+          .getUnderlyingPrice(this.address),
+      ])
+        .then(([cashMantissa, priceMantissa]) => {
+          const cashUSD = FixedNumber.from(cashMantissa.toString(), 'fixed80x18')
+            .divUnsafe(FixedNumber.from(priceMantissa.toString(), 'fixed80x18'));
+          return {
+            underlying: Number(cashMantissa / 1e18),
+            usd: Number(cashUSD),
+          };
+        })
+        .then(resolve)
+        .catch(reject);
+    });
+  }
+
+  getTotalBorrows() {
+    return new Promise((resolve, reject) => {
+      this.instance.callStatic.totalBorrows()
+        .then((tbm) => Number(tbm) / 1e18)
+        .then(resolve)
+        .catch(reject);
+    });
+  }
+
+  getEarnings(account) {
+    return new Promise(((resolve, reject) => {
+      Promise.all([
+        this.instance.callStatic
+          .getSupplierSnapshotStored(account.address),
+        this.instance.connect(account.signer).callStatic
+          .balanceOfUnderlying(account.address),
+        this.tropykus.priceOracle.instance.callStatic
+          .getUnderlyingPrice(this.address),
+      ])
+        .then(([snapshotM, balanceM, price]) => {
+          let earnings = balanceM.sub(snapshotM.underlyingAmount);
+          earnings = Number(earnings) / 1e18 <= 0 ? 0 : earnings;
+          const underlyingUSD = (price.mul(snapshotM.underlyingAmount))
+            .div(BigNumber.from(1e18.toString()));
+          const earningsUSD = (earnings.mul(price))
+            .div(BigNumber.from(1e18.toString()));
+          return {
+            underlying: Number(snapshotM.underlyingAmount) / 1e18,
+            underlyingUSD: Number(underlyingUSD) / 1e18,
+            earnings: Number(earnings) / 1e18,
+            earningsUSD: Number(earningsUSD) / 1e18,
+          };
+        })
+        .then(resolve)
+        .catch(reject);
+    }));
+  }
+
+  getSupplierSnapshot(accountAddress) {
+    return new Promise((resolve, reject) => this
+      .instance.callStatic
+      .getSupplierSnapshotStored(accountAddress)
+      .then(resolve)
+      .catch(reject));
+  }
+
+  isHurricane() {
+    return new Promise((resolve, reject) => {
+      this.instance.interestRateModel()
+        .then((modelAddress) => {
+          const model = new ethers.Contract(modelAddress,
+            interestRateModelArtifact.abi, this.tropykus.provider);
+          return model.isTropykusInterestRateModel();
+        })
+        .then(resolve)
+        .catch(reject);
+    });
   }
 }

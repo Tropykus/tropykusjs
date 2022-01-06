@@ -16,6 +16,12 @@ export default class CErc20 extends Market {
     );
   }
 
+  /**
+   * Deposits and amount in the name of a given account
+   * @param {object} account Object get from tropykus.getAccount()
+   * @param {number} amount amount to be deposit
+   * @returns {Promise<Object>} transaction
+   */
   mint(account, amount) {
     return new Promise((resolve, reject) => {
       this.erc20Instance.connect(account.signer)
@@ -27,10 +33,18 @@ export default class CErc20 extends Market {
     });
   }
 
+  /**
+   * Pays the debt from an account given
+   * @param {object} account Object get from tropykus.getAccount()
+   * @param {number} amount amount to be paid
+   * @param {boolean} maxValue if true pays all debt
+   * @returns {Promise<Object>} transaction
+   */
   async repayBorrow(account, amount, maxValue = false) {
     if (maxValue) {
       const borrowBalance = await this.instance
-        .connect(account.signer).callStatic
+        .connect(account.signer)
+        .callStatic
         .borrowBalanceCurrent(account.address);
       const delta = BigNumber.from(1e18.toString());
       await this.erc20Instance.connect(account.signer)
@@ -50,6 +64,13 @@ export default class CErc20 extends Market {
       );
   }
 
+  /**
+   * Sends an amount from the given account to the address given
+   * @param {object} accountFrom Object get from tropykus.getAccount()
+   * @param {string} addressTo address to transfer amount
+   * @param {number} amount amount to transfer
+   * @returns {Promise<Object>} transaction
+   */
   transferUnderlying(accountFrom, addressTo, amount) {
     return new Promise((resolve, reject) => {
       this.erc20Instance.connect(accountFrom.signer)
@@ -62,11 +83,26 @@ export default class CErc20 extends Market {
     });
   }
 
+  /** Returns the balance of a given account on the underlying of this market
+   * @param {object} account Object get from tropykus.getAccount()
+   * @returns {Promise<Number>} balance of underlying in wallet
+   */
   balanceOfUnderlyingInWallet(account) {
     return new Promise((resolve, reject) => {
-      this.erc20Instance.connect(account.signer)
-        .balanceOf(account.address)
-        .then((balance) => Number(balance) / 1e18)
+      Promise.all([
+        this.erc20Instance.connect(account.signer)
+          .balanceOf(account.address),
+        this.tropykus.priceOracle.instance.callStatic
+          .getUnderlyingPrice(this.address),
+      ])
+        .then(([balance, price]) => {
+          const toUSD = (balance.mul(price))
+            .div(BigNumber.from(1e18.toString()));
+          return {
+            underlying: Number(balance) / 1e18,
+            usd: Number(toUSD) / 1e18,
+          };
+        })
         .then(resolve)
         .catch(reject);
     });

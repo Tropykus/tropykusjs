@@ -51,8 +51,12 @@ export default class Tropykus {
    * @returns {Object} account
    */
   getAccountFromMnemonic(mnemonic, derivationPath) {
-    return Wallet
+    const account = Wallet
       .fromMnemonic(mnemonic, derivationPath).connect(this.provider);
+    return {
+      signer: account,
+      address: account.address,
+    };
   }
 
   /**
@@ -79,7 +83,7 @@ export default class Tropykus {
    * market information a Market instance
    * is added to the protocol and is made available.
    * @param {object} account Object get from tropykus.getAccount()
-   * @param {('RDOC'|'CErc20Immutable'|'CRBTC')} artifact to use for the contract instantiation
+   * @param {('CRDOC'|'CErc20Immutable'|'CRBTC')} artifact to use for the contract instantiation
    * @param {string | null} marketAddress on chain deployed market address.
    * @param {string | null} erc20TokenAddress on chain deployed erc20 token address.
    * @param {object} args additional args to initialize market
