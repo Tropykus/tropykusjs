@@ -6,7 +6,8 @@ import CToken from './Markets/CToken';
 import CRDOC from './Markets/CRDOC';
 import CRBTC from './Markets/CRBTC';
 
-const factor = FixedNumber.from(ethers.utils.parseEther('1'), 'fixed80x18');
+const format = 'fixed80x18';
+const factor = FixedNumber.fromString(1e18.toString(), format);
 
 export default class Comptroller {
   /**
@@ -269,11 +270,11 @@ export default class Comptroller {
       }
       Promise.all(promises)
         .then(([liq, price]) => {
-          const fixedNumber = FixedNumber.from(liq[1].toString(), 'fixed80x18');
+          const fixedNumber = FixedNumber.from(liq[1].toString(), format);
           const usd = fixedNumber.divUnsafe(factor);
           const underlying = price > 0 ? (fixedNumber
-            .divUnsafe(FixedNumber.from(price.toString(), 'fixed80x18')))
-            : FixedNumber.from('0', 'fixed80x18');
+            .divUnsafe(FixedNumber.from(price.toString(), format)))
+            : FixedNumber.from('0', format);
           return {
             usd: Number(usd._value),
             underlying: Number(underlying._value),
@@ -299,16 +300,14 @@ export default class Comptroller {
           .getUnderlyingPrice(marketAddress),
       ])
         .then(([res, price]) => {
-          const liquidityFixedNumber = FixedNumber.from(res[1].toString(), 'fixed80x18');
+          const liquidityFixedNumber = FixedNumber.from(res[1].toString(), format);
           const liquidityUsd = liquidityFixedNumber.divUnsafe(factor);
-          const liquidityUnderlying = price > 0 ? (liquidityFixedNumber
-            .divUnsafe(FixedNumber.from(price.toString(), 'fixed80x18')))
-            : FixedNumber.from('0', 'fixed80x18');
-          const shortfallFixedNumber = FixedNumber.from(res[2].toString(), 'fixed80x18');
+          const liquidityUnderlying = (liquidityFixedNumber
+            .divUnsafe(FixedNumber.from(price.toString(), format)));
+          const shortfallFixedNumber = FixedNumber.from(res[2].toString(), format);
           const shortfallUsd = shortfallFixedNumber.divUnsafe(factor);
-          const shortfallUnderlying = price > 0 ? (shortfallFixedNumber
-            .divUnsafe(FixedNumber.from(price.toString(), 'fixed80x18')))
-            : FixedNumber.from('0', 'fixed80x18');
+          const shortfallUnderlying = (shortfallFixedNumber
+            .divUnsafe(FixedNumber.from(price.toString(), format)));
           return {
             liquidity: {
               usd: Number(liquidityUsd._value),
@@ -329,7 +328,7 @@ export default class Comptroller {
 
   getTotalBorrowsInAllMarkets(account, markets, marketAddress = '') {
     return new Promise((resolve, reject) => {
-      let fixedNumber = FixedNumber.fromString('0', 'fixed80x18');
+      let fixedNumber = FixedNumber.fromString('0', format);
       let priceUnderlying = BigNumber.from('0');
       let counter = 0;
       markets.forEach(async (market) => Promise.all([
@@ -338,7 +337,7 @@ export default class Comptroller {
           .getUnderlyingPrice(market.address),
       ])
         .then(([borrows, priceMantissa]) => {
-          const price = FixedNumber.from(priceMantissa.toString(), 'fixed80x18')
+          const price = FixedNumber.from(priceMantissa.toString(), format)
             .divUnsafe(factor);
           if (market.address === marketAddress.toLowerCase()) priceUnderlying = price;
           const borrowsAsUSD = (borrows.fixedNumber).mulUnsafe(price)
@@ -352,6 +351,46 @@ export default class Comptroller {
               underlying: Number(underlying._value),
               usd: Number(usd._value),
               fixedNumber,
+            });
+          }
+        })
+        .catch(reject));
+    });
+  }
+
+  getTotalSupplyInAllMarkets(account, markets, marketAddress) {
+    return new Promise((resolve, reject) => {
+      let fixedNumber = FixedNumber.fromString('0', format);
+      let withCollateral = fixedNumber;
+      let priceUnderlying = BigNumber.from('0');
+      let counter = 0;
+      markets.forEach(async (market) => Promise.all([
+        market.balanceOfUnderlying(account),
+        this.tropykus.priceOracle.instance.callStatic
+          .getUnderlyingPrice(market.address),
+        this.instance.callStatic.markets(market.address),
+      ])
+        .then(([supply, priceMantissa, marketData]) => {
+          const collateralFactor = FixedNumber
+            .from(marketData.collateralFactorMantissa.toString(), format)
+            .divUnsafe(factor);
+          const price = FixedNumber.from(priceMantissa.toString(), format)
+            .divUnsafe(factor);
+          if (market.address === marketAddress.toLowerCase()) priceUnderlying = price;
+          const supplyAsUSD = (supply.fixedNumber).mulUnsafe(price)
+            .divUnsafe(factor);
+          const withCollateralASUSD = supplyAsUSD.mulUnsafe(collateralFactor);
+          withCollateral = withCollateral.addUnsafe(withCollateralASUSD);
+          fixedNumber = fixedNumber.addUnsafe(supplyAsUSD);
+          counter += 1;
+          if (counter === markets.length) {
+            const usd = fixedNumber;
+            const underlying = marketAddress ? fixedNumber.divUnsafe(priceUnderlying) : 0;
+            resolve({
+              underlying: Number(underlying._value),
+              usd: Number(usd._value),
+              fixedNumber,
+              withCollateral,
             });
           }
         })

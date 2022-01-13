@@ -3,7 +3,8 @@ import { BigNumber, ethers, FixedNumber } from 'ethers';
 import interestRateModelArtifact from '../artifacts/InterestRateModel.json';
 import Comptroller from './Comptroller';
 
-const factor = FixedNumber.fromString(1e18.toString(), 'fixed80x18');
+const format = 'fixed80x18';
+const factor = FixedNumber.fromString(1e18.toString(), format);
 
 export default class Market {
   /**
@@ -33,9 +34,9 @@ export default class Market {
           .getUnderlyingPrice(this.address),
       ])
         .then(([balance, priceMantissa]) => {
-          const price = FixedNumber.from(priceMantissa.toString(), 'fixed80x18')
+          const price = FixedNumber.from(priceMantissa.toString(), format)
             .divUnsafe(factor);
-          const fixedNumber = FixedNumber.from(balance.toString(), 'fixed80x18');
+          const fixedNumber = FixedNumber.from(balance.toString(), format);
           const underlying = fixedNumber.divUnsafe(factor);
           const usd = fixedNumber.mulUnsafe(price).divUnsafe(factor);
           return {
@@ -78,10 +79,35 @@ export default class Market {
           .getUnderlyingPrice(this.address),
       ])
         .then(([balanceMantissa, priceMantissa]) => {
-          const fixedNumber = FixedNumber.from(balanceMantissa.toString(), 'fixed80x18');
+          const fixedNumber = FixedNumber.from(balanceMantissa.toString(), format);
           const underlying = fixedNumber.divUnsafe(factor);
           const usd = fixedNumber
-            .mulUnsafe(FixedNumber.from(priceMantissa.toString(), 'fixed80x18'))
+            .mulUnsafe(FixedNumber.from(priceMantissa.toString(), format))
+            .divUnsafe(factor).divUnsafe(factor);
+          return {
+            underlying: Number(underlying._value),
+            usd: Number(usd._value),
+            fixedNumber,
+          };
+        })
+        .then(resolve)
+        .catch(reject);
+    });
+  }
+
+  borrowBalanceStored(account) {
+    return new Promise((resolve, reject) => {
+      Promise.all([
+        this.instance.connect(account.signer)
+          .callStatic.borrowBalanceStored(account.address),
+        this.tropykus.priceOracle.instance.callStatic
+          .getUnderlyingPrice(this.address),
+      ])
+        .then(([balanceMantissa, priceMantissa]) => {
+          const fixedNumber = FixedNumber.from(balanceMantissa.toString(), format);
+          const underlying = fixedNumber.divUnsafe(factor);
+          const usd = fixedNumber
+            .mulUnsafe(FixedNumber.from(priceMantissa.toString(), format))
             .divUnsafe(factor).divUnsafe(factor);
           return {
             underlying: Number(underlying._value),
@@ -358,8 +384,8 @@ export default class Market {
           .getUnderlyingPrice(this.address),
       ])
         .then(([cashMantissa, priceMantissa]) => {
-          const cashUSD = FixedNumber.from(cashMantissa.toString(), 'fixed80x18')
-            .divUnsafe(FixedNumber.from(priceMantissa.toString(), 'fixed80x18'));
+          const cashUSD = FixedNumber.from(cashMantissa.toString(), format)
+            .divUnsafe(FixedNumber.from(priceMantissa.toString(), format));
           return {
             underlying: Number(cashMantissa / 1e18),
             usd: Number(cashUSD),
@@ -378,10 +404,10 @@ export default class Market {
           .getUnderlyingPrice(this.address),
       ])
         .then(([totalBorrowsMantissa, priceMantissa]) => {
-          const fixedNumber = FixedNumber.from(totalBorrowsMantissa.toString(), 'fixed80x18');
+          const fixedNumber = FixedNumber.from(totalBorrowsMantissa.toString(), format);
           const underlying = fixedNumber.divUnsafe(factor);
           const usd = fixedNumber
-            .mulUnsafe(FixedNumber.from(priceMantissa.toString(), 'fixed80x18'))
+            .mulUnsafe(FixedNumber.from(priceMantissa.toString(), format))
             .divUnsafe(factor).divUnsafe(factor);
           return {
             underlying: Number(underlying._value),
@@ -448,8 +474,59 @@ export default class Market {
     return new Promise((resolve, reject) => {
       this.getComptroller()
         .then((comptrollerAddress) => new Comptroller(comptrollerAddress, this.tropykus))
-        .then((comptroller) => comptroller
-          .getTotalBorrowsInAllMarkets(account, markets, this.address))
+        .then((comptroller) => Promise.all([
+          comptroller.getTotalBorrowsInAllMarkets(account, markets, this.address),
+          comptroller.getTotalSupplyInAllMarkets(account, markets, this.address),
+          this.tropykus.priceOracle.instance.callStatic.getUnderlyingPrice(this.address),
+          comptroller.instance.callStatic.markets(this.address),
+          this.instance.connect(account.signer)
+            .callStatic.balanceOfUnderlying(account.address),
+        ]))
+        .then(([totalBorrows, totalSupply, priceMantissa, marketData, supplyBalanceMantissa]) => {
+          const collateralFactor = FixedNumber
+            .from(marketData.collateralFactorMantissa.toString(), format)
+            .divUnsafe(factor);
+          const price = FixedNumber.from(priceMantissa.toString(), format)
+            .divUnsafe(factor);
+          const marketDepositUSD = FixedNumber
+            .from(supplyBalanceMantissa.toString(), format).mulUnsafe(price)
+            .divUnsafe(factor);
+          const marketLiquidity = marketDepositUSD.mulUnsafe(collateralFactor);
+          const liquidity = totalSupply.withCollateral.subUnsafe(marketLiquidity);
+          const totalDebtPlusDelta = totalBorrows.fixedNumber
+            .addUnsafe(FixedNumber.fromString('5', format));
+          let fixedNumber = marketDepositUSD.subUnsafe((totalDebtPlusDelta.subUnsafe(liquidity))
+            .divUnsafe(collateralFactor));
+          const diff = fixedNumber.subUnsafe(marketDepositUSD);
+          if (Number(diff._value) >= 0) fixedNumber = marketDepositUSD;
+          const underlying = fixedNumber.divUnsafe(price);
+          return {
+            underlying: Number(underlying._value),
+            usd: Number(fixedNumber._value),
+            fixedNumber,
+          };
+        })
+        .then(resolve)
+        .catch(reject);
+    });
+  }
+
+  getTokensFromUnderlying(account, amount) {
+    return new Promise((resolve, reject) => {
+      this.instance.connect(account.signer)
+        .callStatic.exchangeRateCurrent()
+        .then((exchangeRateMantissa) => {
+          const amountAsFixedNumber = FixedNumber
+            .from(ethers.utils.parseEther(amount.toString()), format)
+            .divUnsafe(factor);
+          const exchangeRate = FixedNumber.from(exchangeRateMantissa.toString(), format)
+            .divUnsafe(factor);
+          const fixedNumber = amountAsFixedNumber.divUnsafe(exchangeRate);
+          return {
+            value: Number(fixedNumber._value),
+            fixedNumber,
+          };
+        })
         .then(resolve)
         .catch(reject);
     });

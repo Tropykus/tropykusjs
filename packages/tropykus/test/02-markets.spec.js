@@ -585,7 +585,42 @@ describe('Market', () => {
       expect(usd).to.be.closeTo(0.025 * 54556.9 + 1000, 1e-3);
     });
 
-    it.skip('should return the max value that an account can redeem from a market', async () => {
+    it('should get the supply balance in all the markets', async () => {
+      await crbtc.borrow(dep, 0.7);
+      let data = await crbtc.getMarketTotalBorrows();
+      expect(data.underlying).to.equal(0.7);
+      expect(data.usd).to.equal(0.7 * 54556.9);
+      await cdoc.borrow(dep, 7000);
+      data = await cdoc.getMarketTotalBorrows();
+      expect(data.underlying).to.equal(7000);
+      expect(data.usd).to.equal(7000);
+
+      const markets = await newComptroller
+        .getAllMarketsInstances(csat.address, crbtc.address, crdoc.address);
+
+      await csat.mint(alice, 0.025);
+      let balance = await csat.balanceOfUnderlying(alice);
+      expect(balance.underlying).to.equal(0.025);
+      expect(balance.usd).to.be.closeTo(0.025 * 54556.9, 1e-12);
+
+      await crbtc.mint(alice, 0.05);
+      balance = await crbtc.balanceOfUnderlying(alice);
+      expect(balance.underlying).to.be.closeTo(0.05, 1e-12);
+      expect(balance.usd).to.be.closeTo(0.05 * 54556.9, 1e-12);
+
+      await crdoc.transferUnderlying(dep, alice.address, 3000);
+      await crdoc.mint(alice, 3000);
+      balance = await crdoc.balanceOfUnderlying(alice);
+      expect(balance.underlying).to.equal(3000);
+      expect(balance.usd).to.equal(3000);
+
+      const { usd, underlying } = await newComptroller
+        .getTotalSupplyInAllMarkets(alice, markets, crbtc.address);
+      expect(usd).to.be.closeTo(0.025 * 54556.9 + 0.05 * 54556.9 + 3000, 1e-3);
+      expect(underlying).to.be.closeTo((0.025 * 54556.9 + 0.05 * 54556.9 + 3000) / 54556.9, 1e-7);
+    });
+
+    it('should return the max value that an account can redeem from a market', async () => {
       await crbtc.borrow(dep, 0.7);
       let data = await crbtc.getMarketTotalBorrows();
       expect(data.underlying).to.equal(0.7);
@@ -600,32 +635,33 @@ describe('Market', () => {
       expect(balance.underlying).equals(0.025);
       expect(balance.usd).to.be.closeTo(0.025 * 54556.9, 1e-12);
 
-      await cdoc.borrow(alice, 5);
-      data = await cdoc.borrowBalanceCurrent(alice);
-      expect(data.underlying).equals(5);
-      expect(data.usd).equals(5);
+      await cdoc.transferUnderlying(dep, alice.address, 1000);
+      await cdoc.mint(alice, 1000);
 
-      data = await newComptroller
-        .getHypotheticalAccountLiquidity(alice, csat.address, 0, 0);
-      const price = await tropykus.priceOracle.getUnderlyingPrice(csat.address);
-      const collateralFactor = await newComptroller.getCollateralFactor(csat.address);
-      expect(data.liquidity.usd).to.equal((0.025 * price * collateralFactor) - 5);
-      expect(data.shortfall.usd).to.equal(0);
+      const cdocDebt = 50;
+      await cdoc.borrow(alice, cdocDebt);
+      data = await cdoc.borrowBalanceCurrent(alice);
+      expect(data.underlying).equals(cdocDebt);
+      expect(data.usd).equals(cdocDebt);
 
       const markets = await newComptroller
         .getAllMarketsInstances(csat.address, crbtc.address, crdoc.address);
 
-      const { tokens, underlying, usd } = await csat.maxAllowedToWithdraw(alice, markets);
-      console.log('tokens', tokens);
-      console.log('underlying', underlying);
-      console.log('usd', usd);
+      const { underlying } = await csat.maxAllowedToWithdraw(alice, markets);
+      // expect(underlying).to.be.closeTo(0.023, 1e-3);
 
-      // await csat.redeem(alice, underlying);
+      const tokens = await csat.getTokensFromUnderlying(alice, underlying);
+      // expect(tokens.value).to.be.below(0.025);
 
       data = await newComptroller
-        .getHypotheticalAccountLiquidity(alice, csat.address, tokens, 0);
-      console.log('liquidity', data.liquidity.usd);
-      console.log('shortfall', data.shortfall.usd);
+        .getHypotheticalAccountLiquidity(alice, csat.address, tokens.value, 0);
+      // console.log('liquidity', data.liquidity.usd);
+      // console.log('shortfall', data.shortfall.usd);
+      expect(data.shortfall.usd).equals(0);
+
+      await csat.redeem(alice, underlying);
+      const liquidity = await newComptroller.getAccountLiquidity(alice, csat.address);
+      expect(liquidity.usd).to.gt(0);
     });
 
     it('should repay a portion of debt on cdoc market', async () => {
