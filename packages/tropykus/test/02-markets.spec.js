@@ -385,20 +385,20 @@ describe('Market', () => {
     });
 
     it('should return market\'s cash for cdoc', async () => {
-      let cash = await crdoc.cash();
+      let cash = await crdoc.getCash();
       expect(cash.underlying).to.equal(10000);
       await crdoc.transferUnderlying(dep, alice.address, 100);
       await crdoc.mint(alice, 100);
-      cash = await crdoc.cash();
+      cash = await crdoc.getCash();
       expect(cash.underlying).to.be.closeTo(10100, 18);
       expect(cash.usd).to.equal(10100);
     });
 
     it('should return market\'s cash for crbtc', async () => {
-      let cash = await crbtc.cash();
+      let cash = await crbtc.getCash();
       expect(cash.underlying).to.equal(1);
       await crbtc.mint(alice, 0.05);
-      cash = await crbtc.cash();
+      cash = await crbtc.getCash();
       expect(cash.underlying).to.be.closeTo(1.05, 18);
       expect(cash.usd).to.be.closeTo(1.05 / 54556.9, 1e-18);
     });

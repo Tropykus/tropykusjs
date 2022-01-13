@@ -95,31 +95,6 @@ export default class Market {
     });
   }
 
-  borrowBalanceStored(account) {
-    return new Promise((resolve, reject) => {
-      Promise.all([
-        this.instance.connect(account.signer)
-          .callStatic.borrowBalanceStored(account.address),
-        this.tropykus.priceOracle.instance.callStatic
-          .getUnderlyingPrice(this.address),
-      ])
-        .then(([balanceMantissa, priceMantissa]) => {
-          const fixedNumber = FixedNumber.from(balanceMantissa.toString(), format);
-          const underlying = fixedNumber.divUnsafe(factor);
-          const usd = fixedNumber
-            .mulUnsafe(FixedNumber.from(priceMantissa.toString(), format))
-            .divUnsafe(factor).divUnsafe(factor);
-          return {
-            underlying: Number(underlying._value),
-            usd: Number(usd._value),
-            fixedNumber,
-          };
-        })
-        .then(resolve)
-        .catch(reject);
-    });
-  }
-
   /**
    * function that allows us to make a deposit in the market
    * @param {object} account Object get from tropykus.getAccount()
@@ -353,7 +328,8 @@ export default class Market {
 
   /** Returns the balance of a given account on the underlying of this market
    * @param {object} account Object get from tropykus.getAccount()
-   * @returns {Promise<Number>} balance of underlying in wallet
+   * @returns {Promise<Number>} balance of underlying in wallet in usd,
+   * underlying and fixedNumber
    */
   balanceOfUnderlyingInWallet(account) {
     return new Promise((resolve, reject) => {
@@ -363,12 +339,15 @@ export default class Market {
         this.tropykus.priceOracle.instance.callStatic
           .getUnderlyingPrice(this.address),
       ])
-        .then(([balance, price]) => {
-          const toUSD = (balance.mul(price))
-            .div(BigNumber.from(1e18.toString()));
+        .then(([balance, priceMantissa]) => {
+          const fixedNumber = FixedNumber.from(balance, format).divUnsafe(factor);
+          const price = FixedNumber.from(priceMantissa.toString(), format)
+            .divUnsafe(factor);
+          const usd = fixedNumber.mulUnsafe(price);
           return {
-            underlying: Number(balance) / 1e18,
-            usd: Number(toUSD) / 1e18,
+            underlying: Number(fixedNumber._value),
+            usd: Number(usd._value),
+            fixedNumber,
           };
         })
         .then(resolve)
@@ -376,7 +355,11 @@ export default class Market {
     });
   }
 
-  cash() {
+  /**
+   * Returns market cash
+   * @returns {Promise<Object>} cash in usd, underlying and fixedNumber
+   */
+  getCash() {
     return new Promise((resolve, reject) => {
       Promise.all([
         this.instance.callStatic.getCash(),
@@ -384,11 +367,15 @@ export default class Market {
           .getUnderlyingPrice(this.address),
       ])
         .then(([cashMantissa, priceMantissa]) => {
-          const cashUSD = FixedNumber.from(cashMantissa.toString(), format)
-            .divUnsafe(FixedNumber.from(priceMantissa.toString(), format));
+          const fixedNumber = FixedNumber.from(cashMantissa.toString(), format)
+            .divUnsafe(factor);
+          const price = FixedNumber.from(priceMantissa.toString(), format)
+            .divUnsafe(factor);
+          const usd = fixedNumber.divUnsafe(price);
           return {
-            underlying: Number(cashMantissa / 1e18),
-            usd: Number(cashUSD),
+            underlying: Number(fixedNumber._value),
+            usd: Number(usd._value),
+            fixedNumber,
           };
         })
         .then(resolve)
@@ -396,6 +383,10 @@ export default class Market {
     });
   }
 
+  /**
+   * Returns market's total borrows
+   * @returns {Promise<Object>} total borrows as underlying, usd and fixedNumber
+   */
   getMarketTotalBorrows() {
     return new Promise((resolve, reject) => {
       Promise.all([
@@ -470,6 +461,7 @@ export default class Market {
     });
   }
 
+  // TODO cash verification
   maxAllowedToWithdraw(account, markets) {
     return new Promise((resolve, reject) => {
       this.getComptroller()

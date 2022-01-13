@@ -77,7 +77,7 @@ export default class Comptroller {
    * sets the given markets as collateral
    * @param {object} account Object get from tropykus.getAccount()
    * @param {string} marketAddresses array of market addresses in which to add the account
-   * @return {Promise}
+   * @return {Promise<Object>} transaction object
    */
   enterMarkets(account, marketAddresses) {
     return new Promise((resolve, reject) => {
@@ -91,7 +91,7 @@ export default class Comptroller {
    * Add a market to be supported by comptroller
    * @param {object} account Object get from tropykus.getAccount()
    * @param {string} marketAddress address of the market to support by a comptroller
-   * @returns {Promise<unknown>}
+   * @returns {Promise<Object>} transaction object
    */
   supportMarket(account, marketAddress) {
     return new Promise((resolve, reject) => {
@@ -189,7 +189,7 @@ export default class Comptroller {
   /**
    * Gets the markets where the account has collateral
    * @param accountAddress<String> Address of the account to consult its markets as collateral
-   * @return {Promise} with the array of markets the account has entered as collateral
+   * @return {Promise<Array>} with the array of markets the account has entered as collateral
    */
   getAssetsIn(accountAddress) {
     return new Promise((resolve, reject) => {
