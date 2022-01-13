@@ -1,5 +1,9 @@
+/* eslint-disable no-underscore-dangle */
 import { BigNumber, ethers, FixedNumber } from 'ethers';
 import interestRateModelArtifact from '../artifacts/InterestRateModel.json';
+import Comptroller from './Comptroller';
+
+const factor = FixedNumber.fromString(1e18.toString(), 'fixed80x18');
 
 export default class Market {
   /**
@@ -10,7 +14,7 @@ export default class Market {
    */
   constructor(tropykus, abi, marketAddress) {
     this.tropykus = tropykus;
-    this.address = marketAddress;
+    this.address = marketAddress.toLowerCase();
     this.instance = new ethers.Contract(marketAddress, abi, this.tropykus.provider);
     this.wsInstance = new ethers.Contract(marketAddress, abi, this.tropykus.wsProvider);
   }
@@ -22,9 +26,24 @@ export default class Market {
    */
   balanceOfUnderlying(account) {
     return new Promise((resolve, reject) => {
-      this.instance.connect(account.signer)
-        .callStatic.balanceOfUnderlying(account.address)
-        .then((balance) => Number(balance) / 1e18)
+      Promise.all([
+        this.instance.connect(account.signer)
+          .callStatic.balanceOfUnderlying(account.address),
+        this.tropykus.priceOracle.instance.callStatic
+          .getUnderlyingPrice(this.address),
+      ])
+        .then(([balance, priceMantissa]) => {
+          const price = FixedNumber.from(priceMantissa.toString(), 'fixed80x18')
+            .divUnsafe(factor);
+          const fixedNumber = FixedNumber.from(balance.toString(), 'fixed80x18');
+          const underlying = fixedNumber.divUnsafe(factor);
+          const usd = fixedNumber.mulUnsafe(price).divUnsafe(factor);
+          return {
+            usd: Number(usd._value),
+            underlying: Number(underlying._value),
+            fixedNumber,
+          };
+        })
         .then(resolve)
         .catch(reject);
     });
@@ -52,9 +71,24 @@ export default class Market {
    */
   borrowBalanceCurrent(account) {
     return new Promise((resolve, reject) => {
-      this.instance.connect(account.signer)
-        .callStatic.borrowBalanceCurrent(account.address)
-        .then((balance) => Number(balance) / 1e18)
+      Promise.all([
+        this.instance.connect(account.signer)
+          .callStatic.borrowBalanceCurrent(account.address),
+        this.tropykus.priceOracle.instance.callStatic
+          .getUnderlyingPrice(this.address),
+      ])
+        .then(([balanceMantissa, priceMantissa]) => {
+          const fixedNumber = FixedNumber.from(balanceMantissa.toString(), 'fixed80x18');
+          const underlying = fixedNumber.divUnsafe(factor);
+          const usd = fixedNumber
+            .mulUnsafe(FixedNumber.from(priceMantissa.toString(), 'fixed80x18'))
+            .divUnsafe(factor).divUnsafe(factor);
+          return {
+            underlying: Number(underlying._value),
+            usd: Number(usd._value),
+            fixedNumber,
+          };
+        })
         .then(resolve)
         .catch(reject);
     });
@@ -215,6 +249,7 @@ export default class Market {
   getComptroller() {
     return new Promise((resolve, reject) => {
       this.instance.comptroller()
+        .then((address) => address.toLowerCase())
         .then(resolve)
         .catch(reject);
     });
@@ -252,7 +287,7 @@ export default class Market {
         })
         .then(([blocksPerYear, borrowRatePerBlock]) => borrowRatePerBlock
           .mul(blocksPerYear))
-        .then((sAPY) => Number(sAPY) / 1e18)
+        .then((bAPY) => Number(bAPY) / 1e18)
         .then(resolve)
         .catch(reject);
     });
@@ -335,10 +370,25 @@ export default class Market {
     });
   }
 
-  getTotalBorrows() {
+  getMarketTotalBorrows() {
     return new Promise((resolve, reject) => {
-      this.instance.callStatic.totalBorrows()
-        .then((tbm) => Number(tbm) / 1e18)
+      Promise.all([
+        this.instance.callStatic.totalBorrows(),
+        this.tropykus.priceOracle.instance.callStatic
+          .getUnderlyingPrice(this.address),
+      ])
+        .then(([totalBorrowsMantissa, priceMantissa]) => {
+          const fixedNumber = FixedNumber.from(totalBorrowsMantissa.toString(), 'fixed80x18');
+          const underlying = fixedNumber.divUnsafe(factor);
+          const usd = fixedNumber
+            .mulUnsafe(FixedNumber.from(priceMantissa.toString(), 'fixed80x18'))
+            .divUnsafe(factor).divUnsafe(factor);
+          return {
+            underlying: Number(underlying._value),
+            usd: Number(usd._value),
+            fixedNumber,
+          };
+        })
         .then(resolve)
         .catch(reject);
     });
@@ -389,6 +439,17 @@ export default class Market {
             interestRateModelArtifact.abi, this.tropykus.provider);
           return model.isTropykusInterestRateModel();
         })
+        .then(resolve)
+        .catch(reject);
+    });
+  }
+
+  maxAllowedToWithdraw(account, markets) {
+    return new Promise((resolve, reject) => {
+      this.getComptroller()
+        .then((comptrollerAddress) => new Comptroller(comptrollerAddress, this.tropykus))
+        .then((comptroller) => comptroller
+          .getTotalBorrowsInAllMarkets(account, markets, this.address))
         .then(resolve)
         .catch(reject);
     });

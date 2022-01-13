@@ -4,7 +4,7 @@ import PriceOracleProxyArtifact from '../artifacts/PriceOracleProxy.json';
 export default class PriceOracle {
   constructor(contractAddress, tropykus) {
     this.tropykus = tropykus;
-    this.address = contractAddress;
+    this.address = contractAddress.toLowerCase();
     this.instance = new ethers.Contract(
       contractAddress,
       PriceOracleProxyArtifact.abi,

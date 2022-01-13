@@ -4,7 +4,7 @@ import UnitrollerArtifact from '../artifacts/Unitroller.json';
 export default class Unitroller {
   constructor(contractAddress, tropykus) {
     this.tropykus = tropykus;
-    this.address = contractAddress;
+    this.address = contractAddress.toLowerCase();
     this.instance = new ethers.Contract(
       contractAddress,
       UnitrollerArtifact.abi,
@@ -36,6 +36,7 @@ export default class Unitroller {
     return new Promise((resolve, reject) => {
       this.instance.callStatic
         .pendingComptrollerImplementation()
+        .then((address) => address.toLowerCase())
         .then(resolve)
         .catch(reject);
     });
@@ -49,6 +50,7 @@ export default class Unitroller {
     return new Promise((resolve, reject) => {
       this.instance.callStatic
         .comptrollerImplementation()
+        .then((address) => address.toLowerCase())
         .then(resolve)
         .catch(reject);
     });

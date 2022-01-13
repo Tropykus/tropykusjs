@@ -4,6 +4,7 @@ import chaiAsPromised from 'chai-as-promised';
 import Tropykus from "../src";
 import Comptroller from "../src/Comptroller";
 import Unitroller from "../src/Unitroller";
+import Market from "../src/Market";
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -11,6 +12,8 @@ const { expect } = chai;
 const comptrollerAddress = '0xB173b5EE67b9F38263413Bc29440f89cC5BC3C39';
 const priceOracleAddress = '0x4d7Cc3cdb88Fa1EEC3095C9f849c799F1f7D4031';
 const crdocAddress = '0x1a389e93be8ef2B5D105DEa44271d4426736A484';
+const csatAddress = '0xf8A2e7A2bfa135a81f0c78edD6252a818619E2c3';
+const crbtcAddress = '0xE498D1E3A0d7fdb80a2d7591D997aFDA34F8c5C5';
 const unitrollerAddress = '0xdC98d636ad43A17bDAcE402997C7c6ABA55EAa28';
 
 describe('Comptroller', () => {
@@ -26,13 +29,25 @@ describe('Comptroller', () => {
     it('should instance a comptroller handler', async () => {
         comptroller = await tropykus.setComptroller(dep, comptrollerAddress);
         expect(comptroller).instanceOf(Comptroller);
-        expect(comptroller.address).to.equal(comptrollerAddress);
+        expect(comptroller.address).to.equal(comptrollerAddress.toLowerCase());
     });
 
-    it('should list the markets', async () => {
+    it('should list the market\'s addresses', async () => {
         comptroller = await tropykus.setComptroller(dep, comptrollerAddress);
         return comptroller.allMarkets()
             .then((markets) => markets.forEach((market) => expect(market).to.match(/0x[a-fA-F0-9]{40}/)));
+    });
+
+    it('should list the market\'s as instances', async () => {
+        comptroller = await tropykus.setComptroller(dep, comptrollerAddress);
+        const markets = await comptroller.getAllMarketsInstances(
+          csatAddress, crbtcAddress, crdocAddress,
+        );
+        markets.forEach((market) => {
+            expect(market).instanceOf(Market);
+            expect(market.address).to.match(/0x[a-fA-F0-9]{40}/);
+        })
+        expect(markets.length).to.equal(6);
     });
 
     it('should enter the markets', async () => {

@@ -23,7 +23,7 @@ describe('Unitroller', () => {
     it('should instance a unitroller handler', async () => {
         const unitroller = new Unitroller(unitrollerAddress, tropykus);
         expect(unitroller).instanceOf(Unitroller);
-        expect(unitroller.address).to.equal(unitrollerAddress);
+        expect(unitroller.address).to.equal(unitrollerAddress.toLowerCase());
     });
 
     it('should set a pending implementation of comptroller', async () => {

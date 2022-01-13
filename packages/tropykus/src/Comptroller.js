@@ -1,6 +1,12 @@
 /* eslint-disable no-underscore-dangle */
 import { BigNumber, ethers, FixedNumber } from 'ethers';
 import ComptrollerArtifact from '../artifacts/ComptrollerG6.json';
+import CErc20ImmutableArtifact from '../artifacts/CErc20Immutable.json';
+import CToken from './Markets/CToken';
+import CRDOC from './Markets/CRDOC';
+import CRBTC from './Markets/CRBTC';
+
+const factor = FixedNumber.from(ethers.utils.parseEther('1'), 'fixed80x18');
 
 export default class Comptroller {
   /**
@@ -10,7 +16,7 @@ export default class Comptroller {
    */
   constructor(contractAddress, tropykus) {
     this.tropykus = tropykus;
-    this.address = contractAddress;
+    this.address = contractAddress.toLowerCase();
     this.instance = new ethers.Contract(
       contractAddress,
       ComptrollerArtifact.abi,
@@ -26,6 +32,42 @@ export default class Comptroller {
     return new Promise((resolve, reject) => {
       this.instance.callStatic.getAllMarkets()
         .then(resolve)
+        .catch(reject);
+    });
+  }
+
+  /**
+   * Returns a list of the markets as instances of tropykus' Market
+   * @param {string} kSatAddress Address of kToken's hurricane market
+   * @param {string} kRbtcAddress Address of kToken's RBTC market
+   * @param {string} kRDocAddress Address of kToken's RDOC market
+   * @returns {Promise<Array>} List of the market's instances
+   */
+  getAllMarketsInstances(kSatAddress, kRbtcAddress, kRDocAddress) {
+    return new Promise((resolve, reject) => {
+      this.allMarkets()
+        .then((marketAddresses) => {
+          const instances = [];
+          return marketAddresses.forEach(async (mktAddress) => {
+            let instance;
+            const marketAddress = mktAddress.toLowerCase();
+            if (marketAddress === kSatAddress.toLowerCase()
+              || marketAddress === kRbtcAddress.toLowerCase()) {
+              instance = new CRBTC(this.tropykus, marketAddress);
+            } else {
+              const contractInstance = new ethers.Contract(
+                marketAddress, CErc20ImmutableArtifact.abi, this.tropykus.provider,
+              );
+              const underlyingAddress = await contractInstance.callStatic.underlying()
+                .then((result) => result);
+              instance = marketAddress === kRDocAddress.toLowerCase()
+                ? new CRDOC(this.tropykus, marketAddress, underlyingAddress)
+                : new CToken(this.tropykus, marketAddress, underlyingAddress);
+            }
+            instances.push(instance);
+            if (instances.length === marketAddresses.length) resolve(instances);
+          });
+        })
         .catch(reject);
     });
   }
@@ -68,7 +110,6 @@ export default class Comptroller {
    */
   setCollateralFactor(account, marketAddress, collateralFactor) {
     return new Promise((resolve, reject) => {
-      // eslint-disable-next-line no-underscore-dangle
       this.instance.connect(account.signer)
         ._setCollateralFactor(
           marketAddress,
@@ -88,7 +129,6 @@ export default class Comptroller {
    */
   become(account, unitrollerAddress) {
     return new Promise((resolve, reject) => {
-      // eslint-disable-next-line no-underscore-dangle
       this.instance.connect(account.signer)
         ._become(unitrollerAddress)
         .then(resolve)
@@ -104,7 +144,6 @@ export default class Comptroller {
    */
   setOracle(account, priceOracleAddress) {
     return new Promise((resolve, reject) => {
-      // eslint-disable-next-line no-underscore-dangle
       this.instance.connect(account.signer)
         ._setPriceOracle(priceOracleAddress)
         .then(resolve)
@@ -120,7 +159,6 @@ export default class Comptroller {
    */
   setCloseFactor(account, closeFactor) {
     return new Promise((resolve, reject) => {
-      // eslint-disable-next-line no-underscore-dangle
       this.instance.connect(account.signer)
         ._setCloseFactor(
           ethers.utils.parseEther(closeFactor.toString()),
@@ -138,7 +176,6 @@ export default class Comptroller {
    */
   setLiquidationIncentive(account, liquidationIncentive) {
     return new Promise((resolve, reject) => {
-      // eslint-disable-next-line no-underscore-dangle
       this.instance.connect(account.signer)
         ._setLiquidationIncentive(
           ethers.utils.parseEther(liquidationIncentive.toString()),
@@ -217,15 +254,108 @@ export default class Comptroller {
   /**
    * Gets an account's liquidity on USD
    * @param {object} account Object get from tropykus.getAccount()
-   * @returns {Promise<Number>} total liquidity in USD
+   * @param {string} marketAddress Address of the market to get underlying representation
+   * @returns {Promise<Object>} total liquidity in usd, underlying and fixedNumber
    */
-  getAccountLiquidity(account) {
+  getAccountLiquidity(account, marketAddress = '') {
     return new Promise((resolve, reject) => {
-      this.instance.connect(account.signer).callStatic
-        .getAccountLiquidity(account.address)
-        .then((res) => Number(res[1] / 1e18))
+      const promises = [this.instance.connect(account.signer).callStatic
+        .getAccountLiquidity(account.address)];
+      if (marketAddress) {
+        promises.push(this.tropykus.priceOracle.instance.callStatic
+          .getUnderlyingPrice(marketAddress));
+      } else {
+        promises.push(Promise.resolve(BigNumber.from('0')));
+      }
+      Promise.all(promises)
+        .then(([liq, price]) => {
+          const fixedNumber = FixedNumber.from(liq[1].toString(), 'fixed80x18');
+          const usd = fixedNumber.divUnsafe(factor);
+          const underlying = price > 0 ? (fixedNumber
+            .divUnsafe(FixedNumber.from(price.toString(), 'fixed80x18')))
+            : FixedNumber.from('0', 'fixed80x18');
+          return {
+            usd: Number(usd._value),
+            underlying: Number(underlying._value),
+            fixedNumber,
+          };
+        })
         .then(resolve)
         .catch(reject);
+    });
+  }
+
+  getHypotheticalAccountLiquidity(account, marketAddress, redeemTokens = 0, borrowAmount = 0) {
+    return new Promise((resolve, reject) => {
+      Promise.all([
+        this.instance.connect(account.signer).callStatic
+          .getHypotheticalAccountLiquidity(
+            account.address,
+            marketAddress,
+            ethers.utils.parseEther(redeemTokens.toString()),
+            ethers.utils.parseEther(borrowAmount.toString()),
+          ),
+        this.tropykus.priceOracle.instance.callStatic
+          .getUnderlyingPrice(marketAddress),
+      ])
+        .then(([res, price]) => {
+          const liquidityFixedNumber = FixedNumber.from(res[1].toString(), 'fixed80x18');
+          const liquidityUsd = liquidityFixedNumber.divUnsafe(factor);
+          const liquidityUnderlying = price > 0 ? (liquidityFixedNumber
+            .divUnsafe(FixedNumber.from(price.toString(), 'fixed80x18')))
+            : FixedNumber.from('0', 'fixed80x18');
+          const shortfallFixedNumber = FixedNumber.from(res[2].toString(), 'fixed80x18');
+          const shortfallUsd = shortfallFixedNumber.divUnsafe(factor);
+          const shortfallUnderlying = price > 0 ? (shortfallFixedNumber
+            .divUnsafe(FixedNumber.from(price.toString(), 'fixed80x18')))
+            : FixedNumber.from('0', 'fixed80x18');
+          return {
+            liquidity: {
+              usd: Number(liquidityUsd._value),
+              underlying: Number(liquidityUnderlying._value),
+              fixedNumber: liquidityFixedNumber,
+            },
+            shortfall: {
+              usd: Number(shortfallUsd._value),
+              underlying: Number(shortfallUnderlying._value),
+              fixedNumber: shortfallFixedNumber,
+            },
+          };
+        })
+        .then(resolve)
+        .catch(reject);
+    });
+  }
+
+  getTotalBorrowsInAllMarkets(account, markets, marketAddress = '') {
+    return new Promise((resolve, reject) => {
+      let fixedNumber = FixedNumber.fromString('0', 'fixed80x18');
+      let priceUnderlying = BigNumber.from('0');
+      let counter = 0;
+      markets.forEach(async (market) => Promise.all([
+        market.borrowBalanceCurrent(account),
+        this.tropykus.priceOracle.instance.callStatic
+          .getUnderlyingPrice(market.address),
+      ])
+        .then(([borrows, priceMantissa]) => {
+          const price = FixedNumber.from(priceMantissa.toString(), 'fixed80x18')
+            .divUnsafe(factor);
+          if (market.address === marketAddress.toLowerCase()) priceUnderlying = price;
+          const borrowsAsUSD = (borrows.fixedNumber).mulUnsafe(price)
+            .divUnsafe(factor);
+          fixedNumber = fixedNumber.addUnsafe(borrowsAsUSD);
+          counter += 1;
+          if (counter === markets.length) {
+            const usd = fixedNumber;
+            const underlying = marketAddress ? fixedNumber.divUnsafe(priceUnderlying) : 0;
+            resolve({
+              underlying: Number(underlying._value),
+              usd: Number(usd._value),
+              fixedNumber,
+            });
+          }
+        })
+        .catch(reject));
     });
   }
 }

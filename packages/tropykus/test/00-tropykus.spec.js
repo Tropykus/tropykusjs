@@ -24,7 +24,7 @@ describe('Core tropykus', () => {
   it('should get internal comptroller instance', async () => {
     const dep = await tropykus.getAccount();
     await tropykus.setComptroller(dep, comptrollerAddress);
-    expect(tropykus.comptroller.address).to.equal(comptrollerAddress);
+    expect(tropykus.comptroller.address).to.equal(comptrollerAddress.toLowerCase());
   });
 
   it('should deploy a new comptroller', async () => {
@@ -39,7 +39,7 @@ describe('Core tropykus', () => {
     expect(tropykus.priceOracle).to.be.null;
     tropykus.setPriceOracle(priceOracleAddress);
     expect(tropykus.priceOracle.address)
-        .to.equal(priceOracleAddress);
+        .to.equal(priceOracleAddress.toLowerCase());
   });
 
 });
