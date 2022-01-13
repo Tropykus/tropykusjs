@@ -475,13 +475,27 @@ export default class Market {
             .callStatic.balanceOfUnderlying(account.address),
         ]))
         .then(([totalBorrows, totalSupply, priceMantissa, marketData, supplyBalanceMantissa]) => {
-          const collateralFactor = FixedNumber
-            .from(marketData.collateralFactorMantissa.toString(), format)
+          const zero = FixedNumber.fromString('0', format);
+          if (Number(totalSupply.fixedNumber._value) <= 0) {
+            return { usd: 0, underlying: 0, fixedNumber: zero };
+          }
+          const supplyBalance = FixedNumber
+            .from(supplyBalanceMantissa.toString(), format)
             .divUnsafe(factor);
           const price = FixedNumber.from(priceMantissa.toString(), format)
             .divUnsafe(factor);
           const marketDepositUSD = FixedNumber
             .from(supplyBalanceMantissa.toString(), format).mulUnsafe(price)
+            .divUnsafe(factor);
+          if (Number(totalBorrows.fixedNumber._value) <= 0) {
+            return {
+              usd: Number(marketDepositUSD._value),
+              underlying: Number(supplyBalance._value),
+              fixedNumber: supplyBalance,
+            };
+          }
+          const collateralFactor = FixedNumber
+            .from(marketData.collateralFactorMantissa.toString(), format)
             .divUnsafe(factor);
           const marketLiquidity = marketDepositUSD.mulUnsafe(collateralFactor);
           const liquidity = totalSupply.withCollateral.subUnsafe(marketLiquidity);
