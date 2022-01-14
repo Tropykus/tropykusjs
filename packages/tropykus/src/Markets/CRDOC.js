@@ -9,5 +9,6 @@ export default class CRDOC extends CErc20 {
       contractAddress,
       erc20TokenAddress,
     );
+    this.type = 'CRDOC';
   }
 }

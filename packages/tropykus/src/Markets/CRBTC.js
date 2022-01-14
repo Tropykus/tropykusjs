@@ -10,6 +10,7 @@ export default class CRBTC extends Market {
       CRBTCArtifact.abi,
       contractAddress,
     );
+    this.type = 'CRBTC';
   }
 
   addSubsidy(account, amount) {
@@ -109,6 +110,16 @@ export default class CRBTC extends Market {
       );
       companionFactory.deploy(comptrollerAddress, this.address, priceOracleAddress)
         .then((companion) => companion.address)
+        .then(resolve)
+        .catch(reject);
+    });
+  }
+
+  getUnderlyingSymbol() {
+    return new Promise((resolve, reject) => {
+      this.tropykus.getChainId()
+        .then((chainId) => (chainId === 31 || chainId === 1337
+          ? 'tRBTC' : 'RBTC'))
         .then(resolve)
         .catch(reject);
     });

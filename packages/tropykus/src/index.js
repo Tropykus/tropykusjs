@@ -199,4 +199,13 @@ export default class Tropykus {
   setPriceOracle(priceOracleAddress) {
     this.internalPriceOracle = new PriceOracle(priceOracleAddress, this);
   }
+
+  async getChainId() {
+    return new Promise((resolve, reject) => {
+      this.provider.getNetwork()
+        .then((network) => network.chainId)
+        .then(resolve)
+        .catch(reject);
+    });
+  }
 }

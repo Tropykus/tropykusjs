@@ -371,7 +371,31 @@ export default class Market {
             .divUnsafe(factor);
           const price = FixedNumber.from(priceMantissa.toString(), format)
             .divUnsafe(factor);
-          const usd = fixedNumber.divUnsafe(price);
+          const usd = fixedNumber.mulUnsafe(price);
+          return {
+            underlying: Number(fixedNumber._value),
+            usd: Number(usd._value),
+            fixedNumber,
+          };
+        })
+        .then(resolve)
+        .catch(reject);
+    });
+  }
+
+  getReserves() {
+    return new Promise((resolve, reject) => {
+      Promise.all([
+        this.instance.callStatic.totalReserves(),
+        this.tropykus.priceOracle.instance.callStatic
+          .getUnderlyingPrice(this.address),
+      ])
+        .then(([reservesMantissa, priceMantissa]) => {
+          const fixedNumber = FixedNumber.from(reservesMantissa.toString(), format)
+            .divUnsafe(factor);
+          const price = FixedNumber.from(priceMantissa.toString(), format)
+            .divUnsafe(factor);
+          const usd = fixedNumber.mulUnsafe(price);
           return {
             underlying: Number(fixedNumber._value),
             usd: Number(usd._value),
@@ -404,6 +428,34 @@ export default class Market {
             underlying: Number(underlying._value),
             usd: Number(usd._value),
             fixedNumber,
+          };
+        })
+        .then(resolve)
+        .catch(reject);
+    });
+  }
+
+  getMarketTotalSupply() {
+    return new Promise((resolve, reject) => {
+      Promise.all([
+        this.instance.callStatic.totalSupply(),
+        this.tropykus.priceOracle.instance.callStatic
+          .getUnderlyingPrice(this.address),
+        this.instance.callStatic.exchangeRateCurrent(),
+      ])
+        .then(([totalSupplyMantissa, priceMantissa, exchangeRateMantissa]) => {
+          const fixedNumber = FixedNumber.from(totalSupplyMantissa.toString(), format)
+            .divUnsafe(factor);
+          const exchangeRate = FixedNumber.from(exchangeRateMantissa.toString(), format)
+            .divUnsafe(factor);
+          const underlying = fixedNumber.mulUnsafe(exchangeRate);
+          const usd = underlying
+            .mulUnsafe(FixedNumber.from(priceMantissa.toString(), format))
+            .divUnsafe(factor);
+          return {
+            underlying: Number(underlying._value),
+            usd: Number(usd._value),
+            fixedNumber: underlying,
           };
         })
         .then(resolve)
@@ -461,7 +513,6 @@ export default class Market {
     });
   }
 
-  // TODO cash verification
   maxAllowedToWithdraw(account, markets) {
     return new Promise((resolve, reject) => {
       this.getComptroller()
@@ -473,8 +524,16 @@ export default class Market {
           comptroller.instance.callStatic.markets(this.address),
           this.instance.connect(account.signer)
             .callStatic.balanceOfUnderlying(account.address),
+          this.getCash(),
         ]))
-        .then(([totalBorrows, totalSupply, priceMantissa, marketData, supplyBalanceMantissa]) => {
+        .then(([
+          totalBorrows,
+          totalSupply,
+          priceMantissa,
+          marketData,
+          supplyBalanceMantissa,
+          cash,
+        ]) => {
           const zero = FixedNumber.fromString('0', format);
           if (Number(totalSupply.fixedNumber._value) <= 0) {
             return { usd: 0, underlying: 0, fixedNumber: zero };
@@ -487,6 +546,13 @@ export default class Market {
           const marketDepositUSD = FixedNumber
             .from(supplyBalanceMantissa.toString(), format).mulUnsafe(price)
             .divUnsafe(factor);
+          if (Number(cash.fixedNumber._value) < Number(supplyBalance._value)) {
+            return {
+              usd: cash.usd,
+              underlying: cash.underlying,
+              fixedNumber: cash.fixedNumber,
+            };
+          }
           if (Number(totalBorrows.fixedNumber._value) <= 0) {
             return {
               usd: Number(marketDepositUSD._value),
@@ -508,6 +574,7 @@ export default class Market {
           const underlying = fixedNumber.divUnsafe(price);
           return {
             underlying: Number(underlying._value),
+            tokens: Number(underlying._value),
             usd: Number(fixedNumber._value),
             fixedNumber,
           };

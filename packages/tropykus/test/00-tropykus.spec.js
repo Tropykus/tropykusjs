@@ -16,6 +16,10 @@ describe('Core tropykus', () => {
   const wsProvider = new ethers.providers.JsonRpcProvider('ws://127.0.0.1:8545');
   const tropykus = new Tropykus(provider, wsProvider, 400000);
 
+  it('should get provider\'s chainId', async () => {
+    expect(Number(await tropykus.getChainId())).equals(1337);
+  });
+
   it('should generate an account', async () => {
     expect((await tropykus.getAccount()).address.toLowerCase())
       .equals('0xe317349c7279ffF242cc8ADCb575EbA0153760BA'.toLowerCase());

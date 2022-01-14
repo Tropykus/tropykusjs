@@ -14,6 +14,7 @@ export default class CErc20 extends Market {
       StandartTokenArtifact.abi,
       tropykus.provider,
     );
+    this.type = 'CErc20Immutable';
   }
 
   /**
@@ -103,6 +104,14 @@ export default class CErc20 extends Market {
             usd: Number(toUSD) / 1e18,
           };
         })
+        .then(resolve)
+        .catch(reject);
+    });
+  }
+
+  getUnderlyingSymbol() {
+    return new Promise((resolve, reject) => {
+      this.erc20Instance.callStatic.symbol()
         .then(resolve)
         .catch(reject);
     });
