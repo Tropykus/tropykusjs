@@ -278,7 +278,7 @@ export default class Comptroller {
           return {
             usd: Number(usd._value),
             underlying: Number(underlying._value),
-            fixedNumber,
+            fixedNumber: underlying,
           };
         })
         .then(resolve)

@@ -796,19 +796,38 @@ describe('Market', () => {
       const markets = await newComptroller
         .getAllMarketsInstances(csat.address, crbtc.address, crdoc.address);
 
-      const { underlying } = await csat.maxAllowedToWithdraw(alice, markets);
-      expect(underlying).to.equal(cash.underlying);
+      data = await csat.maxAllowedToWithdraw(alice, markets);
+      expect(data.underlying).to.equal(cash.underlying);
 
-      const tokens = await csat.getTokensFromUnderlying(alice, underlying);
+      const hy = await newComptroller
+        .getHypotheticalAccountLiquidity(alice, csat.address, data.tokens.value, 0);
+      expect(hy.shortfall.usd).equals(0);
 
-      data = await newComptroller
-        .getHypotheticalAccountLiquidity(alice, csat.address, tokens.value, 0);
-      expect(data.shortfall.usd).equals(0);
-
-      await csat.redeem(alice, underlying);
+      await csat.redeem(alice, data.underlying);
       const liquidity = await newComptroller.getAccountLiquidity(alice, csat.address);
       expect(liquidity.usd).to.gt(0);
     });
+
+    it('should return the max value than an account can borrow from a market with no more debts', async () => {
+      let max = await csat.maxAllowedToBorrow(alice);
+      expect(max.underlying).to.equal(0);
+      expect(max.usd).to.equal(0);
+
+      await crbtc.mint(alice, 0.05);
+
+      max = await crbtc.maxAllowedToBorrow(alice);
+      expect(max.underlying).to.equal(0.05 * 0.6);
+      expect(max.usd).to.equal((0.05 * 54556.9) * 0.6);
+
+      const data = await newComptroller
+        .getHypotheticalAccountLiquidity(alice, crbtc.address, 0, max.underlying);
+      expect(data.shortfall.usd).equals(0);
+      expect(data.liquidity.usd).equals(0);
+    });
+
+    it('should return the max value than an account can borrow from a market without more debts');
+
+    it('should return the max value than an account can borrow from a market where the cash is less than account liquidity');
 
     it('should repay a portion of debt on cdoc market', async () => {
       await crbtc.mint(alice, 0.5);

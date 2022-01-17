@@ -5,6 +5,8 @@ import Comptroller from './Comptroller';
 
 const format = 'fixed80x18';
 const factor = FixedNumber.fromString(1e18.toString(), format);
+const zero = FixedNumber.fromString('0', format);
+const minLiquidity = FixedNumber.fromString('5', format);
 
 export default class Market {
   /**
@@ -522,8 +524,8 @@ export default class Market {
           comptroller.getTotalSupplyInAllMarkets(account, markets, this.address),
           this.tropykus.priceOracle.instance.callStatic.getUnderlyingPrice(this.address),
           comptroller.instance.callStatic.markets(this.address),
-          this.instance.connect(account.signer)
-            .callStatic.balanceOfUnderlying(account.address),
+          this.instance.connect(account.signer).callStatic.balanceOfUnderlying(account.address),
+          this.instance.connect(account.signer).callStatic.exchangeRateCurrent(),
           this.getCash(),
         ]))
         .then(([
@@ -532,9 +534,9 @@ export default class Market {
           priceMantissa,
           marketData,
           supplyBalanceMantissa,
+          exchangeRateMantissa,
           cash,
         ]) => {
-          const zero = FixedNumber.fromString('0', format);
           if (Number(totalSupply.fixedNumber._value) <= 0) {
             return { usd: 0, underlying: 0, fixedNumber: zero };
           }
@@ -543,21 +545,33 @@ export default class Market {
             .divUnsafe(factor);
           const price = FixedNumber.from(priceMantissa.toString(), format)
             .divUnsafe(factor);
+          const exchangeRate = FixedNumber.from(exchangeRateMantissa, format)
+            .divUnsafe(factor);
           const marketDepositUSD = FixedNumber
             .from(supplyBalanceMantissa.toString(), format).mulUnsafe(price)
             .divUnsafe(factor);
+          let tokens = cash.fixedNumber.divUnsafe(exchangeRate);
           if (Number(cash.fixedNumber._value) < Number(supplyBalance._value)) {
             return {
               usd: cash.usd,
               underlying: cash.underlying,
               fixedNumber: cash.fixedNumber,
+              tokens: {
+                value: Number(tokens._value),
+                fixedNumber: tokens,
+              }
             };
           }
+          tokens = supplyBalance.divUnsafe(exchangeRate);
           if (Number(totalBorrows.fixedNumber._value) <= 0) {
             return {
               usd: Number(marketDepositUSD._value),
               underlying: Number(supplyBalance._value),
               fixedNumber: supplyBalance,
+              tokens: {
+                value: Number(tokens._value),
+                fixedNumber: tokens,
+              }
             };
           }
           const collateralFactor = FixedNumber
@@ -566,18 +580,48 @@ export default class Market {
           const marketLiquidity = marketDepositUSD.mulUnsafe(collateralFactor);
           const liquidity = totalSupply.withCollateral.subUnsafe(marketLiquidity);
           const totalDebtPlusDelta = totalBorrows.fixedNumber
-            .addUnsafe(FixedNumber.fromString('5', format));
+            .addUnsafe(minLiquidity);
           let fixedNumber = marketDepositUSD.subUnsafe((totalDebtPlusDelta.subUnsafe(liquidity))
             .divUnsafe(collateralFactor));
           const diff = fixedNumber.subUnsafe(marketDepositUSD);
           if (Number(diff._value) >= 0) fixedNumber = marketDepositUSD;
           const underlying = fixedNumber.divUnsafe(price);
+          tokens = fixedNumber.divUnsafe(exchangeRate)
+            .divUnsafe(factor);
           return {
             underlying: Number(underlying._value),
-            tokens: Number(underlying._value),
             usd: Number(fixedNumber._value),
             fixedNumber,
+            tokens: {
+              value: Number(tokens._value),
+              fixedNumber: tokens,
+            },
           };
+        })
+        .then(resolve)
+        .catch(reject);
+    });
+  }
+
+  maxAllowedToBorrow(account) {
+    return new Promise((resolve, reject) => {
+      Promise.all([
+        this.tropykus.comptroller.getAccountLiquidity(account, this.address),
+        this.getCash(),
+      ])
+        .then(([liquidity, cash]) => {
+          console.log('liquidity', liquidity.fixedNumber._value);
+          console.log('cash', cash.fixedNumber._value);
+          if (Number(cash.fixedNumber._value) === 0) {
+            return {
+              underlying: 0,
+              usd: 0,
+              fixedNumber: zero,
+            };
+          }
+          if (Number(liquidity.fixedNumber._value) > Number(cash
+            .fixedNumber._value)) return cash;
+          return liquidity;
         })
         .then(resolve)
         .catch(reject);
