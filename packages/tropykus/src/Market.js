@@ -538,7 +538,12 @@ export default class Market {
           cash,
         ]) => {
           if (Number(totalSupply.fixedNumber._value) <= 0) {
-            return { usd: 0, underlying: 0, fixedNumber: zero };
+            return {
+              usd: 0,
+              underlying: 0,
+              fixedNumber: zero,
+              tokens: { value: 0, fixedNumber: zero },
+            };
           }
           const supplyBalance = FixedNumber
             .from(supplyBalanceMantissa.toString(), format)
@@ -559,7 +564,7 @@ export default class Market {
               tokens: {
                 value: Number(tokens._value),
                 fixedNumber: tokens,
-              }
+              },
             };
           }
           tokens = supplyBalance.divUnsafe(exchangeRate);
@@ -571,7 +576,7 @@ export default class Market {
               tokens: {
                 value: Number(tokens._value),
                 fixedNumber: tokens,
-              }
+              },
             };
           }
           const collateralFactor = FixedNumber
@@ -586,8 +591,7 @@ export default class Market {
           const diff = fixedNumber.subUnsafe(marketDepositUSD);
           if (Number(diff._value) >= 0) fixedNumber = marketDepositUSD;
           const underlying = fixedNumber.divUnsafe(price);
-          tokens = fixedNumber.divUnsafe(exchangeRate)
-            .divUnsafe(factor);
+          tokens = underlying.divUnsafe(exchangeRate);
           return {
             underlying: Number(underlying._value),
             usd: Number(fixedNumber._value),
@@ -610,7 +614,7 @@ export default class Market {
         this.getCash(),
       ])
         .then(([liquidity, cash]) => {
-          console.log('liquidity', liquidity.fixedNumber._value);
+          console.log('liquidity', liquidity.underlying.fixedNumber._value);
           console.log('cash', cash.fixedNumber._value);
           if (Number(cash.fixedNumber._value) === 0) {
             return {
@@ -619,7 +623,7 @@ export default class Market {
               fixedNumber: zero,
             };
           }
-          if (Number(liquidity.fixedNumber._value) > Number(cash
+          if (Number(liquidity.underlying.fixedNumber._value) > Number(cash
             .fixedNumber._value)) return cash;
           return liquidity;
         })

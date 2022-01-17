@@ -276,9 +276,14 @@ export default class Comptroller {
             .divUnsafe(FixedNumber.from(price.toString(), format)))
             : FixedNumber.from('0', format);
           return {
-            usd: Number(usd._value),
-            underlying: Number(underlying._value),
-            fixedNumber: underlying,
+            usd: {
+              value: Number(usd._value),
+              fixedNumber: usd,
+            },
+            underlying: {
+              value: Number(underlying._value),
+              fixedNumber: underlying,
+            },
           };
         })
         .then(resolve)
