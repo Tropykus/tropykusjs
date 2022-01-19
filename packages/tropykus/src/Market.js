@@ -527,6 +527,7 @@ export default class Market {
           this.instance.connect(account.signer).callStatic.balanceOfUnderlying(account.address),
           this.instance.connect(account.signer).callStatic.exchangeRateCurrent(),
           this.getCash(),
+          this.instance.connect(account.signer).callStatic.balanceOf(account.address),
         ]))
         .then(([
           totalBorrows,
@@ -536,6 +537,7 @@ export default class Market {
           supplyBalanceMantissa,
           exchangeRateMantissa,
           cash,
+          tokensMantissa,
         ]) => {
           if (Number(totalSupply.fixedNumber._value) <= 0) {
             return {
@@ -567,7 +569,8 @@ export default class Market {
               },
             };
           }
-          tokens = supplyBalance.divUnsafe(exchangeRate);
+          tokens = FixedNumber.from(tokensMantissa.toString(), format)
+            .divUnsafe(factor);
           if (Number(totalBorrows.fixedNumber._value) <= 0) {
             return {
               usd: Number(marketDepositUSD._value),
