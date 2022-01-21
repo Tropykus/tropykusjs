@@ -655,4 +655,56 @@ export default class Market {
         .catch(reject);
     });
   }
+
+  suppliedLast24Hours() {
+    return new Promise((resolve, reject) => {
+      Promise.all([
+        this.wsInstance.queryFilter('Mint', -2880),
+        this.tropykus.priceOracle.instance.callStatic
+          .getUnderlyingPrice(this.address),
+      ])
+        .then(([supplyEvents, price]) => {
+          let supplied = FixedNumber.from(ethers.utils.parseEther('0'), format);
+          supplyEvents.forEach((supplyEvent) => {
+            supplied = supplied.addUnsafe(
+              FixedNumber.from(supplyEvent.args.mintAmount.toString(), format)
+            );
+          });
+          supplied = supplied.divUnsafe(factor);
+
+          let suppliedInUsd = supplied.mulUnsafe(FixedNumber.from(price.toString(), format)).divUnsafe(factor);
+          supplied = Number(supplied._value);
+          suppliedInUsd = Number(suppliedInUsd._value);
+          return { supplied, suppliedInUsd };
+        })
+        .then(resolve)
+        .catch(reject);
+    });
+  }
+
+  borrowedLast24Hours() {
+    return new Promise((resolve, reject) => {
+      Promise.all([
+        this.wsInstance.queryFilter('Borrow', -2880),
+        this.tropykus.priceOracle.instance.callStatic
+          .getUnderlyingPrice(this.address),
+      ])
+        .then(([borrowEvents, price]) => {
+          let borrowed = FixedNumber.from(ethers.utils.parseEther('0'), format);
+          borrowEvents.forEach((borrowEvent) => {
+            borrowed = borrowed.addUnsafe(
+              FixedNumber.from(borrowEvent.args.borrowAmount.toString(), format)
+            );
+          });
+          borrowed = borrowed.divUnsafe(factor);
+
+          let borrowedInUsd = borrowed.mulUnsafe(FixedNumber.from(price.toString(), format)).divUnsafe(factor);
+          borrowed = Number(borrowed._value);
+          borrowedInUsd = Number(borrowedInUsd._value);
+          return { borrowed, borrowedInUsd };
+        })
+        .then(resolve)
+        .catch(reject);
+    });
+  }
 }

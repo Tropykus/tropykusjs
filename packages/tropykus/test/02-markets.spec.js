@@ -37,7 +37,7 @@ describe('Market', () => {
 
   beforeEach(async () => {
     const provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545');
-    const wsProvider = new ethers.providers.JsonRpcProvider('ws://127.0.0.1:8545');
+    const wsProvider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545');
     tropykus = new Tropykus(provider, wsProvider, 400000);
     dep = await tropykus.getAccount();
     comptroller = await tropykus.setComptroller(dep, comptrollerAddress);
@@ -1030,6 +1030,30 @@ describe('Market', () => {
         expect(actionObj.action.calledOnce).equals(false);
         expect(actionObj.action.calledTwice).equals(true);
       });
+    });
+
+    it('Should get the deposit volume of last day for rBTC market', async () => {
+      await crbtc.mint(dep, 0.003);
+      await crbtc.mint(alice, 0.001);
+      await crbtc.mint(bob, 0.008);
+
+      const { supplied, suppliedInUsd } = await crbtc.suppliedLast24Hours();
+
+      expect(supplied).to.be.equals(1.012);
+    });
+
+    it('Should get the borrow volume of last day for rBTC market', async () => {
+      await crbtc.mint(dep, 0.003);
+      await crbtc.mint(alice, 0.001);
+      await crbtc.mint(bob, 0.008);
+
+      await crbtc.borrow(dep, 0.0003);
+      await crbtc.borrow(alice, 0.0001);
+      await crbtc.borrow(bob, 0.0008);
+
+      const { borrowed, borrowedInUsd } = await crbtc.borrowedLast24Hours();
+
+      expect(borrowed).to.be.equals(0.0012);
     });
   });
 });
