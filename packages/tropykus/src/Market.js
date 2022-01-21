@@ -585,6 +585,17 @@ export default class Market {
           const collateralFactor = FixedNumber
             .from(marketData.collateralFactorMantissa.toString(), format)
             .divUnsafe(factor);
+          if (Number(collateralFactor._value) <= 0) {
+            return {
+              usd: Number(marketDepositUSD._value),
+              underlying: Number(supplyBalance._value),
+              fixedNumber: supplyBalance,
+              tokens: {
+                value: Number(tokens._value),
+                fixedNumber: tokens,
+              },
+            };
+          }
           const marketLiquidity = marketDepositUSD.mulUnsafe(collateralFactor);
           const liquidity = totalSupply.withCollateral.subUnsafe(marketLiquidity);
           const totalDebtPlusDelta = totalBorrows.fixedNumber

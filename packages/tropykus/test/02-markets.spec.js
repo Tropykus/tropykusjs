@@ -16,17 +16,20 @@ const crbtcMarketAddress = '0xE498D1E3A0d7fdb80a2d7591D997aFDA34F8c5C5';
 const csatMarketAddress = '0xf8A2e7A2bfa135a81f0c78edD6252a818619E2c3';
 const cdocAddress = '0x1CbD672Ac9d98F4f033e12eDE3c55f5CB02B983C';
 const docAddress = '0xC3b5a61f8fc55fef790165d9f12AD23D47F7De99';
+const usdtAddress = '0x3AC74a85B80824caa8cc9Dbae0DdcE584F3D3e8E';
 const crdocAddress = '0x1a389e93be8ef2B5D105DEa44271d4426736A484';
 const rdocAddress = '0x301b50CD6E1a31c56122463aA306290baD3428cf';
 const cdocInterestRateModelAddress = '0x17cFe95D999961dAd27E47Af8B9b8A8Ef07832e4';
 const crdocInterestRateModelAddress = '0x46342D72503A41f797CC47D5B89C8Cc8F592f5a3';
 const crbtcInterestRateModelAddress = '0x466BBE5C0368Ba75EBA90c2f4643c9DbC226B4d7';
 const csatInterestRateModelAddress = '0xD0Ed8135F9Ceb504A0484eEF9700D17622569Df2';
+const cusdtInterestRateModelAddress = '0x5932c14cBBaA59248321E8448E4E46Ed5734e5a6';
 const priceOracleAddress = '0x4d7Cc3cdb88Fa1EEC3095C9f849c799F1f7D4031';
 const crbtcAdapterAddress = '0x94D2C65157FBeb52BaEEAaaE7b20fA0fAc3f0681';
 const cdocAdapterAddress = '0x21e23076EAe56759304a6883bEBdb2e3EbA7678A';
 const crdocAdapterAddress = '0xB572eee464bFEc3f92189A09fBbb7D7BCD3540C5';
 const csatAdapterAddress = '0x014635649DDf811FA581e24F95316A4440a02D78';
+const cusdtdapterAddress = '0x99bBf2c61FeA5E067D1F311f0B0114Bd71dC8272';
 const unitrollerAddress = '0xdC98d636ad43A17bDAcE402997C7c6ABA55EAa28';
 
 describe('Market', () => {
@@ -37,7 +40,7 @@ describe('Market', () => {
 
   beforeEach(async () => {
     const provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545');
-    const wsProvider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545');
+    const wsProvider = new ethers.providers.JsonRpcProvider('ws://127.0.0.1:8545');
     tropykus = new Tropykus(provider, wsProvider, 400000);
     dep = await tropykus.getAccount();
     comptroller = await tropykus.setComptroller(dep, comptrollerAddress);
@@ -188,6 +191,7 @@ describe('Market', () => {
     let csat;
     let cdoc;
     let crdoc;
+    let cusdt;
     let newComptroller;
     let alice;
     let bob;
@@ -233,6 +237,19 @@ describe('Market', () => {
           symbol: 'CDOC',
           decimals: 18,
         });
+      cusdt = await tropykus.addMarket(
+        dep,
+        'CErc20Immutable',
+        null,
+        usdtAddress,
+        {
+          comptrollerAddress: newComptroller.address,
+          interestRateModelAddress: cusdtInterestRateModelAddress,
+          initialExchangeRate: 0.02,
+          name: 'New CUSDT',
+          symbol: 'CUSDT',
+          decimals: 18,
+        });
       crdoc = await tropykus.addMarket(
         dep,
         'CRDOC',
@@ -256,26 +273,31 @@ describe('Market', () => {
       await tropykus.priceOracle.setAdapterToToken(dep, cdoc.address, cdocAdapterAddress);
       await tropykus.priceOracle.setAdapterToToken(dep, crdoc.address, crdocAdapterAddress);
       await tropykus.priceOracle.setAdapterToToken(dep, csat.address, csatAdapterAddress);
+      await tropykus.priceOracle.setAdapterToToken(dep, cusdt.address, cusdtdapterAddress);
 
       await crbtc.setComptroller(dep, newComptroller.address);
       await cdoc.setComptroller(dep, newComptroller.address);
       await crdoc.setComptroller(dep, newComptroller.address);
       await csat.setComptroller(dep, newComptroller.address);
+      await cusdt.setComptroller(dep, newComptroller.address);
 
       await newComptroller.supportMarket(dep, crbtc.address);
       await newComptroller.supportMarket(dep, cdoc.address);
       await newComptroller.supportMarket(dep, crdoc.address);
       await newComptroller.supportMarket(dep, csat.address);
+      await newComptroller.supportMarket(dep, cusdt.address);
 
       await newComptroller.setCollateralFactor(dep, crbtc.address, 0.6);
       await newComptroller.setCollateralFactor(dep, cdoc.address, 0.75);
       await newComptroller.setCollateralFactor(dep, crdoc.address, 0.7);
       await newComptroller.setCollateralFactor(dep, csat.address, 0.6);
+      await newComptroller.setCollateralFactor(dep, cusdt.address, 0);
 
       await crbtc.setReserveFactor(dep, 0.2);
       await cdoc.setReserveFactor(dep, 0.5);
       await crdoc.setReserveFactor(dep, 0.5);
       await csat.setReserveFactor(dep, 0.5);
+      await cusdt.setReserveFactor(dep, 0.5);
 
       await crbtc.mint(dep, 1);
       await cdoc.mint(dep, 10000);
@@ -297,6 +319,7 @@ describe('Market', () => {
         cdoc.address,
         crdoc.address,
         csat.address,
+        cusdt.address,
       ];
 
       await newComptroller.enterMarkets(dep, mkts);
@@ -658,7 +681,7 @@ describe('Market', () => {
       await csat.mint(alice, 0.025);
       let balance = await csat.balanceOfUnderlying(alice);
       expect(balance.underlying).to.equal(0.025);
-      expect(balance.usd).to.be.closeTo(0.025 * 54556.9, 1e-12);
+      expect(balance.usd).to.be.closeTo(0.025 * 54556.9, 1e-10);
 
       await crbtc.mint(alice, 0.05);
       balance = await crbtc.balanceOfUnderlying(alice);
@@ -839,6 +862,37 @@ describe('Market', () => {
       expect(liquidity.usd.value).to.gt(0);
     });
 
+    it('should return the max value that an account can redeem from a market with active debts collateral factor 0', async () => {
+      await cusdt.mint(dep, 10000);
+      await cusdt.transferUnderlying(dep, alice.address, 1000);
+
+      await cusdt.mint(alice, 1000);
+      let balance = await cusdt.balanceOfUnderlying(alice);
+      expect(balance.underlying).equals(1000);
+      expect(balance.usd).to.equals(1000);
+
+      await crbtc.mint(alice, 0.005);
+
+      const cdocDebt = 50;
+      await cdoc.borrow(alice, cdocDebt);
+      let data = await cdoc.borrowBalanceCurrent(alice);
+      expect(data.underlying).equals(cdocDebt);
+      expect(data.usd).equals(cdocDebt);
+
+      const markets = await newComptroller
+        .getAllMarketsInstances(csat.address, crbtc.address, crdoc.address);
+
+      const { underlying, tokens } = await cusdt.maxAllowedToWithdraw(alice, markets);
+
+      data = await newComptroller
+        .getHypotheticalAccountLiquidity(alice, cusdt.address, tokens.value, 0);
+      expect(data.shortfall.usd).equals(0);
+
+      await cusdt.redeem(alice, underlying);
+      const liquidity = await newComptroller.getAccountLiquidity(alice, cusdt.address);
+      expect(liquidity.usd.value).to.gt(0);
+    });
+
     it.skip('should return the max value than an account can borrow from a market with no more debts', async () => {
       let max = await csat.maxAllowedToBorrow(alice);
       expect(max.underlying).to.equal(0);
@@ -846,14 +900,14 @@ describe('Market', () => {
 
       await crbtc.mint(alice, 0.05);
 
-      max = await crbtc.maxAllowedToBorrow(alice);
-      expect(max.underlying).to.equal(0.05 * 0.6);
-      expect(max.usd).to.equal((0.05 * 54556.9) * 0.6);
+      const { underlying, usd } = await crbtc.maxAllowedToBorrow(alice);
+      expect(underlying.value).to.equal(0.05 * 0.6);
+      expect(usd.value).to.equal((0.05 * 54556.9) * 0.6);
 
       const data = await newComptroller
-        .getHypotheticalAccountLiquidity(alice, crbtc.address, 0, max.underlying);
+        .getHypotheticalAccountLiquidity(alice, crbtc.address, 0, underlying.fixedNumber);
       expect(data.shortfall.usd).equals(0);
-      expect(data.liquidity.usd).equals(0);
+      expect(data.liquidity.usd).equals(5);
     });
 
     it('should return the max value than an account can borrow from a market without more debts');
@@ -1030,30 +1084,6 @@ describe('Market', () => {
         expect(actionObj.action.calledOnce).equals(false);
         expect(actionObj.action.calledTwice).equals(true);
       });
-    });
-
-    it('Should get the deposit volume of last day for rBTC market', async () => {
-      await crbtc.mint(dep, 0.003);
-      await crbtc.mint(alice, 0.001);
-      await crbtc.mint(bob, 0.008);
-
-      const { supplied, suppliedInUsd } = await crbtc.suppliedLast24Hours();
-
-      expect(supplied).to.be.equals(1.012);
-    });
-
-    it('Should get the borrow volume of last day for rBTC market', async () => {
-      await crbtc.mint(dep, 0.003);
-      await crbtc.mint(alice, 0.001);
-      await crbtc.mint(bob, 0.008);
-
-      await crbtc.borrow(dep, 0.0003);
-      await crbtc.borrow(alice, 0.0001);
-      await crbtc.borrow(bob, 0.0008);
-
-      const { borrowed, borrowedInUsd } = await crbtc.borrowedLast24Hours();
-
-      expect(borrowed).to.be.equals(0.0012);
     });
   });
 });
