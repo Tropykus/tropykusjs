@@ -44,7 +44,7 @@ export default class Comptroller {
    * @param {string} kRDocAddress Address of kToken's RDOC market
    * @returns {Promise<Array>} List of the market's instances
    */
-  getAllMarketsInstances(kSatAddress, kRbtcAddress, kRDocAddress) {
+  getAllMarketsInstances(kSatAddress, kRbtcAddress, kRDocAddress = '') {
     return new Promise((resolve, reject) => {
       this.allMarkets()
         .then((marketAddresses) => {
@@ -61,9 +61,11 @@ export default class Comptroller {
               );
               const underlyingAddress = await contractInstance.callStatic.underlying()
                 .then((result) => result);
-              instance = marketAddress === kRDocAddress.toLowerCase()
-                ? new CRDOC(this.tropykus, marketAddress, underlyingAddress)
-                : new CToken(this.tropykus, marketAddress, underlyingAddress);
+              if (kRDocAddress && marketAddress === kRDocAddress.toLowerCase()) {
+                instance = new CRDOC(this.tropykus, marketAddress, underlyingAddress);
+              } else {
+                instance = new CToken(this.tropykus, marketAddress, underlyingAddress);
+              }
             }
             instances.push(instance);
             if (instances.length === marketAddresses.length) resolve(instances);
