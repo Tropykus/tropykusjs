@@ -6,7 +6,7 @@ import Comptroller from './Comptroller';
 const format = 'fixed80x18';
 const factor = FixedNumber.fromString(1e18.toString(), format);
 const zero = FixedNumber.fromString('0', format);
-const minLiquidity = FixedNumber.fromString('5', format);
+const minLiquidity = FixedNumber.fromString('1', format);
 
 export default class Market {
   /**
