@@ -596,6 +596,19 @@ export default class Market {
               },
             };
           }
+          const totalDepositsMinusTotalDebts = totalSupply.fixedNumber
+            .subUnsafe(totalBorrows.fixedNumber);
+          if (Number(marketDepositUSD._value) <= Number(totalDepositsMinusTotalDebts._value)) {
+            return {
+              usd: Number(marketDepositUSD._value),
+              underlying: Number(supplyBalance._value),
+              fixedNumber: supplyBalance,
+              tokens: {
+                value: Number(tokens._value),
+                fixedNumber: tokens,
+              },
+            };
+          }
           const marketLiquidity = marketDepositUSD.mulUnsafe(collateralFactor);
           const liquidity = totalSupply.withCollateral.subUnsafe(marketLiquidity);
           const totalDebtPlusDelta = totalBorrows.fixedNumber
