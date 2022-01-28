@@ -470,10 +470,13 @@ describe('Market', () => {
     });
 
     it('should get a user\'s kTokens balance', async () => {
-      expect(await crbtc.balanceOf(alice)).to.equal(0);
+      let tokenBalance = await crbtc.balanceOf(alice);
+      expect(tokenBalance.underlying.value).to.equal(0);
 
       await crbtc.mint(alice, 0.001);
-      expect(await crbtc.balanceOf(alice)).to.equal(0.001 / 0.02);
+      tokenBalance = await crbtc.balanceOf(alice);
+      expect(tokenBalance.tokens.value).to.equal(0.001 / 0.02);
+      expect(tokenBalance.underlying.value).to.equal(0.001);
     });
 
     it('should get a market\'s current exchange rate', async () => {
@@ -604,14 +607,14 @@ describe('Market', () => {
       expect(balance.underlying).equals(0.5);
       expect(balance.usd).equals(0.5 * 54556.9);
       const kRBTCBalance = await crbtc.balanceOf(alice);
-      expect(kRBTCBalance).equals(25);
+      expect(kRBTCBalance.tokens.value).equals(25);
 
       await crbtc.redeem(alice, 0, true);
       const balanceAfter = await crbtc.balanceOfUnderlying(alice);
       expect(balanceAfter.underlying).equals(0);
       expect(balanceAfter.usd).equals(0);
       const kRBTCBalanceAfter = await crbtc.balanceOf(alice);
-      expect(kRBTCBalanceAfter).equals(0);
+      expect(kRBTCBalanceAfter.tokens.value).equals(0);
     });
 
     it('should redeem all kTokens from cdoc market', async () => {
@@ -621,14 +624,14 @@ describe('Market', () => {
       expect(balance.underlying).equals(500);
       expect(balance.usd).equals(500);
       const kDocBeforeBalance = await cdoc.balanceOf(alice);
-      expect(kDocBeforeBalance).to.be.closeTo(25000, 1e-10);
+      expect(kDocBeforeBalance.tokens.value).to.be.closeTo(25000, 1e-10);
 
       await cdoc.redeem(alice, null, true);
       const balanceAfter = await cdoc.balanceOfUnderlying(alice);
       expect(balanceAfter.underlying).equals(0);
       expect(balanceAfter.usd).equals(0);
       const kDocAfterBalance = await cdoc.balanceOf(alice);
-      expect(kDocAfterBalance).equals(0);
+      expect(kDocAfterBalance.tokens.value).equals(0);
     });
 
     it('should get the borrow balance in all the markets', async () => {
@@ -888,6 +891,8 @@ describe('Market', () => {
         .getAllMarketsInstances(csat.address, crbtc.address, crdoc.address);
 
       const { underlying, tokens } = await csat.maxAllowedToWithdraw(alice, markets);
+      const marketTokens = await csat.balanceOf(alice);
+      expect(tokens.fixedNumber._value).equals(marketTokens.tokens.fixedNumber._value);
 
       data = await newComptroller
         .getHypotheticalAccountLiquidity(alice, csat.address, tokens.value, 0);

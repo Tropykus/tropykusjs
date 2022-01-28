@@ -59,9 +59,38 @@ export default class Market {
    */
   balanceOf(account) {
     return new Promise((resolve, reject) => {
-      this.instance.connect(account.signer)
-        .callStatic.balanceOf(account.address)
-        .then((balance) => Number(balance) / 1e18)
+      Promise.all([
+        this.instance.connect(account.signer)
+          .callStatic.balanceOf(account.address),
+        this.tropykus.priceOracle.instance.callStatic
+          .getUnderlyingPrice(this.address),
+        this.instance.connect(account.signer)
+          .callStatic.exchangeRateCurrent(),
+      ])
+        .then(([balanceMantissa, priceMantissa, exchangeRateMantissa]) => {
+          const tokens = FixedNumber.from(balanceMantissa.toString(), format)
+            .divUnsafe(factor);
+          const exchangeRate = FixedNumber.from(exchangeRateMantissa.toString(), format)
+            .divUnsafe(factor);
+          const underlying = tokens.mulUnsafe(exchangeRate);
+          const usd = underlying
+            .mulUnsafe(FixedNumber.from(priceMantissa.toString(), format)
+              .divUnsafe(factor));
+          return {
+            underlying: {
+              value: Number(underlying._value),
+              fixedNumber: underlying,
+            },
+            usd: {
+              value: Number(usd._value),
+              fixedNumber: usd,
+            },
+            tokens: {
+              value: Number(tokens._value),
+              fixedNumber: tokens,
+            },
+          };
+        })
         .then(resolve)
         .catch(reject);
     });
@@ -596,9 +625,19 @@ export default class Market {
               },
             };
           }
-          const totalDepositsMinusTotalDebts = totalSupply.fixedNumber
-            .subUnsafe(totalBorrows.fixedNumber);
-          if (Number(marketDepositUSD._value) <= Number(totalDepositsMinusTotalDebts._value)) {
+          const marketLiquidity = marketDepositUSD.mulUnsafe(collateralFactor);
+          const liquidity = totalSupply.withCollateral.subUnsafe(marketLiquidity);
+          const totalDebtPlusDelta = totalBorrows.fixedNumber
+            .addUnsafe(minLiquidity);
+          let fixedNumber = marketDepositUSD.subUnsafe((totalDebtPlusDelta.subUnsafe(liquidity))
+            .divUnsafe(collateralFactor));
+          const diff = fixedNumber.subUnsafe(marketDepositUSD);
+          if (Number(diff._value) >= 0) fixedNumber = marketDepositUSD;
+          const underlying = fixedNumber.divUnsafe(price);
+          const calculatedTokens = underlying.divUnsafe(exchangeRate);
+          const supplyMinusUnderlying = supplyBalance.subUnsafe(underlying);
+          if (supplyMinusUnderlying._value
+            .localeCompare('0.000000000000000005', undefined, { numeric: true }) < 0) {
             return {
               usd: Number(marketDepositUSD._value),
               underlying: Number(supplyBalance._value),
@@ -609,23 +648,13 @@ export default class Market {
               },
             };
           }
-          const marketLiquidity = marketDepositUSD.mulUnsafe(collateralFactor);
-          const liquidity = totalSupply.withCollateral.subUnsafe(marketLiquidity);
-          const totalDebtPlusDelta = totalBorrows.fixedNumber
-            .addUnsafe(minLiquidity);
-          let fixedNumber = marketDepositUSD.subUnsafe((totalDebtPlusDelta.subUnsafe(liquidity))
-            .divUnsafe(collateralFactor));
-          const diff = fixedNumber.subUnsafe(marketDepositUSD);
-          if (Number(diff._value) >= 0) fixedNumber = marketDepositUSD;
-          const underlying = fixedNumber.divUnsafe(price);
-          tokens = underlying.divUnsafe(exchangeRate);
           return {
             underlying: Number(underlying._value),
             usd: Number(fixedNumber._value),
             fixedNumber,
             tokens: {
-              value: Number(tokens._value),
-              fixedNumber: tokens,
+              value: Number(calculatedTokens._value),
+              fixedNumber: calculatedTokens,
             },
           };
         })
@@ -690,13 +719,13 @@ export default class Market {
         .then(([supplyEvents, price]) => {
           let supplied = FixedNumber.from(ethers.utils.parseEther('0'), format);
           supplyEvents.forEach((supplyEvent) => {
-            supplied = supplied.addUnsafe(
-              FixedNumber.from(supplyEvent.args.mintAmount.toString(), format)
-            );
+            supplied = supplied
+              .addUnsafe(FixedNumber.from(supplyEvent.args.mintAmount.toString(), format));
           });
           supplied = supplied.divUnsafe(factor);
 
-          let suppliedInUsd = supplied.mulUnsafe(FixedNumber.from(price.toString(), format)).divUnsafe(factor);
+          let suppliedInUsd = supplied.mulUnsafe(FixedNumber.from(price.toString(), format))
+            .divUnsafe(factor);
           supplied = Number(supplied._value);
           suppliedInUsd = Number(suppliedInUsd._value);
           return { supplied, suppliedInUsd };
@@ -716,13 +745,14 @@ export default class Market {
         .then(([borrowEvents, price]) => {
           let borrowed = FixedNumber.from(ethers.utils.parseEther('0'), format);
           borrowEvents.forEach((borrowEvent) => {
-            borrowed = borrowed.addUnsafe(
-              FixedNumber.from(borrowEvent.args.borrowAmount.toString(), format)
-            );
+            borrowed = borrowed
+              .addUnsafe(FixedNumber.from(borrowEvent.args.borrowAmount.toString(), format));
           });
           borrowed = borrowed.divUnsafe(factor);
 
-          let borrowedInUsd = borrowed.mulUnsafe(FixedNumber.from(price.toString(), format)).divUnsafe(factor);
+          let borrowedInUsd = borrowed
+            .mulUnsafe(FixedNumber.from(price.toString(), format))
+            .divUnsafe(factor);
           borrowed = Number(borrowed._value);
           borrowedInUsd = Number(borrowedInUsd._value);
           return { borrowed, borrowedInUsd };
