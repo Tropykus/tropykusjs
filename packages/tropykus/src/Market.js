@@ -637,7 +637,7 @@ export default class Market {
           const calculatedTokens = underlying.divUnsafe(exchangeRate);
           const supplyMinusUnderlying = supplyBalance.subUnsafe(underlying);
           if (supplyMinusUnderlying._value
-            .localeCompare('0.000000000000000005', undefined, { numeric: true }) < 0) {
+            .localeCompare('0.00000000000000005', undefined, { numeric: true }) < 0) {
             return {
               usd: Number(marketDepositUSD._value),
               underlying: Number(supplyBalance._value),
