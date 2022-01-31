@@ -1003,11 +1003,11 @@ describe('Market', () => {
       let max = Math.min((0.7 + 7000 * 0.8), 0.025);
       expect(maxToDeposit.underlying.fixedNumber._value).equals(max.toString());
 
-      await csat.mint(eve, 0.017);
+      await csat.mint(eve, 0.007);
 
       maxToDeposit = await csat.maxAllowedToDeposit(eve);
-      max = Math.min((0.7 + 7000 * 0.8), 0.025 - 0.017);
-      expect(maxToDeposit.underlying.fixedNumber._value).equals(max.toString());
+      max = Math.min((0.7 + 7000 * 0.8), 0.025 - 0.007);
+      expect(Number(maxToDeposit.underlying.fixedNumber._value)).to.be.closeTo(max, 1e-17);
     });
 
     it.skip('should return the max value than an account can borrow from a market with no more debts', async () => {

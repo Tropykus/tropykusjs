@@ -6,6 +6,7 @@ import CompanionArtifact from '../../artifacts/CRBTCCompanion.json';
 
 const format = 'fixed80x18';
 const factor = FixedNumber.fromString(1e18.toString(), format);
+const minLiquidity = FixedNumber.fromString('1', format);
 const zero = FixedNumber.fromString('0', format);
 
 export default class CRBTC extends Market {
@@ -82,7 +83,7 @@ export default class CRBTC extends Market {
         companion.connect(account.signer).callStatic
           .getTotalBorrowsInOtherMarkets(),
         this.instance.callStatic.totalSupply(),
-        this.instance.callStatic.exchangeRateCurrent(),
+        this.instance.connect(account.signer).callStatic.exchangeRateCurrent(),
         companion.callStatic.marketCapThresholdMantissa(),
       ])
         .then(([
@@ -105,6 +106,8 @@ export default class CRBTC extends Market {
           const limitInUnderlying = limit.divUnsafe(cSatPrice);
           const totalDepositInUnderlying = satTotalSupply.mulUnsafe(satExchangeRate);
           totalDeposits = totalDepositInUnderlying.mulUnsafe(cSatPrice);
+          totalDeposits = totalDeposits.addUnsafe(minLiquidity);
+          totalDeposits = Number(totalDeposits._value) < 0 ? zero : totalDeposits;
           return {
             totalDeposits: {
               usd: {
