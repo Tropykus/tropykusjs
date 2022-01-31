@@ -1,8 +1,9 @@
-import { ethers } from 'ethers';
+import { ethers, FixedNumber } from 'ethers';
 import sinon from 'sinon';
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import Tropykus from "../src";
+import Market from '../src/Market';
 import CRBTCMarket from '../src/Markets/CRBTC.js';
 import CRDOCMarket from '../src/Markets/CRDOC.js';
 import CErc20Market from '../src/Markets/CErc20.js';
@@ -37,6 +38,33 @@ describe('Market', () => {
   let dep;
   let comptroller;
   const sandbox = sinon.createSandbox();
+
+  it('should return the min value between two fixed numbers', () => {
+    let a = FixedNumber.from(0.0001.toString(), 'fixed80x18');
+    let b = FixedNumber.from(0.00001.toString(), 'fixed80x18');
+    let c = Market.min(a, b);
+
+    expect(c._value).equals(b._value);
+
+    a = FixedNumber.from(0.00001.toString(), 'fixed80x18');
+    b = FixedNumber.from(0.0001.toString(), 'fixed80x18');
+    c = Market.min(a, b);
+
+    expect(c._value).equals(a._value);
+
+    a = FixedNumber.from('0.000000000000000001', 'fixed80x18');
+    b = FixedNumber.from(0.0001.toString(), 'fixed80x18');
+    c = Market.min(a, b);
+
+    expect(c._value).equals(a._value);
+
+    a = FixedNumber.from(0.0001.toString(), 'fixed80x18');
+    b = FixedNumber.from(0.0001.toString(), 'fixed80x18');
+    c = Market.min(a, b);
+
+    expect(c._value).equals(a._value);
+    expect(c._value).equals(b._value);
+  });
 
   beforeEach(async () => {
     const provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545');
@@ -195,6 +223,9 @@ describe('Market', () => {
     let newComptroller;
     let alice;
     let bob;
+    let carlos;
+    let david;
+    let eve;
     let companionAddress;
     beforeEach(async () => {
       newComptroller = await tropykus.setComptroller(dep, null, unitrollerAddress);
@@ -313,6 +344,9 @@ describe('Market', () => {
 
       alice = tropykus.getAccountFromMnemonic(mnemonic, `m/44'/60'/0'/0/1`);
       bob = tropykus.getAccountFromMnemonic(mnemonic, `m/44'/60'/0'/0/2`);
+      carlos = tropykus.getAccountFromMnemonic(mnemonic, `m/44'/60'/0'/0/3`);
+      david = tropykus.getAccountFromMnemonic(mnemonic, `m/44'/60'/0'/0/4`);
+      eve = tropykus.getAccountFromMnemonic(mnemonic, `m/44'/60'/0'/0/4`);
 
       const mkts = [
         crbtc.address,
@@ -329,23 +363,23 @@ describe('Market', () => {
     it('should transfer underlying to the given address', async () => {
       let cdocBalance = await cdoc.balanceOfUnderlyingInWallet(dep);
       let crdocBalance = await crdoc.balanceOfUnderlyingInWallet(dep);
-      expect(cdocBalance.underlying).to.be.at.least(10);
-      expect(crdocBalance.underlying).to.be.at.least(10);
+      expect(cdocBalance.underlying.value).to.be.at.least(10);
+      expect(crdocBalance.underlying.value).to.be.at.least(10);
 
       await crdoc.transferUnderlying(dep, alice.address, 10);
       crdocBalance = await crdoc.balanceOfUnderlyingInWallet(alice);
-      expect(crdocBalance.underlying).to.be.at.least(10);
-      expect(crdocBalance.usd).to.be.at.least(10);
+      expect(crdocBalance.underlying.value).to.be.at.least(10);
+      expect(crdocBalance.usd.value).to.be.at.least(10);
       await cdoc.transferUnderlying(dep, alice.address, 10);
       cdocBalance = await cdoc.balanceOfUnderlyingInWallet(alice);
-      expect(cdocBalance.underlying).to.be.at.least(10);
-      expect(cdocBalance.usd).to.be.at.least(10);
+      expect(cdocBalance.underlying.value).to.be.at.least(10);
+      expect(cdocBalance.usd.value).to.be.at.least(10);
     });
 
     it('should return the wallet balance in underlying and usd for rbtc', async () => {
       const balance = await csat.balanceOfUnderlyingInWallet(bob);
-      expect(balance.underlying).to.equal(10000000000000);
-      expect(balance.usd).to.equal(10000000000000 * 54556.9);
+      expect(balance.underlying.value).to.equal(10000000000000);
+      expect(balance.usd.value).to.equal(10000000000000 * 54556.9);
     });
 
     it('should get the supplier snapshot of an account address', async () => {
@@ -361,11 +395,11 @@ describe('Market', () => {
 
     it('should get market cap limit values', async () => {
       let data = await crbtc.getMarketCap(dep, companionAddress);
-      expect(data.totalDeposits).to.equal(0);
-      expect(data.limit).to.equal(0);
+      expect(data.totalDeposits.underlying.value).to.equal(0);
+      expect(data.limit.underlying.value).to.equal(0);
       data = await csat.getMarketCap(dep, companionAddress);
-      expect(data.totalDeposits).to.equal(0);
-      expect(data.limit).to.equal(0);
+      expect(data.totalDeposits.underlying.value).to.equal(0);
+      expect(data.limit.underlying.value).to.equal(0);
       await crbtc.borrow(dep, 0.7);
       data = await crbtc.getMarketTotalBorrows();
       expect(data.underlying).to.equal(0.7);
@@ -380,8 +414,8 @@ describe('Market', () => {
       expect(data.usd).to.equal(1000);
       await csat.mint(alice, 0.025);
       data = await csat.getMarketCap(dep, companionAddress);
-      expect(data.totalDeposits).to.be.closeTo(0.025 * 54556.9, 18);
-      expect(data.limit).to.equal(((0.7 * 54556.9) + 7000 + 1000) * 0.8);
+      expect(data.totalDeposits.usd.value).to.be.closeTo(0.025 * 54556.9, 18);
+      expect(data.limit.usd.value).to.equal(((0.7 * 54556.9) + 7000 + 1000) * 0.8);
     });
 
     it('should get the earnings and de underlying value for any interest rate model', async () => {
@@ -932,6 +966,51 @@ describe('Market', () => {
       await cusdt.redeem(alice, underlying);
       const liquidity = await newComptroller.getAccountLiquidity(alice, cusdt.address);
       expect(liquidity.usd.value).to.gt(0);
+    });
+
+    it('should return the max value that an account can deposit in stable markets', async () => {
+      const randomNumber = (Math.random() * (1000.00 - 1.00 + 1.00) + 1.00)
+        .toFixed(18);
+      await cdoc.transferUnderlying(dep, carlos.address, randomNumber);
+
+      let balanceOfCDoc = await cdoc.balanceOfUnderlyingInWallet(carlos);
+      expect(balanceOfCDoc.underlying.fixedNumber._value).equals(randomNumber);
+
+      const maxToDeposit = await cdoc.maxAllowedToDeposit(carlos);
+      expect(maxToDeposit.underlying.fixedNumber._value).equals(randomNumber);
+      expect(maxToDeposit.usd.fixedNumber._value).equals(randomNumber);
+
+      await cdoc.mint(carlos, maxToDeposit.underlying.fixedNumber._value);
+      balanceOfCDoc = await cdoc.balanceOfUnderlyingInWallet(carlos);
+      expect(balanceOfCDoc.underlying.fixedNumber._value).equals('0.0');
+    });
+
+    it('should return the max value that an account can deposit in rbtc standard', async () => {
+      const balance = await crbtc.balanceOfUnderlyingInWallet(david);
+
+      const maxToDeposit = await crbtc.maxAllowedToDeposit(david);
+      expect(maxToDeposit.underlying.fixedNumber._value)
+        .equals(balance.underlying.fixedNumber._value);
+      expect(maxToDeposit.usd.fixedNumber._value)
+        .equals((balance.underlying.value * 54556.9).toString());
+    });
+
+    it('should return the max value that an account can deposit in rbtc micro', async () => {
+      let maxToDeposit = await csat.maxAllowedToDeposit(eve);
+      expect(maxToDeposit.underlying.fixedNumber._value).equals('0.0');
+
+      await crbtc.borrow(dep, 0.7);
+      await cdoc.borrow(dep, 7000);
+
+      maxToDeposit = await csat.maxAllowedToDeposit(eve);
+      let max = Math.min((0.7 + 7000 * 0.8), 0.025);
+      expect(maxToDeposit.underlying.fixedNumber._value).equals(max.toString());
+
+      await csat.mint(eve, 0.017);
+
+      maxToDeposit = await csat.maxAllowedToDeposit(eve);
+      max = Math.min((0.7 + 7000 * 0.8), 0.025 - 0.017);
+      expect(maxToDeposit.underlying.fixedNumber._value).equals(max.toString());
     });
 
     it.skip('should return the max value than an account can borrow from a market with no more debts', async () => {

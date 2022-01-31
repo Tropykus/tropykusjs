@@ -1,7 +1,12 @@
-import { BigNumber, ethers } from 'ethers';
+/* eslint-disable no-underscore-dangle */
+import { BigNumber, ethers, FixedNumber } from 'ethers';
 import CRBTCArtifact from '../../artifacts/CRBTC.json';
 import Market from '../Market';
 import CompanionArtifact from '../../artifacts/CRBTCCompanion.json';
+
+const format = 'fixed80x18';
+const factor = FixedNumber.fromString(1e18.toString(), format);
+const zero = FixedNumber.fromString('0', format);
 
 export default class CRBTC extends Market {
   constructor(tropykus, contractAddress) {
@@ -11,6 +16,7 @@ export default class CRBTC extends Market {
       contractAddress,
     );
     this.type = 'CRBTC';
+    this.companionAddress = '';
   }
 
   addSubsidy(account, amount) {
@@ -48,8 +54,26 @@ export default class CRBTC extends Market {
 
   getMarketCap(account, companionAddress) {
     return new Promise((resolve, reject) => {
-      let limit = 0;
-      let totalDeposits = 0;
+      let limit = {
+        usd: {
+          value: 0,
+          fixedNumber: zero,
+        },
+        underlying: {
+          value: 0,
+          fixedNumber: zero,
+        },
+      };
+      let totalDeposits = {
+        usd: {
+          value: 0,
+          fixedNumber: zero,
+        },
+        underlying: {
+          value: 0,
+          fixedNumber: zero,
+        },
+      };
       const companion = new ethers.Contract(companionAddress,
         CompanionArtifact.abi, this.tropykus.provider);
       Promise.all([
@@ -61,19 +85,47 @@ export default class CRBTC extends Market {
         companion.callStatic.marketCapThresholdMantissa(),
       ])
         .then(([
-          isHurricane, [, totalBorrows, cSatPrice],
-          satTotalSupply, satExchangeRate, threshold,
+          isHurricane, [, totalBorrowsMantissa, cSatPriceMantissa],
+          satTotalSupplyMantissa, satExchangeRateMantissa, thresholdMantissa,
         ]) => {
+          const totalBorrows = FixedNumber.from(totalBorrowsMantissa.toString(), format)
+            .divUnsafe(factor);
+          const cSatPrice = FixedNumber.from(cSatPriceMantissa.toString(), format)
+            .divUnsafe(factor);
+          const satTotalSupply = FixedNumber.from(satTotalSupplyMantissa.toString(), format)
+            .divUnsafe(factor);
+          const satExchangeRate = FixedNumber.from(satExchangeRateMantissa.toString(), format)
+            .divUnsafe(factor);
+          const threshold = FixedNumber.from(thresholdMantissa.toString(), format)
+            .divUnsafe(factor);
           if (!isHurricane) return { totalDeposits, limit };
           if (Number(totalBorrows) === 0) return { totalDeposits, limit };
-          limit = Number((totalBorrows.mul(threshold))
-            .div(BigNumber.from(1e18.toString()))) / 1e18;
-          const totalDepositInUnderlying = (satTotalSupply.mul(satExchangeRate))
-            .div(BigNumber.from(1e18.toString()));
-          totalDeposits = (totalDepositInUnderlying.mul(cSatPrice))
-            .div(BigNumber.from(1e18.toString()));
-          totalDeposits = Number(totalDeposits) / 1e18;
-          return { totalDeposits, limit };
+          limit = totalBorrows.mulUnsafe(threshold);
+          const limitInUnderlying = limit.divUnsafe(cSatPrice);
+          const totalDepositInUnderlying = satTotalSupply.mulUnsafe(satExchangeRate);
+          totalDeposits = totalDepositInUnderlying.mulUnsafe(cSatPrice);
+          return {
+            totalDeposits: {
+              usd: {
+                value: Number(totalDeposits._value),
+                fixedNumber: totalDeposits,
+              },
+              underlying: {
+                value: Number(totalDepositInUnderlying._value),
+                fixedNumber: totalDepositInUnderlying,
+              },
+            },
+            limit: {
+              usd: {
+                value: Number(limit._value),
+                fixedNumber: limit,
+              },
+              underlying: {
+                value: Number(limitInUnderlying._value),
+                fixedNumber: limitInUnderlying,
+              },
+            },
+          };
         })
         .then(resolve)
         .catch(reject);
@@ -82,6 +134,7 @@ export default class CRBTC extends Market {
 
   setCompanion(account, companionAddress) {
     return new Promise((resolve, reject) => {
+      this.companionAddress = companionAddress;
       this.instance.connect(account.signer)
         .setCompanion(companionAddress)
         .then(resolve)
@@ -120,6 +173,63 @@ export default class CRBTC extends Market {
       this.tropykus.getChainId()
         .then((chainId) => (chainId === 31 || chainId === 1337
           ? 'tRBTC' : 'RBTC'))
+        .then(resolve)
+        .catch(reject);
+    });
+  }
+
+  // Needs to be done a setCompanion before
+  maxAllowedToDeposit(account) {
+    return new Promise((resolve, reject) => {
+      Promise.all([
+        this.balanceOfUnderlyingInWallet(account),
+        this.tropykus.priceOracle.instance.callStatic
+          .getUnderlyingPrice(this.address),
+        this.isHurricane(),
+        this.getMarketCap(account, this.companionAddress),
+        this.getSupplierSnapshot(account.address),
+      ])
+        .then(([balanceInWallet, priceMantissa, isHurricane, marketCap, snapshot]) => {
+          if (isHurricane) {
+            const satMarketCapMaxDeposit = marketCap.limit.underlying.fixedNumber
+              .subUnsafe(marketCap.totalDeposits.underlying.fixedNumber);
+            if (satMarketCapMaxDeposit._value
+              .localeCompare('0', undefined, { numeric: true }) > 0) {
+              let depositLimitInSat = FixedNumber.from('0.025'.toString(), format);
+              const satBalanceInWallet = balanceInWallet.underlying.fixedNumber;
+              const satDepositsBalance = FixedNumber
+                .from(snapshot.underlyingAmount.toString(), format)
+                .divUnsafe(factor);
+              depositLimitInSat = depositLimitInSat.subUnsafe(satDepositsBalance);
+              const maxToDeposit = Market.min(Market
+                .min(depositLimitInSat, satMarketCapMaxDeposit), satBalanceInWallet);
+              const satPrice = FixedNumber.from(priceMantissa.toString(), format)
+                .divUnsafe(factor);
+              const usd = maxToDeposit.mulUnsafe(satPrice);
+              return {
+                underlying: {
+                  value: Number(maxToDeposit._value),
+                  fixedNumber: maxToDeposit,
+                },
+                usd: {
+                  value: Number(usd.value),
+                  fixedNumber: usd,
+                },
+              };
+            }
+            return {
+              underlying: {
+                value: 0,
+                fixedNumber: zero,
+              },
+              usd: {
+                value: 0,
+                fixedNumber: zero,
+              },
+            };
+          }
+          return super.maxAllowedToDeposit(account);
+        })
         .then(resolve)
         .catch(reject);
     });

@@ -371,14 +371,19 @@ export default class Market {
           .getUnderlyingPrice(this.address),
       ])
         .then(([balance, priceMantissa]) => {
-          const fixedNumber = FixedNumber.from(balance, format).divUnsafe(factor);
+          const underlying = FixedNumber.from(balance, format).divUnsafe(factor);
           const price = FixedNumber.from(priceMantissa.toString(), format)
             .divUnsafe(factor);
-          const usd = fixedNumber.mulUnsafe(price);
+          const usd = underlying.mulUnsafe(price);
           return {
-            underlying: Number(fixedNumber._value),
-            usd: Number(usd._value),
-            fixedNumber,
+            underlying: {
+              value: Number(underlying._value),
+              fixedNumber: underlying,
+            },
+            usd: {
+              value: Number(usd._value),
+              fixedNumber: usd,
+            },
           };
         })
         .then(resolve)
@@ -663,30 +668,57 @@ export default class Market {
     });
   }
 
-  maxAllowedToBorrow(account) {
+  maxAllowedToDeposit(account) {
     return new Promise((resolve, reject) => {
       Promise.all([
-        this.tropykus.comptroller.getAccountLiquidity(account, this.address),
-        this.getCash(),
+        this.balanceOfUnderlyingInWallet(account),
+        this.tropykus.priceOracle.instance.callStatic
+          .getUnderlyingPrice(this.address),
       ])
-        .then(([liquidity, cash]) => {
-          console.log('liquidity', liquidity.underlying.fixedNumber._value);
-          console.log('cash', cash.fixedNumber._value);
-          if (Number(cash.fixedNumber._value) === 0) {
-            return {
-              underlying: 0,
-              usd: 0,
-              fixedNumber: zero,
-            };
-          }
-          if (Number(liquidity.underlying.fixedNumber._value) > Number(cash
-            .fixedNumber._value)) return cash;
-          return liquidity;
+        .then(([balance, priceMantissa]) => {
+          const underlying = balance.underlying.fixedNumber;
+          const usd = underlying.mulUnsafe(FixedNumber.from(priceMantissa.toString(), format))
+            .divUnsafe(factor);
+          return {
+            underlying: {
+              value: Number(underlying.value),
+              fixedNumber: underlying,
+            },
+            usd: {
+              value: Number(usd.value),
+              fixedNumber: usd,
+            },
+          };
         })
         .then(resolve)
         .catch(reject);
     });
   }
+
+  // maxAllowedToBorrow(account) {
+  //   return new Promise((resolve, reject) => {
+  //     Promise.all([
+  //       this.tropykus.comptroller.getAccountLiquidity(account, this.address),
+  //       this.getCash(),
+  //     ])
+  //       .then(([liquidity, cash]) => {
+  //         console.log('liquidity', liquidity.underlying.fixedNumber._value);
+  //         console.log('cash', cash.fixedNumber._value);
+  //         if (Number(cash.fixedNumber._value) === 0) {
+  //           return {
+  //             underlying: 0,
+  //             usd: 0,
+  //             fixedNumber: zero,
+  //           };
+  //         }
+  //         if (Number(liquidity.underlying.fixedNumber._value) > Number(cash
+  //           .fixedNumber._value)) return cash;
+  //         return liquidity;
+  //       })
+  //       .then(resolve)
+  //       .catch(reject);
+  //   });
+  // }
 
   getTokensFromUnderlying(account, amount) {
     return new Promise((resolve, reject) => {
@@ -760,5 +792,15 @@ export default class Market {
         .then(resolve)
         .catch(reject);
     });
+  }
+
+  static min(aFixedNumber, bFixedNumber) {
+    const a = aFixedNumber.mulUnsafe(factor);
+    const b = bFixedNumber.mulUnsafe(factor);
+    if (a._value
+      .localeCompare(b._value, undefined, { numeric: true }) < 0) {
+      return aFixedNumber;
+    }
+    return bFixedNumber;
   }
 }

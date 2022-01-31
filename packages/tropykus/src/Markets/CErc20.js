@@ -1,6 +1,10 @@
-import { BigNumber, ethers } from 'ethers';
+/* eslint-disable no-underscore-dangle */
+import { BigNumber, ethers, FixedNumber } from 'ethers';
 import StandartTokenArtifact from '../../artifacts/StandardToken.json';
 import Market from '../Market';
+
+const format = 'fixed80x18';
+const factor = FixedNumber.fromString(1e18.toString(), format);
 
 export default class CErc20 extends Market {
   constructor(tropykus, abi, contractAddress, erc20TokenAddress) {
@@ -96,12 +100,21 @@ export default class CErc20 extends Market {
         this.tropykus.priceOracle.instance.callStatic
           .getUnderlyingPrice(this.address),
       ])
-        .then(([balance, price]) => {
-          const toUSD = (balance.mul(price))
-            .div(BigNumber.from(1e18.toString()));
+        .then(([balanceMantissa, priceMantissa]) => {
+          const price = FixedNumber.from(priceMantissa, format)
+            .divUnsafe(factor);
+          const underlying = FixedNumber.from(balanceMantissa.toString(), format)
+            .divUnsafe(factor);
+          const usd = underlying.mulUnsafe(price);
           return {
-            underlying: Number(balance) / 1e18,
-            usd: Number(toUSD) / 1e18,
+            underlying: {
+              value: Number(underlying._value),
+              fixedNumber: underlying,
+            },
+            usd: {
+              value: Number(usd._value),
+              fixedNumber: usd,
+            },
           };
         })
         .then(resolve)
