@@ -133,14 +133,18 @@ export default class CRBTC extends Market {
     });
   }
 
-  setCompanion(account, companionAddress) {
+  setNewCompanion(account, companionAddress) {
     return new Promise((resolve, reject) => {
-      this.companionAddress = companionAddress;
+      this.setInternalCompanion(companionAddress);
       this.instance.connect(account.signer)
         .setCompanion(companionAddress)
         .then(resolve)
         .catch(reject);
     });
+  }
+
+  setInternalCompanion(companionAddress) {
+    this.companionAddress = companionAddress;
   }
 
   setMarketCapThreshold(account, companionAddress, threshold) {

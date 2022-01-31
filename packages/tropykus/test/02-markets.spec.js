@@ -339,7 +339,7 @@ describe('Market', () => {
         newComptroller.address,
         priceOracleAddress,
       );
-      await csat.setCompanion(dep, companionAddress);
+      await csat.setNewCompanion(dep, companionAddress);
       await csat.setMarketCapThreshold(dep, companionAddress, 0.8);
 
       alice = tropykus.getAccountFromMnemonic(mnemonic, `m/44'/60'/0'/0/1`);
@@ -973,15 +973,12 @@ describe('Market', () => {
         .toFixed(18);
       await cdoc.transferUnderlying(dep, carlos.address, randomNumber);
 
-      let balanceOfCDoc = await cdoc.balanceOfUnderlyingInWallet(carlos);
-      expect(balanceOfCDoc.underlying.fixedNumber._value).equals(randomNumber);
-
       const maxToDeposit = await cdoc.maxAllowedToDeposit(carlos);
       expect(maxToDeposit.underlying.fixedNumber._value).equals(randomNumber);
       expect(maxToDeposit.usd.fixedNumber._value).equals(randomNumber);
 
       await cdoc.mint(carlos, maxToDeposit.underlying.fixedNumber._value);
-      balanceOfCDoc = await cdoc.balanceOfUnderlyingInWallet(carlos);
+      const balanceOfCDoc = await cdoc.balanceOfUnderlyingInWallet(carlos);
       expect(balanceOfCDoc.underlying.fixedNumber._value).equals('0.0');
     });
 
