@@ -213,7 +213,7 @@ export default class CRBTC extends Market {
                   fixedNumber: maxToDeposit,
                 },
                 usd: {
-                  value: Number(usd.value),
+                  value: Number(usd._value),
                   fixedNumber: usd,
                 },
               };

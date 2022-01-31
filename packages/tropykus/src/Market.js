@@ -681,11 +681,11 @@ export default class Market {
             .divUnsafe(factor);
           return {
             underlying: {
-              value: Number(underlying.value),
+              value: Number(underlying._value),
               fixedNumber: underlying,
             },
             usd: {
-              value: Number(usd.value),
+              value: Number(usd._value),
               fixedNumber: usd,
             },
           };
