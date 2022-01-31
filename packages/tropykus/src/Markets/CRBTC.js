@@ -104,10 +104,9 @@ export default class CRBTC extends Market {
           if (Number(totalBorrows) === 0) return { totalDeposits, limit };
           limit = totalBorrows.mulUnsafe(threshold);
           const limitInUnderlying = limit.divUnsafe(cSatPrice);
-          const totalDepositInUnderlying = satTotalSupply.mulUnsafe(satExchangeRate);
-          totalDeposits = totalDepositInUnderlying.mulUnsafe(cSatPrice);
-          totalDeposits = totalDeposits.addUnsafe(minLiquidity);
-          totalDeposits = Number(totalDeposits._value) < 0 ? zero : totalDeposits;
+          let totalDepositInUnderlying = satTotalSupply.mulUnsafe(satExchangeRate);
+          totalDeposits = totalDepositInUnderlying.mulUnsafe(cSatPrice).addUnsafe(minLiquidity);
+          totalDepositInUnderlying = totalDeposits.divUnsafe(cSatPrice);
           return {
             totalDeposits: {
               usd: {
