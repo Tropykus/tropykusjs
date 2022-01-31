@@ -74,6 +74,7 @@ export default class CRBTC extends Market {
           fixedNumber: zero,
         },
       };
+      if (!companionAddress) resolve({ totalDeposits, limit });
       const companion = new ethers.Contract(companionAddress,
         CompanionArtifact.abi, this.tropykus.provider);
       Promise.all([

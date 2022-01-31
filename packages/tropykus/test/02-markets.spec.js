@@ -991,8 +991,8 @@ describe('Market', () => {
       const maxToDeposit = await crbtc.maxAllowedToDeposit(david);
       expect(maxToDeposit.underlying.fixedNumber._value)
         .equals(balance.underlying.fixedNumber._value);
-      expect(maxToDeposit.usd.fixedNumber._value)
-        .equals((balance.underlying.value * 54556.9).toString());
+      expect(Number(maxToDeposit.usd.fixedNumber._value))
+        .to.be.closeTo((balance.underlying.value * 54556.9), 1e-1);
     });
 
     it('should return the max value that an account can deposit in rbtc micro', async () => {
