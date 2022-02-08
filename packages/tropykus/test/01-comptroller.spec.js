@@ -18,7 +18,7 @@ const unitrollerAddress = '0xdC98d636ad43A17bDAcE402997C7c6ABA55EAa28';
 
 describe('Comptroller', () => {
     const provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545');
-    const wsProvider = new ethers.providers.JsonRpcProvider('ws://127.0.0.1:8545');
+    const wsProvider = new ethers.providers.WebSocketProvider('ws://127.0.0.1:8545');
     const tropykus = new Tropykus(provider, wsProvider, 400000);
     let comptroller;
     let dep;

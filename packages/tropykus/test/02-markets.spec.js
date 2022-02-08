@@ -68,7 +68,7 @@ describe('Market', () => {
 
   beforeEach(async () => {
     const provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545');
-    const wsProvider = new ethers.providers.JsonRpcProvider('ws://127.0.0.1:8545');
+    const wsProvider = new ethers.providers.WebSocketProvider('ws://127.0.0.1:8545');
     tropykus = new Tropykus(provider, wsProvider, 400000);
     dep = await tropykus.getAccount();
     comptroller = await tropykus.setComptroller(dep, comptrollerAddress);
@@ -1533,7 +1533,7 @@ describe('Market', () => {
         sandbox.restore();
       });
 
-      it.skip('Should subscribe on mint event', async () => {
+      it('Should subscribe on mint event', async () => {
         const actionObj = {
           action: () => {
             return 'Action excecuted, mint';
@@ -1556,7 +1556,7 @@ describe('Market', () => {
         expect(actionObj.action.calledTwice).equals(true);
       });
 
-      it.skip('Should subscribe on redeem event', async () => {
+      it('Should subscribe on redeem event', async () => {
         const actionObj = {
           action: () => {
             return 'Action excecuted, redeem';
@@ -1580,7 +1580,7 @@ describe('Market', () => {
         expect(actionObj.action.calledTwice).equals(true);
       });
 
-      it.skip('Should subscribe on borrow event', async () => {
+      it('Should subscribe on borrow event', async () => {
         const actionObj = {
           action: () => {
             return 'Action excecuted, borrow';
@@ -1604,7 +1604,7 @@ describe('Market', () => {
         expect(actionObj.action.calledTwice).equals(true);
       });
 
-      it.skip('Should subscribe on repayBorrow event', async () => {
+      it('Should subscribe on repayBorrow event', async () => {
         const actionObj = {
           action: () => {
             return 'Action excecuted, repayBorrow';

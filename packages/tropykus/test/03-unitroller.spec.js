@@ -8,13 +8,11 @@ chai.use(chaiAsPromised);
 const { expect } = chai;
 
 const unitrollerAddress = '0xdC98d636ad43A17bDAcE402997C7c6ABA55EAa28';
-const comptrollerAddress = '0xB173b5EE67b9F38263413Bc29440f89cC5BC3C39';
-const priceOracleAddress = '0x4d7Cc3cdb88Fa1EEC3095C9f849c799F1f7D4031';
 
 describe('Unitroller', () => {
     let dep;
     const provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545');
-    const wsProvider = new ethers.providers.JsonRpcProvider('ws://127.0.0.1:8545');
+    const wsProvider = new ethers.providers.WebSocketProvider('ws://127.0.0.1:8545');
     const tropykus = new Tropykus(provider, wsProvider, 400000);
     beforeEach(async () => {
         dep = await tropykus.getAccount();
