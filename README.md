@@ -8,18 +8,18 @@ The Tropykus cToken contracts (CRBTC, CERC20Immutable and CRDOC) track these bal
 
 # Tropykusjs
 
-[@tropykus/tropykus](https://www.npmjs.com/package/@tropykus/tropykus) npm package enables developers to interact with a deployed instance of Tropykus smart contracts by simply importing it as a dependency.
+[@tropykus-finance/tropykus](https://www.npmjs.com/package/@tropykus-finance/tropykus) npm package enables developers to interact with a deployed instance of Tropykus smart contracts by simply importing it as a dependency.
 
 ## Install tropykus
 ``` bash
 $ npm init
 $ npm install @babel/runtime
-$ npm install @tropykus/tropykus
+$ npm install @tropykus-finance/tropykus
 ```
 
 ## Use tropykus in your app
 ```javascript
-const Tropykus = require('@tropykus/tropykus');
+const Tropykus = require('@tropykus-finance/tropykus');
 
 const tropykus = new Tropykus('https://public-node.testnet.rsk.co', 400000);
 

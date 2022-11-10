@@ -9,6 +9,6 @@ echo "\"module\",\"shasum\""
 for PACKAGE in ${PACKAGES} ; do
   cd ./packages/${PACKAGE}
   PACKAGE_SHA=$( npm pack --dry-run 2>&1 >/dev/null | grep "shasum: " | awk '{print $NF}' )
-  echo "\"@tropykus/${PACKAGE}@${VERSION}\",\"${PACKAGE_SHA}\""
+  echo "\"@tropykus-finance/${PACKAGE}@${VERSION}\",\"${PACKAGE_SHA}\""
   cd ../..
 done

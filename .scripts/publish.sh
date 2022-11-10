@@ -15,8 +15,8 @@ for PACKAGE in ${PACKAGES} ; do
   fi
   PACKAGE_SHA_LOCAL=$( npm pack --dry-run 2>&1 >/dev/null | grep "shasum: " | awk '{print $NF}' )
   npm publish --access public
-  PACKAGE_SHA_REMOTE=$( npm view @tropykus/${PACKAGE}@${VERSION} dist.shasum )
-  echo "\"@tropykus/${PACKAGE}@${VERSION}\",\"${PACKAGE_SHA_LOCAL}\",\"${PACKAGE_SHA_REMOTE}\""
+  PACKAGE_SHA_REMOTE=$( npm view @tropykus-finance/${PACKAGE}@${VERSION} dist.shasum )
+  echo "\"@tropykus-finance/${PACKAGE}@${VERSION}\",\"${PACKAGE_SHA_LOCAL}\",\"${PACKAGE_SHA_REMOTE}\""
   if [ "${PACKAGE_SHA_LOCAL}" != "${PACKAGE_SHA_REMOTE}" ] ; then
     echo "${PACKAGE} - local shasum is ${PACKAGE_SHA_LOCAL}, but published shasum is ${PACKAGE_SHA_REMOTE}"
     exit 1
