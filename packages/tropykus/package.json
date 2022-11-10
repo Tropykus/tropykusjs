@@ -1,6 +1,6 @@
 {
   "name": "@tropykus-finance/tropykus",
-  "version": "0.2.16",
+  "version": "0.2.17",
   "description": "Tropykus finance contract handlers",
   "main": "dist/@tropykus-finance/tropykus.cjs.js",
   "module": "dist/@tropykus-finance/tropykus.esm.js",
