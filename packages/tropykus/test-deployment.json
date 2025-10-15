@@ -2,19 +2,19 @@
   "network": "hardhat-local",
   "chainId": 31337,
   "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-  "timestamp": "2025-10-15T19:21:13.399Z",
+  "timestamp": "2025-10-15T21:29:40.406Z",
   "contracts": {
-    "whitePaperInterestRateModel": "0x21dF544947ba3E8b3c32561399E88B52Dc8b2823",
-    "jumpRateModel": "0x2E2Ed0Cfd3AD2f1d34481277b3204d807Ca2F8c2",
-    "unitroller": "0xD8a5a9b31c3C0232E196d518E89Fd8bF83AcAd43",
-    "comptroller": "0xDC11f7E700A4c898AE5CAddB1082cFfa76512aDD",
-    "priceOracle": "0x8198f5d8F8CfFE8f9C413d98a0A55aEB8ab9FbB7",
-    "doc": "0x172076E0166D1F9Cc711C77Adf8488051744980C",
-    "kdoc": "0x4EE6eCAD1c2Dae9f525404De8555724e3c35d07B",
-    "krbtc": "0xBEc49fA140aCaA83533fB00A2BB19bDdd0290f25",
-    "docPriceProvider": "0xC9a43158891282A2B1475592D5719c001986Aaec",
-    "rbtcPriceProvider": "0x1c85638e118b37167e9298c2268758e058DdfDA0",
-    "docAdapter": "0x367761085BF3C12e5DA2Df99AC6E1a824612b8fb",
-    "rbtcAdapter": "0x4C2F7092C2aE51D986bEFEe378e50BD4dB99C901"
+    "whitePaperInterestRateModel": "0xD5ac451B0c50B9476107823Af206eD814a2e2580",
+    "jumpRateModel": "0xF8e31cb472bc70500f08Cd84917E5A1912Ec8397",
+    "unitroller": "0xc0F115A19107322cFBf1cDBC7ea011C19EbDB4F8",
+    "comptroller": "0xc96304e3c037f81dA488ed9dEa1D8F2a48278a75",
+    "priceOracle": "0x07882Ae1ecB7429a84f1D53048d35c4bB2056877",
+    "doc": "0x276C216D241856199A83bf27b2286659e5b877D3",
+    "kdoc": "0x3347B4d90ebe72BeFb30444C9966B2B990aE9FcB",
+    "krbtc": "0x3155755b79aA083bd953911C92705B7aA82a18F9",
+    "docPriceProvider": "0xE3011A37A904aB90C8881a99BD1F6E21401f1522",
+    "rbtcPriceProvider": "0x1f10F3Ba7ACB61b2F50B9d6DdCf91a6f787C0E82",
+    "docAdapter": "0x457cCf29090fe5A24c19c1bc95F492168C0EaFdb",
+    "rbtcAdapter": "0x525C7063E7C20997BaaE9bDa922159152D0e8417"
   }
 }

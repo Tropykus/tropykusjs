@@ -57,13 +57,13 @@
 
 **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T011 [P] [US1] Write unit test for decimal factor computation (0, 6, 8, 18 decimals) in packages/tropykus/test/02-markets.spec.js
-- [ ] T012 [P] [US1] Write contract test for minting 100 units of 6-decimal token in packages/tropykus/test/02-markets.spec.js
-- [ ] T013 [P] [US1] Write contract test for borrowing from 6-decimal market in packages/tropykus/test/02-markets.spec.js
-- [ ] T014 [P] [US1] Write contract test for redeeming from 6-decimal market in packages/tropykus/test/02-markets.spec.js
-- [ ] T015 [P] [US1] Write contract test for repaying to 6-decimal market in packages/tropykus/test/02-markets.spec.js
-- [ ] T016 [P] [US1] Write contract test for maxValue=true redeem with 6-decimal token in packages/tropykus/test/02-markets.spec.js
-- [ ] T017 [P] [US1] Write contract test for maxValue=true repayBorrow with 6-decimal token in packages/tropykus/test/02-markets.spec.js
+- [X] T011 [P] [US1] Write unit test for decimal factor computation (0, 6, 8, 18 decimals) in packages/tropykus/test/02-markets.spec.js
+- [X] T012 [P] [US1] Write contract test for minting 100 units of 6-decimal token in packages/tropykus/test/02-markets.spec.js
+- [X] T013 [P] [US1] Write contract test for borrowing from 6-decimal market in packages/tropykus/test/02-markets.spec.js
+- [X] T014 [P] [US1] Write contract test for redeeming from 6-decimal market in packages/tropykus/test/02-markets.spec.js
+- [X] T015 [P] [US1] Write contract test for repaying to 6-decimal market in packages/tropykus/test/02-markets.spec.js
+- [X] T016 [P] [US1] Write contract test for maxValue=true redeem with 6-decimal token in packages/tropykus/test/02-markets.spec.js
+- [X] T017 [P] [US1] Write contract test for maxValue=true repayBorrow with 6-decimal token in packages/tropykus/test/02-markets.spec.js
 
 **Verify all tests FAIL (red state) before proceeding to implementation**
 

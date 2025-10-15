@@ -1630,4 +1630,320 @@ describe('Market', () => {
       });
     });
   });
+
+  /**
+   * USER STORY 1: Multi-Decimal Token Support (6-decimal tokens like USDT)
+   * Tests MUST be written FIRST (TDD - Red Phase)
+   * These tests verify the library correctly handles tokens with non-18-decimal precision
+   */
+  describe('Multi-Decimal Token Support (User Story 1)', () => {
+    let tropykus;
+    let dep;
+    let alice;
+    const sandbox = sinon.createSandbox();
+
+    beforeEach(async () => {
+      const provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545');
+      const wsProvider = new ethers.providers.WebSocketProvider('ws://127.0.0.1:8545');
+      tropykus = new Tropykus(provider, wsProvider, 400000);
+      dep = await tropykus.getAccount();
+      alice = await tropykus.getAccountFromMnemonic(mnemonic, "m/44'/37310'/0'/0/1");
+      await tropykus.setComptroller(dep, comptrollerAddress);
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    // T011: Unit test for decimal factor computation (0, 6, 8, 18 decimals)
+    describe('T011: Decimal factor computation', () => {
+      it('should compute tokenFactor correctly for 0 decimals', async () => {
+        const market = await tropykus.addMarket(
+          dep,
+          'CErc20Immutable',
+          csatMarketAddress,
+          usdtAddress,
+          {
+            tokenDecimals: 0,
+            comptrollerAddress,
+            interestRateModelAddress: cusdtInterestRateModelAddress,
+          }
+        );
+
+        expect(market.tokenDecimals).to.equal(0);
+        expect(market.tokenFactor._value).to.equal('1.0');
+      });
+
+      it('should compute tokenFactor correctly for 6 decimals', async () => {
+        const market = await tropykus.addMarket(
+          dep,
+          'CErc20Immutable',
+          csatMarketAddress,
+          usdtAddress,
+          {
+            tokenDecimals: 6,
+            comptrollerAddress,
+            interestRateModelAddress: cusdtInterestRateModelAddress,
+          }
+        );
+
+        expect(market.tokenDecimals).to.equal(6);
+        expect(market.tokenFactor._value).to.equal('1000000.0');
+      });
+
+      it('should compute tokenFactor correctly for 8 decimals', async () => {
+        const market = await tropykus.addMarket(
+          dep,
+          'CErc20Immutable',
+          csatMarketAddress,
+          usdtAddress,
+          {
+            tokenDecimals: 8,
+            comptrollerAddress,
+            interestRateModelAddress: cusdtInterestRateModelAddress,
+          }
+        );
+
+        expect(market.tokenDecimals).to.equal(8);
+        expect(market.tokenFactor._value).to.equal('100000000.0');
+      });
+
+      it('should compute tokenFactor correctly for 18 decimals (default)', async () => {
+        const market = await tropykus.addMarket(
+          dep,
+          'CErc20Immutable',
+          csatMarketAddress,
+          usdtAddress,
+          {
+            comptrollerAddress,
+            interestRateModelAddress: cusdtInterestRateModelAddress,
+          }
+        );
+
+        expect(market.tokenDecimals).to.equal(18);
+        expect(market.tokenFactor._value).to.equal('1000000000000000000.0');
+      });
+
+      it('should throw error for tokenDecimals > 18', async () => {
+        try {
+          await tropykus.addMarket(
+            dep,
+            'CErc20Immutable',
+            csatMarketAddress,
+            usdtAddress,
+            {
+              tokenDecimals: 24,
+              comptrollerAddress,
+              interestRateModelAddress: cusdtInterestRateModelAddress,
+            }
+          );
+          expect.fail('Should have thrown an error');
+        } catch (error) {
+          expect(error.message).to.include('tokenDecimals must be an integer between 0 and 18');
+        }
+      });
+
+      it('should throw error for negative tokenDecimals', async () => {
+        try {
+          await tropykus.addMarket(
+            dep,
+            'CErc20Immutable',
+            csatMarketAddress,
+            usdtAddress,
+            {
+              tokenDecimals: -1,
+              comptrollerAddress,
+              interestRateModelAddress: cusdtInterestRateModelAddress,
+            }
+          );
+          expect.fail('Should have thrown an error');
+        } catch (error) {
+          expect(error.message).to.include('tokenDecimals must be an integer between 0 and 18');
+        }
+      });
+    });
+
+    // T012: Contract test for minting 100 units of 6-decimal token
+    describe('T012: Minting 6-decimal token', () => {
+      it('should mint 100 USDT (6 decimals) correctly', async () => {
+        // Note: This test will fail until implementation is complete (TDD red phase)
+        const kusdt = await tropykus.addMarket(
+          dep,
+          'CErc20Immutable',
+          csatMarketAddress,
+          usdtAddress,
+          {
+            tokenDecimals: 6,
+            comptrollerAddress,
+            interestRateModelAddress: cusdtInterestRateModelAddress,
+          }
+        );
+
+        // Mock ERC20 approve and mint
+        sandbox.stub(kusdt.erc20Instance, 'connect').returns({
+          approve: sandbox.stub().resolves({ wait: sandbox.stub().resolves() }),
+        });
+        sandbox.stub(kusdt.instance, 'connect').returns({
+          mint: sandbox.stub().callsFake((amount) => {
+            // Verify the amount is correctly converted to 6-decimal mantissa
+            expect(amount.toString()).to.equal('100000000'); // 100 * 10^6
+            return Promise.resolve({ wait: sandbox.stub().resolves() });
+          }),
+        });
+
+        await kusdt.mint(alice, 100);
+      });
+    });
+
+    // T013: Contract test for borrowing from 6-decimal market
+    describe('T013: Borrowing 6-decimal token', () => {
+      it('should borrow 50 USDT (6 decimals) correctly', async () => {
+        const kusdt = await tropykus.addMarket(
+          dep,
+          'CErc20Immutable',
+          csatMarketAddress,
+          usdtAddress,
+          {
+            tokenDecimals: 6,
+            comptrollerAddress,
+            interestRateModelAddress: cusdtInterestRateModelAddress,
+          }
+        );
+
+        sandbox.stub(kusdt.instance, 'connect').returns({
+          borrow: sandbox.stub().callsFake((amount, options) => {
+            // Verify the amount is correctly converted to 6-decimal mantissa
+            expect(amount.toString()).to.equal('50000000'); // 50 * 10^6
+            return Promise.resolve({ wait: sandbox.stub().resolves() });
+          }),
+        });
+
+        await kusdt.borrow(alice, 50);
+      });
+    });
+
+    // T014: Contract test for redeeming from 6-decimal market
+    describe('T014: Redeeming 6-decimal token', () => {
+      it('should redeem 25 USDT (6 decimals) correctly', async () => {
+        const kusdt = await tropykus.addMarket(
+          dep,
+          'CErc20Immutable',
+          csatMarketAddress,
+          usdtAddress,
+          {
+            tokenDecimals: 6,
+            comptrollerAddress,
+            interestRateModelAddress: cusdtInterestRateModelAddress,
+          }
+        );
+
+        sandbox.stub(kusdt.instance, 'connect').returns({
+          callStatic: {
+            exchangeRateCurrent: sandbox.stub().resolves(ethers.BigNumber.from('20000000000000000')), // 0.02 * 1e18
+          },
+          redeemUnderlying: sandbox.stub().callsFake((amount, options) => {
+            // Verify the amount is correctly converted to 6-decimal mantissa
+            expect(amount.toString()).to.equal('25000000'); // 25 * 10^6
+            return Promise.resolve({ wait: sandbox.stub().resolves() });
+          }),
+        });
+
+        await kusdt.redeem(alice, 25);
+      });
+    });
+
+    // T015: Contract test for repaying to 6-decimal market
+    describe('T015: Repaying 6-decimal token', () => {
+      it('should repay 30 USDT (6 decimals) correctly', async () => {
+        const kusdt = await tropykus.addMarket(
+          dep,
+          'CErc20Immutable',
+          csatMarketAddress,
+          usdtAddress,
+          {
+            tokenDecimals: 6,
+            comptrollerAddress,
+            interestRateModelAddress: cusdtInterestRateModelAddress,
+          }
+        );
+
+        sandbox.stub(kusdt.erc20Instance, 'connect').returns({
+          approve: sandbox.stub().resolves({ wait: sandbox.stub().resolves() }),
+        });
+        sandbox.stub(kusdt.instance, 'connect').returns({
+          repayBorrow: sandbox.stub().callsFake((amount) => {
+            // Verify the amount is correctly converted to 6-decimal mantissa
+            expect(amount.toString()).to.equal('30000000'); // 30 * 10^6
+            return Promise.resolve({ wait: sandbox.stub().resolves() });
+          }),
+        });
+
+        await kusdt.repayBorrow(alice, 30, false);
+      });
+    });
+
+    // T016: Contract test for maxValue=true redeem with 6-decimal token
+    describe('T016: MaxValue redeem with 6-decimal token', () => {
+      it('should redeem all with maxValue=true for 6-decimal token', async () => {
+        const kusdt = await tropykus.addMarket(
+          dep,
+          'CErc20Immutable',
+          csatMarketAddress,
+          usdtAddress,
+          {
+            tokenDecimals: 6,
+            comptrollerAddress,
+            interestRateModelAddress: cusdtInterestRateModelAddress,
+          }
+        );
+
+        const kTokenBalance = ethers.BigNumber.from('5000000000'); // 50 kTokens (8 decimals)
+
+        sandbox.stub(kusdt.instance, 'connect').returns({
+          callStatic: {
+            balanceOf: sandbox.stub().resolves(kTokenBalance),
+          },
+          redeem: sandbox.stub().callsFake((amount, options) => {
+            // Verify it redeems all kTokens
+            expect(amount.toString()).to.equal(kTokenBalance.toString());
+            return Promise.resolve({ wait: sandbox.stub().resolves() });
+          }),
+        });
+
+        await kusdt.redeem(alice, 0, true);
+      });
+    });
+
+    // T017: Contract test for maxValue=true repayBorrow with 6-decimal token
+    describe('T017: MaxValue repay with 6-decimal token', () => {
+      it('should repay all with maxValue=true for 6-decimal token', async () => {
+        const kusdt = await tropykus.addMarket(
+          dep,
+          'CErc20Immutable',
+          csatMarketAddress,
+          usdtAddress,
+          {
+            tokenDecimals: 6,
+            comptrollerAddress,
+            interestRateModelAddress: cusdtInterestRateModelAddress,
+          }
+        );
+
+        const maxRepayAmount = ethers.constants.MaxUint256;
+
+        sandbox.stub(kusdt.erc20Instance, 'connect').returns({
+          approve: sandbox.stub().resolves({ wait: sandbox.stub().resolves() }),
+        });
+        sandbox.stub(kusdt.instance, 'connect').returns({
+          repayBorrow: sandbox.stub().callsFake((amount) => {
+            // Verify it uses MaxUint256 for full repayment
+            expect(amount.toString()).to.equal(maxRepayAmount.toString());
+            return Promise.resolve({ wait: sandbox.stub().resolves() });
+          }),
+        });
+
+        await kusdt.repayBorrow(alice, 0, true);
+      });
+    });
+  });
 });
