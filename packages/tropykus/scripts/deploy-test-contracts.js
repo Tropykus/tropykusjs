@@ -1,3 +1,4 @@
+/* eslint-disable no-underscore-dangle */
 /**
  * Deploy Tropykus contracts to local Hardhat network for testing
  * This script deploys all necessary contracts for the test suite
@@ -35,7 +36,7 @@ async function main() {
     const whitePaperFactory = new ethers.ContractFactory(
       WhitePaperInterestRateModel.abi,
       WhitePaperInterestRateModel.bytecode,
-      signer
+      signer,
     );
     const baseRatePerYear = ethers.utils.parseEther('0.02'); // 2%
     const multiplierPerYear = ethers.utils.parseEther('0.30'); // 30%
@@ -49,7 +50,7 @@ async function main() {
     const jumpRateFactory = new ethers.ContractFactory(
       JumpRateModelV2.abi,
       JumpRateModelV2.bytecode,
-      signer
+      signer,
     );
     const baseRatePerYearJump = ethers.utils.parseEther('0.00'); // 0%
     const multiplierPerYearJump = ethers.utils.parseEther('0.04'); // 4%
@@ -60,7 +61,7 @@ async function main() {
       multiplierPerYearJump,
       jumpMultiplierPerYear,
       kink,
-      deployer // owner address (5th parameter)
+      deployer, // owner address (5th parameter)
     );
     await jumpRateModel.deployed();
     deployedContracts.jumpRateModel = jumpRateModel.address;
@@ -72,7 +73,7 @@ async function main() {
     const unitrollerFactory = new ethers.ContractFactory(
       Unitroller.abi,
       Unitroller.bytecode,
-      signer
+      signer,
     );
     const unitroller = await unitrollerFactory.deploy();
     await unitroller.deployed();
@@ -85,7 +86,7 @@ async function main() {
     const comptrollerFactory = new ethers.ContractFactory(
       ComptrollerG6.abi,
       ComptrollerG6.bytecode,
-      signer
+      signer,
     );
     const comptroller = await comptrollerFactory.deploy();
     await comptroller.deployed();
@@ -98,7 +99,7 @@ async function main() {
     const comptrollerAsProxy = new ethers.Contract(
       comptroller.address,
       ComptrollerG6.abi,
-      signer
+      signer,
     );
     await comptrollerAsProxy._become(unitroller.address);
     console.log('  Comptroller set as Unitroller implementation');
@@ -109,7 +110,7 @@ async function main() {
     const oracleFactory = new ethers.ContractFactory(
       PriceOracle.abi,
       PriceOracle.bytecode,
-      signer
+      signer,
     );
     const priceOracle = await oracleFactory.deploy(deployer); // guardian address
     await priceOracle.deployed();
@@ -121,7 +122,7 @@ async function main() {
     const comptrollerViaUnitroller = new ethers.Contract(
       unitroller.address,
       ComptrollerG6.abi,
-      signer
+      signer,
     );
     await comptrollerViaUnitroller._setPriceOracle(priceOracle.address);
     await comptrollerViaUnitroller._setCloseFactor(ethers.utils.parseEther('0.5')); // 50%
@@ -134,7 +135,7 @@ async function main() {
     const tokenFactory = new ethers.ContractFactory(
       StandardToken.abi,
       StandardToken.bytecode,
-      signer
+      signer,
     );
 
     // Deploy DOC (18 decimals)
@@ -142,11 +143,22 @@ async function main() {
       ethers.utils.parseEther('1000000'), // 1M DOC
       'Test DOC',
       18,
-      'tDOC'
+      'tDOC',
     );
     await doc.deployed();
     deployedContracts.doc = doc.address;
     console.log('  DOC (18 decimals) deployed to:', doc.address);
+
+    // Deploy USDT0 (6 decimals)
+    const usdt0 = await tokenFactory.deploy(
+      ethers.utils.parseUnits('1000000', 6), // 1M USDT0 (scaled to 6 decimals)
+      'Test USDT0',
+      6,
+      'tUSDT0',
+    );
+    await usdt0.deployed();
+    deployedContracts.usdt0 = usdt0.address;
+    console.log('  USDT0 (6 decimals) deployed to:', usdt0.address);
 
     // 8. Deploy kToken Markets
     console.log('\n8. Deploying kToken Markets...');
@@ -158,7 +170,7 @@ async function main() {
     const cErc20Factory = new ethers.ContractFactory(
       CErc20Immutable.abi,
       CErc20Immutable.bytecode,
-      signer
+      signer,
     );
 
     const kdoc = await cErc20Factory.deploy(
@@ -169,7 +181,7 @@ async function main() {
       'Tropykus DOC',
       'kDOC',
       18, // kToken decimals (18 for Tropykus)
-      deployer // admin address
+      deployer, // admin address
     );
     await kdoc.deployed();
     deployedContracts.kdoc = kdoc.address;
@@ -180,7 +192,7 @@ async function main() {
     const crbtcFactory = new ethers.ContractFactory(
       CRBTC.abi,
       CRBTC.bytecode,
-      signer
+      signer,
     );
     const krbtc = await crbtcFactory.deploy(
       unitroller.address,
@@ -189,27 +201,45 @@ async function main() {
       'Tropykus RBTC',
       'kRBTC',
       18, // kToken decimals (18 for Tropykus)
-      deployer // admin address
+      deployer, // admin address
     );
     await krbtc.deployed();
     deployedContracts.krbtc = krbtc.address;
     console.log('  kRBTC deployed to:', krbtc.address);
 
+    // Deploy kUSDT0 (CErc20Immutable) with Jump Rate Model
+    const kusdt0 = await cErc20Factory.deploy(
+      usdt0.address,
+      unitroller.address,
+      jumpRateModel.address, // Use Jump Rate Model for USDT0
+      ethers.utils.parseUnits('0.02', 6), // Use parseUnits for 6-decimal underlying
+      'Tropykus USDT0',
+      'kUSDT0',
+      18, // kToken decimals (18 for Tropykus)
+      deployer, // admin address
+    );
+    await kusdt0.deployed();
+    deployedContracts.kusdt0 = kusdt0.address;
+    console.log('  kUSDT0 deployed to:', kusdt0.address);
+
     // 9. Support Markets in Comptroller
     console.log('\n9. Supporting markets in Comptroller...');
     await comptrollerViaUnitroller._supportMarket(kdoc.address);
     await comptrollerViaUnitroller._supportMarket(krbtc.address);
+    await comptrollerViaUnitroller._supportMarket(kusdt0.address);
     console.log('  All markets supported');
 
     // 10. Set Collateral Factors
     console.log('\n10. Setting collateral factors...');
     await comptrollerViaUnitroller._setCollateralFactor(kdoc.address, ethers.utils.parseEther('0.75')); // 75%
     await comptrollerViaUnitroller._setCollateralFactor(krbtc.address, ethers.utils.parseEther('0.6')); // 60%
+    await comptrollerViaUnitroller._setCollateralFactor(kusdt0.address, ethers.utils.parseEther('0.75')); // 75%
     console.log('  Collateral factors set');
 
     // 11. Set Oracle Prices using Mock Price Provider and Adapters
     console.log('\n11. Setting oracle prices...');
     const price1USD = ethers.utils.parseEther('1'); // $1
+    const priceUSDT0 = ethers.utils.parseUnits('1', 30); // $1 for the Redstone Oracle
     const priceRBTC = ethers.utils.parseEther('54556.9'); // ~$54,556.90
 
     // Deploy Mock Price Providers
@@ -217,7 +247,7 @@ async function main() {
     const mockProviderFactory = new ethers.ContractFactory(
       MockPriceProviderMoC.abi,
       MockPriceProviderMoC.bytecode,
-      signer
+      signer,
     );
 
     const docPriceProvider = await mockProviderFactory.deploy(deployer, price1USD);
@@ -228,12 +258,16 @@ async function main() {
     await rbtcPriceProvider.deployed();
     console.log('  RBTC Price Provider deployed to:', rbtcPriceProvider.address);
 
+    const usdt0PriceProvider = await mockProviderFactory.deploy(deployer, priceUSDT0);
+    await usdt0PriceProvider.deployed();
+    console.log('  USDT0 Price Provider deployed to:', usdt0PriceProvider.address);
+
     // Deploy Price Oracle Adapters
     const PriceOracleAdapterMoc = loadArtifact('PriceOracleAdapterMoc');
     const adapterFactory = new ethers.ContractFactory(
       PriceOracleAdapterMoc.abi,
       PriceOracleAdapterMoc.bytecode,
-      signer
+      signer,
     );
 
     const docAdapter = await adapterFactory.deploy(deployer, docPriceProvider.address);
@@ -244,23 +278,30 @@ async function main() {
     await rbtcAdapter.deployed();
     console.log('  RBTC Adapter deployed to:', rbtcAdapter.address);
 
+    const usdt0Adapter = await adapterFactory.deploy(deployer, usdt0PriceProvider.address);
+    await usdt0Adapter.deployed();
+    console.log('  USDT0 Adapter deployed to:', usdt0Adapter.address);
+
     // Set adapters in PriceOracleProxy
     await priceOracle.setAdapterToToken(kdoc.address, docAdapter.address);
     await priceOracle.setAdapterToToken(krbtc.address, rbtcAdapter.address);
+    await priceOracle.setAdapterToToken(kusdt0.address, usdt0Adapter.address);
     console.log('  Oracle prices set via adapters');
 
     deployedContracts.docPriceProvider = docPriceProvider.address;
     deployedContracts.rbtcPriceProvider = rbtcPriceProvider.address;
+    deployedContracts.usdt0PriceProvider = usdt0PriceProvider.address;
     deployedContracts.docAdapter = docAdapter.address;
     deployedContracts.rbtcAdapter = rbtcAdapter.address;
+    deployedContracts.usdt0Adapter = usdt0Adapter.address;
 
     // Save deployment addresses
     const deploymentInfo = {
       network: 'hardhat-local',
       chainId: 31337,
-      deployer: deployer,
+      deployer,
       timestamp: new Date().toISOString(),
-      contracts: deployedContracts
+      contracts: deployedContracts,
     };
 
     const outputPath = path.join(__dirname, '../test-deployment.json');
