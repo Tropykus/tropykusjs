@@ -4,7 +4,12 @@
 
 The Tropykus Protocol is developed using RSK smart contracts for supplying or borrowing assets. Through the cToken contracts, accounts on the blockchain supply capital (RBTC or ERC-20 tokens) to receive kTokens. Accounts may also do the reverse, and borrow assets from the protocol, using other assets as collateral.
 
-The Tropykus cToken contracts (CRBTC, CERC20Immutable and CRDOC) track these balances, and algorithmically set interest rates for borrowers. This process is described in greater detail, in the [Tropykus Whitepaper](https://firebasestorage.googleapis.com/v0/b/tropycofinance.appspot.com/o/Tropykus_Protocol%20V4.pdf?alt=media&token=d2b0cb1e-4163-432f-8b17-38df7393baff).
+The Tropykus cToken contracts (CRBTC and CErc20Immutable) track these balances, and algorithmically set interest rates for borrowers. This process is described in greater detail, in the [Tropykus Whitepaper](https://firebasestorage.googleapis.com/v0/b/tropycofinance.appspot.com/o/Tropykus_Protocol%20V4.pdf?alt=media&token=d2b0cb1e-4163-432f-8b17-38df7393baff).
+
+> **Deprecation Notices:**
+> - **CRDOC**: The CRDOC contract artifact is **deprecated** and will be removed in a future version. Use `CErc20Immutable` instead for all ERC20 token markets, including RIF Dollar on Chain (RDOC).
+> - **Hurricane/kSAT Markets**: RBTC micro (kSAT) markets using the Hurricane interest rate model are **deprecated**. All related methods (`addSubsidy`, `getSubsidyFund`, `getMarketCap`, `setNewCompanion`, etc.) will be removed in a future version.
+> - **USDT (legacy)**: The legacy USDT token integration is **deprecated**. Use USDT0 (the new version of USDT) instead. All USDT references in documentation and examples refer to the old version.
 
 # Tropykusjs
 
@@ -90,15 +95,20 @@ args = {
 const crbtc = await tropykus.addMarket('CRBTC', true, crbtcMarketAddress);
 ```
 
-**For cTokens (cDOC, cRIF, cUSDT):**
+**For cTokens (cDOC, cRIF, cUSDT0, cRDOC):**
 ```javascript
 const cdoc = await tropykus.addMarket('CErc20Immutable', true, cdocAddress, docAddress);
+// For USDT0 (new version):
+const cusdt0 = await tropykus.addMarket('CErc20Immutable', true, cusdt0Address, usdt0Address);
 ```
 
-**For cRDOC:**
+**~~For cRDOC~~ (DEPRECATED):**
 ```javascript
+// DEPRECATED: Use 'CErc20Immutable' instead
 const crdoc = await tropykus.addMarket('CRDOC', true, rcdocAddress, rdocAddress);
 ```
+
+> **Deprecation Warning:** The `CRDOC` artifact is deprecated. Use `CErc20Immutable` for all ERC20 markets including RDOC.
 
 Then mint function can be called using the assigned tropykus account to sign the transaction
 
@@ -220,19 +230,19 @@ The third parameter is a flag that indicates the method that must pay all the de
 | tRIF Token | StandardToken | 0xc370cd19517b5a8a9f6df0958679e8cd4874c048 |
 | tDOC Token | StandardToken | 0x494154243ac77c6ab90dfa0d4d42dd411e1df5f3 |
 | trDOC Token | StandardToken | 0xc486ac998afbf1b477533dda94d950bd2190ceb5 |
-| tUSDT Token | StandardToken | 0xcf5137f039578cb10070b91bb30fd3d260bcddde |
+| ~~tUSDT Token~~ (legacy - deprecated) | StandardToken | 0xcf5137f039578cb10070b91bb30fd3d260bcddde |
 | RIF Interest Rate Model | WhitePaperInterestRateModel | 0x41cbfa04ac7bad4e702fad9c92064cf503964f3a |
 | DOC Interest Rate Model | JumpRateModelV2 | 0xe8cf23e02ffb01b7f7221025e7af0ec56fa6df88 |
 | rDOC Interest Rate Model | JumpRateModelV2 | 0x385d059f3dd3dc36addd1918a75fb84d758c3f69 |
-| USDT Interest Rate Model | JumpRateModelV2 | 0x01ffd800f0d5af18b7847e52d9bdcfed81bb8f28 |
+| ~~USDT Interest Rate Model~~ (legacy - deprecated) | JumpRateModelV2 | 0x01ffd800f0d5af18b7847e52d9bdcfed81bb8f28 |
 | RBTC Interest Rate Model | WhitePaperInterestRateModel | 0x4c9e251ce7073ce1a62d696800ed07f67eace2d5 |
-| RBTC micro(kSAT) Interest Rate Model | HurricaneInterestRateModel | 0xd22de9a3f9d87e6bf58783e44b5453b3deacb0fe |
+| ~~RBTC micro(kSAT) Interest Rate Model~~ | ~~HurricaneInterestRateModel~~ (deprecated) | 0xd22de9a3f9d87e6bf58783e44b5453b3deacb0fe |
 | kRIF | CErc20Immutable | 0xd22de9a3f9d87e6bf58783e44b5453b3deacb0fe |
 | kDOC | CErc20Immutable | 0xe7b4770af8152fc1a0e13d08e70a8c9a70f4d9d9 |
-| kRDOC | CRDOC | 0x0981eb51a91e6f89063c963438cadf16c2e44962 |
-| kUSDT | CErc20Immutable | 0x495be6b6d8f35748bb8fe657f884f84342043733 |
+| ~~kRDOC~~ | ~~CRDOC~~ (deprecated) | 0x0981eb51a91e6f89063c963438cadf16c2e44962 |
+| ~~kUSDT~~ (legacy - deprecated) | CErc20Immutable | 0x495be6b6d8f35748bb8fe657f884f84342043733 |
 | kRBTC | CRBTC | 0x636b2c156d09cee9516f9afec7a4605e1f43dec1 |
-| kSAT | CRBTC | 0xf2250c3d8e81a562f55e4a207c218d50c62db087 |
+| ~~kSAT~~ | ~~CRBTC~~ (deprecated - Hurricane market) | 0xf2250c3d8e81a562f55e4a207c218d50c62db087 |
 | Comptroller | ComptrollerG6 | 0x7de1ade0c4482ceab96faff408cc9dcc9015b448 |
 
 

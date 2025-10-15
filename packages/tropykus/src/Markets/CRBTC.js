@@ -10,17 +10,22 @@ const minLiquidity = FixedNumber.fromString('1', format);
 const zero = FixedNumber.fromString('0', format);
 
 export default class CRBTC extends Market {
-  constructor(tropykus, contractAddress) {
+  constructor(tropykus, contractAddress, options = {}) {
     super(
       tropykus,
       CRBTCArtifact.abi,
       contractAddress,
+      options,
     );
     this.type = 'CRBTC';
     this.companionAddress = '';
   }
 
+  /**
+   * @deprecated Hurricane/kSAT micro markets are deprecated. This method will be removed in a future version.
+   */
   addSubsidy(account, amount) {
+    console.warn('DEPRECATION WARNING: addSubsidy() is deprecated. Hurricane/kSAT micro markets are no longer supported.');
     return new Promise((resolve, reject) => {
       this.instance.connect(account.signer)
         .addSubsidy({
@@ -31,7 +36,11 @@ export default class CRBTC extends Market {
     });
   }
 
+  /**
+   * @deprecated Hurricane/kSAT micro markets are deprecated. This method will be removed in a future version.
+   */
   getSubsidyFund() {
+    console.warn('DEPRECATION WARNING: getSubsidyFund() is deprecated. Hurricane/kSAT micro markets are no longer supported.');
     return new Promise(((resolve, reject) => {
       Promise.all([
         this.isHurricane(),
@@ -53,7 +62,11 @@ export default class CRBTC extends Market {
     }));
   }
 
+  /**
+   * @deprecated Hurricane/kSAT micro markets are deprecated. This method will be removed in a future version.
+   */
   getMarketCap(account, companionAddress) {
+    console.warn('DEPRECATION WARNING: getMarketCap() is deprecated. Hurricane/kSAT micro markets are no longer supported.');
     return new Promise((resolve, reject) => {
       let limit = {
         usd: {
@@ -135,7 +148,11 @@ export default class CRBTC extends Market {
     });
   }
 
+  /**
+   * @deprecated Hurricane/kSAT micro markets are deprecated. This method will be removed in a future version.
+   */
   setNewCompanion(account, companionAddress) {
+    console.warn('DEPRECATION WARNING: setNewCompanion() is deprecated. Hurricane/kSAT micro markets are no longer supported.');
     return new Promise((resolve, reject) => {
       this.setInternalCompanion(companionAddress);
       this.instance.connect(account.signer)
@@ -145,11 +162,19 @@ export default class CRBTC extends Market {
     });
   }
 
+  /**
+   * @deprecated Hurricane/kSAT micro markets are deprecated. This method will be removed in a future version.
+   */
   setInternalCompanion(companionAddress) {
+    console.warn('DEPRECATION WARNING: setInternalCompanion() is deprecated. Hurricane/kSAT micro markets are no longer supported.');
     this.companionAddress = companionAddress;
   }
 
+  /**
+   * @deprecated Hurricane/kSAT micro markets are deprecated. This method will be removed in a future version.
+   */
   setMarketCapThreshold(account, companionAddress, threshold) {
+    console.warn('DEPRECATION WARNING: setMarketCapThreshold() is deprecated. Hurricane/kSAT micro markets are no longer supported.');
     return new Promise((resolve, reject) => {
       const companion = new ethers.Contract(
         companionAddress, CompanionArtifact.abi, this.tropykus.provider,
@@ -161,7 +186,11 @@ export default class CRBTC extends Market {
     });
   }
 
+  /**
+   * @deprecated Hurricane/kSAT micro markets are deprecated. This method will be removed in a future version.
+   */
   newCompanion(account, comptrollerAddress, priceOracleAddress) {
+    console.warn('DEPRECATION WARNING: newCompanion() is deprecated. Hurricane/kSAT micro markets are no longer supported.');
     return new Promise((resolve, reject) => {
       const companionFactory = new ethers.ContractFactory(
         CompanionArtifact.abi,

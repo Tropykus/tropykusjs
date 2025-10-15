@@ -83,11 +83,14 @@ export default class Tropykus {
    * market information a Market instance
    * is added to the protocol and is made available.
    * @param {object} account Object get from tropykus.getAccount()
-   * @param {('CRDOC'|'CErc20Immutable'|'CRBTC')} artifact to use for the contract instantiation
+   * @param {('CErc20Immutable'|'CRBTC'|'CRDOC')} artifact to use for the contract instantiation
    * @param {string | null} marketAddress on chain deployed market address.
    * @param {string | null} erc20TokenAddress on chain deployed erc20 token address.
    * @param {object} args additional args to initialize market
+   * @param {number} [args.tokenDecimals] - Number of decimals for the underlying token (0-18, default: 18)
+   * @param {number} [args.oracleDecimals] - Number of decimals for the price oracle (0-40, default: 18)
    * @return {Market<Object>}
+   * @deprecated artifact 'CRDOC' is deprecated. Use 'CErc20Immutable' instead.
    */
   async addMarket(
     account,
@@ -103,6 +106,13 @@ export default class Tropykus {
       decimals: 0,
     },
   ) {
+    // Deprecation warning for CRDOC
+    if (artifact === 'CRDOC') {
+      console.warn(
+        'DEPRECATION WARNING: CRDOC artifact is deprecated. Use CErc20Immutable instead.',
+      );
+    }
+
     let market;
     let address = marketAddress;
     if (!marketAddress) {
@@ -145,15 +155,21 @@ export default class Tropykus {
       }
       address = marketDeployed.address;
     }
+    // Prepare decimal options
+    const decimalOptions = {
+      tokenDecimals: args.tokenDecimals,
+      oracleDecimals: args.oracleDecimals,
+    };
+
     switch (artifact) {
       case 'CRDOC':
-        market = new CRDOC(this, address, erc20TokenAddress);
+        market = new CRDOC(this, address, erc20TokenAddress, decimalOptions);
         break;
       case 'CRBTC':
-        market = new CRBTC(this, address);
+        market = new CRBTC(this, address, decimalOptions);
         break;
       default:
-        market = new CToken(this, address, erc20TokenAddress);
+        market = new CToken(this, address, erc20TokenAddress, decimalOptions);
         break;
     }
     this.markets.push(market);

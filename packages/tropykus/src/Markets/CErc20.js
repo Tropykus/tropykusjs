@@ -7,8 +7,8 @@ const format = 'fixed80x18';
 const factor = FixedNumber.fromString(1e18.toString(), format);
 
 export default class CErc20 extends Market {
-  constructor(tropykus, abi, contractAddress, erc20TokenAddress) {
-    super(tropykus, abi, contractAddress);
+  constructor(tropykus, abi, contractAddress, erc20TokenAddress, options = {}) {
+    super(tropykus, abi, contractAddress, options);
     if (erc20TokenAddress === null || erc20TokenAddress === undefined) {
       throw new Error('Must provide a valid erc20 token address');
     }

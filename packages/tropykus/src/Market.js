@@ -10,16 +10,51 @@ const minLiquidity = FixedNumber.fromString('1', format);
 
 export default class Market {
   /**
+   * Validates that a decimal value is within the valid range
+   * @param {number} decimals - The decimal value to validate
+   * @param {string} paramName - The parameter name for error messages
+   * @param {number} maxDecimals - Maximum allowed decimals
+   * @throws {Error} If decimals is not a valid integer within the valid range
+   * @private
+   */
+  static validateDecimals(decimals, paramName, maxDecimals) {
+    if (!Number.isInteger(decimals) || decimals < 0 || decimals > maxDecimals) {
+      throw new Error(`${paramName} must be an integer between 0 and ${maxDecimals}, got: ${decimals}`);
+    }
+  }
+
+  /**
    * Construct a new Market
    * @param {object} tropykus instance of the tropykus protocol to be linked with
    * @param {object} abi from which instantiate the market
    * @param {string} marketAddress address of the deployed Market instance to point to
+   * @param {object} options - Optional configuration
+   * @param {number} [options.tokenDecimals=18] - Number of decimals for the underlying token (0-18)
+   * @param {number} [options.oracleDecimals=18] - Number of decimals for the price oracle (0-40)
    */
-  constructor(tropykus, abi, marketAddress) {
+  constructor(tropykus, abi, marketAddress, options = {}) {
     this.tropykus = tropykus;
     this.address = marketAddress.toLowerCase();
     this.instance = new ethers.Contract(marketAddress, abi, this.tropykus.provider);
     this.wsInstance = new ethers.Contract(marketAddress, abi, this.tropykus.wsProvider);
+
+    // Set decimal configuration with defaults
+    this.tokenDecimals = options.tokenDecimals !== undefined ? options.tokenDecimals : 18;
+    this.oracleDecimals = options.oracleDecimals !== undefined ? options.oracleDecimals : 18;
+
+    // Validate decimal ranges
+    Market.validateDecimals(this.tokenDecimals, 'tokenDecimals', 18);
+    Market.validateDecimals(this.oracleDecimals, 'oracleDecimals', 40);
+
+    // Compute decimal factors for conversions
+    this.tokenFactor = FixedNumber.fromString(
+      Math.pow(10, this.tokenDecimals).toString(),
+      format
+    );
+    this.oracleFactor = FixedNumber.fromString(
+      Math.pow(10, this.oracleDecimals).toString(),
+      format
+    );
   }
 
   /**

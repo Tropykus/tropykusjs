@@ -4,9 +4,11 @@
 **Feature**: Multi-Decimal Token Support (001-support-multi-decimal)
 **Audience**: Developers integrating TropykusJS
 
+> **Note**: This guide uses "USDT" as a generic example of a 6-decimal token to demonstrate multi-decimal support. For actual USDT integration, use **USDT0** (the current version). The legacy USDT token referenced in the main README is deprecated.
+
 ## Overview
 
-This guide demonstrates how to use TropykusJS with tokens that have non-18-decimal precision (e.g., USDT with 6 decimals) and price oracles with custom decimal formats (e.g., Chainlink-style 8-decimal prices).
+This guide demonstrates how to use TropykusJS with tokens that have non-18-decimal precision (e.g., 6-decimal tokens like USDT0) and price oracles with custom decimal formats (e.g., Chainlink-style 8-decimal prices).
 
 ## Prerequisites
 

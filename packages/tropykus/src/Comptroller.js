@@ -39,12 +39,19 @@ export default class Comptroller {
 
   /**
    * Returns a list of the markets as instances of tropykus' Market
-   * @param {string} kSatAddress Address of kToken's hurricane market
+   * @param {string} kSatAddress Address of kToken's hurricane market (deprecated - Hurricane/kSAT markets no longer supported)
    * @param {string} kRbtcAddress Address of kToken's RBTC market
-   * @param {string} kRDocAddress Address of kToken's RDOC market
+   * @param {string} kRDocAddress Address of kToken's RDOC market (deprecated - use CErc20Immutable instead)
    * @returns {Promise<Array>} List of the market's instances
+   * @deprecated kSatAddress and kRDocAddress parameters are deprecated. Hurricane/kSAT markets and RDOC markets should use standard CRBTC/CErc20Immutable respectively.
    */
   getAllMarketsInstances(kSatAddress, kRbtcAddress, kRDocAddress = '') {
+    if (kSatAddress) {
+      console.warn('DEPRECATION WARNING: kSatAddress parameter is deprecated. Hurricane/kSAT markets are no longer supported.');
+    }
+    if (kRDocAddress) {
+      console.warn('DEPRECATION WARNING: kRDocAddress parameter is deprecated. Use CErc20Immutable for RDOC markets.');
+    }
     return new Promise((resolve, reject) => {
       this.allMarkets()
         .then((marketAddresses) => {
@@ -62,6 +69,7 @@ export default class Comptroller {
               const underlyingAddress = await contractInstance.callStatic.underlying()
                 .then((result) => result);
               if (kRDocAddress && marketAddress === kRDocAddress.toLowerCase()) {
+                // DEPRECATED: CRDOC is deprecated, keeping for backward compatibility
                 instance = new CRDOC(this.tropykus, marketAddress, underlyingAddress);
               } else {
                 instance = new CToken(this.tropykus, marketAddress, underlyingAddress);

@@ -34,14 +34,16 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T005 Add decimal validation helper function in packages/tropykus/src/Market.js
-- [ ] T006 [P] Update Market constructor to accept tokenDecimals and oracleDecimals parameters in packages/tropykus/src/Market.js
-- [ ] T007 [P] Compute and store tokenFactor as FixedNumber in Market constructor in packages/tropykus/src/Market.js
-- [ ] T008 [P] Compute and store oracleFactor as FixedNumber in Market constructor in packages/tropykus/src/Market.js
-- [ ] T009 Add decimal validation with error throwing for invalid ranges (0-18) in Market constructor in packages/tropykus/src/Market.js
-- [ ] T010 Update index.js addMarket() method to pass tokenDecimals and oracleDecimals from args to Market constructors in packages/tropykus/src/index.js
+- [X] T005 Add decimal validation helper function in packages/tropykus/src/Market.js
+- [X] T006 [P] Update Market constructor to accept tokenDecimals and oracleDecimals parameters in packages/tropykus/src/Market.js
+- [X] T007 [P] Compute and store tokenFactor as FixedNumber in Market constructor in packages/tropykus/src/Market.js
+- [X] T008 [P] Compute and store oracleFactor as FixedNumber in Market constructor in packages/tropykus/src/Market.js
+- [X] T009 Add decimal validation with error throwing for invalid ranges (tokenDecimals: 0-18, oracleDecimals: 0-40) in packages/tropykus/src/Market.js
+- [X] T010 Update index.js addMarket() method to pass tokenDecimals and oracleDecimals from args to Market constructors in packages/tropykus/src/index.js
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
+
+**Note**: CRDOC market has been deprecated with warnings added in CRDOC.js, index.js, and Comptroller.js. All market subclasses updated to pass options parameter.
 
 ---
 
