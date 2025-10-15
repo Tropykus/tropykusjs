@@ -11,12 +11,16 @@
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c -w",
-    "test": "nyc mocha --recursive --exit"
+    "test": "./scripts/test-with-hardhat.sh",
+    "test:direct": "nyc mocha --recursive --exit"
   },
   "author": "Tropykus Finance",
   "homepage": "https://github.com/Tropykus/tropykusjs#readme",
   "license": "MIT",
   "dependencies": {
     "ethers": "^5.1.0"
+  },
+  "devDependencies": {
+    "hardhat": "^2.26.3"
   }
 }

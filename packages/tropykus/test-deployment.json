@@ -1,0 +1,20 @@
+{
+  "network": "hardhat-local",
+  "chainId": 31337,
+  "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "timestamp": "2025-10-15T19:21:13.399Z",
+  "contracts": {
+    "whitePaperInterestRateModel": "0x21dF544947ba3E8b3c32561399E88B52Dc8b2823",
+    "jumpRateModel": "0x2E2Ed0Cfd3AD2f1d34481277b3204d807Ca2F8c2",
+    "unitroller": "0xD8a5a9b31c3C0232E196d518E89Fd8bF83AcAd43",
+    "comptroller": "0xDC11f7E700A4c898AE5CAddB1082cFfa76512aDD",
+    "priceOracle": "0x8198f5d8F8CfFE8f9C413d98a0A55aEB8ab9FbB7",
+    "doc": "0x172076E0166D1F9Cc711C77Adf8488051744980C",
+    "kdoc": "0x4EE6eCAD1c2Dae9f525404De8555724e3c35d07B",
+    "krbtc": "0xBEc49fA140aCaA83533fB00A2BB19bDdd0290f25",
+    "docPriceProvider": "0xC9a43158891282A2B1475592D5719c001986Aaec",
+    "rbtcPriceProvider": "0x1c85638e118b37167e9298c2268758e058DdfDA0",
+    "docAdapter": "0x367761085BF3C12e5DA2Df99AC6E1a824612b8fb",
+    "rbtcAdapter": "0x4C2F7092C2aE51D986bEFEe378e50BD4dB99C901"
+  }
+}

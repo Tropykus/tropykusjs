@@ -21,10 +21,10 @@
 
 **Purpose**: Project initialization and dependency verification
 
-- [ ] T001 Verify Lerna monorepo structure and dependencies in package.json
-- [ ] T002 [P] Run `npm run bootstrap` to ensure all packages linked correctly
-- [ ] T003 [P] Run existing test suite to establish baseline (`npm test`)
-- [ ] T004 [P] Document current test coverage for Market.js, CErc20.js, CRBTC.js
+- [X] T001 Verify Lerna monorepo structure and dependencies in package.json
+- [X] T002 [P] Run `npm run bootstrap` to ensure all packages linked correctly
+- [X] T003 [P] Run existing test suite to establish baseline (`npm test`) - ✅ 11/27 passing, baseline documented
+- [X] T004 [P] Document current test coverage for Market.js, CErc20.js, CRBTC.js - ✅ See test-baseline.md
 
 ---
 
