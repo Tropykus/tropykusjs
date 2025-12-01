@@ -17,6 +17,27 @@ $ npm install @babel/runtime
 $ npm install @tropykus-finance/tropykus
 ```
 
+## Running Tests
+
+Before running the test suite, you need to start a local Anvil node that forks the RSK Mainnet network:
+
+```bash
+anvil --fork-url https://public-node.rsk.co --chain-id 30 --port 8545
+```
+
+This command:
+- Forks the RSK Mainnet network (`https://public-node.rsk.co`)
+- Sets the chain ID to 30 (RSK Mainnet)
+- Runs the local node on port 8545 (default)
+
+Once Anvil is running, you can run the tests in a separate terminal:
+
+```bash
+yarn test
+```
+
+> **Note**: Make sure Anvil is running before executing tests, as the test suite requires a local blockchain node to be available at `http://127.0.0.1:8545`.
+
 ## Use tropykus in your app
 ```javascript
 const Tropykus = require('@tropykus-finance/tropykus');
