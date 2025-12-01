@@ -33,9 +33,9 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T003 Create deprecation configuration file packages/tropykus/src/deprecation-config.js with DEPRECATED_MARKETS.addresses mapping deprecated market addresses to metadata
-- [ ] T004 [P] Create deprecation utility functions in packages/tropykus/src/utils/deprecation.js with getDeprecationMetadata(address), warnDeprecated(marketName, metadata), and warnDeprecatedOnce(marketAddress, marketName, metadata)
-- [ ] T005 [P] Export deprecation utilities from packages/tropykus/src/utils/deprecation.js
+- [X] T003 Create deprecation configuration file packages/tropykus/src/deprecation-config.js with DEPRECATED_MARKETS.addresses mapping deprecated market addresses to metadata
+- [X] T004 [P] Create deprecation utility functions in packages/tropykus/src/utils/deprecation.js with getDeprecationMetadata(address), warnDeprecated(marketName, metadata), and warnDeprecatedOnce(marketAddress, marketName, metadata)
+- [X] T005 [P] Export deprecation utilities from packages/tropykus/src/utils/deprecation.js
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
