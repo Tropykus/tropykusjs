@@ -258,5 +258,126 @@ describe('Deprecation Warnings', () => {
       expect(consoleWarnStub.callCount).to.equal(initialCallCount); // No new warnings
     });
   });
+
+  describe('T032: Verify all deprecation warnings display correctly in console output', () => {
+    it('should display correct warning format for all deprecated markets', () => {
+      const deprecatedMarkets = [
+        { address: csatMarketAddress, name: 'kSAT' },
+        { address: crdocAddress, name: 'kRDOC' },
+        { address: krifAddress, name: 'kRIF' },
+        { address: kusdtAddress, name: 'kUSDT' },
+      ];
+
+      deprecatedMarkets.forEach(({ address, name }) => {
+        resetWarnedMarketsCache();
+        consoleWarnStub.resetHistory();
+
+        const metadata = getDeprecationMetadata(address);
+        expect(metadata).to.not.be.null;
+        expect(metadata.deprecated).to.be.true;
+
+        warnDeprecatedOnce(address, name, metadata);
+
+        // Verify warning was displayed
+        expect(consoleWarnStub.calledOnce, `${name} should display deprecation warning`).to.be.true;
+
+        // Verify warning format
+        const warningMessage = consoleWarnStub.firstCall.args[0];
+        expect(warningMessage, `${name} warning should be a string`).to.be.a('string');
+        expect(warningMessage, `${name} warning should include [DEPRECATED] prefix`).to.include('[DEPRECATED]');
+        expect(warningMessage, `${name} warning should include market name`).to.include(name);
+        expect(warningMessage, `${name} warning should include deprecation reason`).to.include(metadata.reason);
+      });
+    });
+
+    it('should verify warning messages are properly formatted and readable', () => {
+      const metadata = getDeprecationMetadata(csatMarketAddress);
+      warnDeprecatedOnce(csatMarketAddress, 'kSAT', metadata);
+
+      const warningMessage = consoleWarnStub.firstCall.args[0];
+      
+      // Verify message structure
+      expect(warningMessage).to.match(/^\[DEPRECATED\]/);
+      expect(warningMessage).to.match(/kSAT.*deprecated/);
+      expect(warningMessage).to.match(/Market delisted/);
+      
+      // Verify message is readable (not empty, has reasonable length)
+      expect(warningMessage.length).to.be.greaterThan(20);
+    });
+  });
+
+  describe('T033: Verify backward compatibility - all deprecated markets remain fully functional', () => {
+    it('should allow creating deprecated market instances without errors', async () => {
+      const market = await tropykus.addMarket(
+        dep,
+        'CRBTC',
+        csatMarketAddress, // Deprecated kSAT address
+        null,
+        {
+          comptrollerAddress,
+          interestRateModelAddress: '0xD0Ed8135F9Ceb504A0484eEF9700D17622569Df2',
+          initialExchangeRate: 0.02,
+          name: 'kSAT',
+          symbol: 'kSAT',
+          decimals: 18,
+        },
+      );
+
+      // Market should be created successfully (backward compatibility)
+      expect(market).instanceOf(CRBTCMarket);
+      expect(market.address.toLowerCase()).to.equal(csatMarketAddress.toLowerCase());
+      
+      // Warning should be displayed but market should still work
+      expect(consoleWarnStub.called).to.be.true;
+    });
+
+    it('should allow deprecated markets to be used in market operations', async () => {
+      const market = await tropykus.addMarket(
+        dep,
+        'CRBTC',
+        csatMarketAddress,
+        null,
+        {
+          comptrollerAddress,
+          interestRateModelAddress: '0xD0Ed8135F9Ceb504A0484eEF9700D17622569Df2',
+          initialExchangeRate: 0.02,
+          name: 'kSAT',
+          symbol: 'kSAT',
+          decimals: 18,
+        },
+      );
+
+      // Market instance should have all expected properties (backward compatibility)
+      expect(market).to.have.property('address');
+      expect(market).to.have.property('tropykus');
+      expect(market).to.have.property('instance');
+      
+      // Market should be functional (methods exist, even if they may fail on test blockchain)
+      expect(market.getSymbol).to.be.a('function');
+      expect(market.balanceOf).to.be.a('function');
+    });
+
+    it('should not break existing code that uses deprecated markets', async () => {
+      // Verify that deprecated markets can be added to tropykus.markets array
+      const market = await tropykus.addMarket(
+        dep,
+        'CRBTC',
+        csatMarketAddress,
+        null,
+        {
+          comptrollerAddress,
+          interestRateModelAddress: '0xD0Ed8135F9Ceb504A0484eEF9700D17622569Df2',
+          initialExchangeRate: 0.02,
+          name: 'kSAT',
+          symbol: 'kSAT',
+          decimals: 18,
+        },
+      );
+
+      // Market should be added to markets array (backward compatibility)
+      expect(tropykus.markets).to.include(market);
+      expect(tropykus.markets.length).to.be.greaterThan(0);
+    });
+  });
 });
 

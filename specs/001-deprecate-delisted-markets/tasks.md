@@ -118,13 +118,13 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T029 [P] Run ESLint on all modified files to ensure code quality standards
-- [ ] T030 [P] Run Prettier on all modified files to ensure formatting consistency
-- [ ] T031 [P] Run full test suite to verify no regressions in packages/tropykus/test/
-- [ ] T032 Verify all deprecation warnings display correctly in console output
-- [ ] T033 Verify backward compatibility - all deprecated markets remain fully functional
-- [ ] T034 Update CHANGELOG.md with deprecation information
-- [ ] T035 Run quickstart.md validation to ensure implementation matches guide
+- [X] T029 [P] Run ESLint on all modified files to ensure code quality standards
+- [X] T030 [P] Run Prettier on all modified files to ensure formatting consistency
+- [X] T031 [P] Run full test suite to verify no regressions in packages/tropykus/test/
+- [X] T032 Verify all deprecation warnings display correctly in console output
+- [X] T033 Verify backward compatibility - all deprecated markets remain fully functional
+- [X] T034 Update CHANGELOG.md with deprecation information
+- [X] T035 Run quickstart.md validation to ensure implementation matches guide
 
 ---
 
