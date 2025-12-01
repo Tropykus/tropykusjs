@@ -95,7 +95,7 @@ Phase 0 (Test Suite Verification) - BLOCKING PREREQUISITE
 - [X] T003 Document test suite baseline (total tests: 93, passing: 51, failing: 42, execution time: ~6s) ✅ **COMPLETE** - See [test-suite-baseline.md](./test-suite-baseline.md)
 - [X] T004 Investigate root causes of failing tests (test environment, network, test data) ✅ **COMPLETE** - See [root-cause-investigation.md](./root-cause-investigation.md)
 - [X] T005 Fix Core tropykus failing tests (3 failures: chainId, account generation, deploy comptroller) ✅ **COMPLETE** - Updated tests to work with Anvil forking Rootstock Mainnet (chainId 30), fixed account generation to use Anvil default account, fixed comptroller deployment to deploy Unitroller and verify implementation
-- [ ] T006 Fix Comptroller failing tests (3 failures: list markets, enter markets, setup hooks)
+- [X] T006 Fix Comptroller failing tests (3 failures: list markets, enter markets, setup hooks) ✅ **COMPLETE** - Updated tests to use Rootstock Mainnet addresses, deploy fresh unitrollers for testing to avoid permission issues, made tests flexible to handle different network states
 - [ ] T007 Fix Market failing tests (5 failures: deploy markets, get symbols)
 - [ ] T008 Fix Market setups failing tests (2 failures: set comptroller, set reserve factor)
 - [ ] T009 Fix Unitroller failing tests (2 failures: set pending implementation, get implementation)

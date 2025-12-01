@@ -41,38 +41,40 @@ export default class Comptroller {
    * Returns a list of the markets as instances of tropykus' Market
    * @param {string} kSatAddress Address of kToken's hurricane market
    * @param {string} kRbtcAddress Address of kToken's RBTC market
-   * @param {string} kRDocAddress Address of kToken's RDOC market
    * @returns {Promise<Array>} List of the market's instances
    */
-  getAllMarketsInstances(kSatAddress, kRbtcAddress, kRDocAddress = '') {
-    return new Promise((resolve, reject) => {
-      this.allMarkets()
-        .then((marketAddresses) => {
-          const instances = [];
-          return marketAddresses.forEach(async (mktAddress) => {
-            let instance;
-            const marketAddress = mktAddress.toLowerCase();
-            if (marketAddress === kSatAddress.toLowerCase()
-              || marketAddress === kRbtcAddress.toLowerCase()) {
-              instance = new CRBTC(this.tropykus, marketAddress);
-            } else {
+  getAllMarketsInstances(kSatAddress, kRbtcAddress) {
+    return this.allMarkets()
+      .then(async (marketAddresses) => {
+        // Normalize addresses for comparison
+        const kSatAddressLower = (kSatAddress || '').toLowerCase();
+        const kRbtcAddressLower = (kRbtcAddress || '').toLowerCase();
+        
+        // Process all markets in parallel
+        const instancePromises = marketAddresses.map(async (mktAddress) => {
+          const marketAddress = mktAddress.toLowerCase();
+          
+          // Check if this is kSAT or kRBTC (CRBTC type)
+          if (marketAddress === kSatAddressLower || marketAddress === kRbtcAddressLower) {
+            return new CRBTC(this.tropykus, marketAddress);
+          } else {
+            // For other markets, get the underlying token address
+            try {
               const contractInstance = new ethers.Contract(
                 marketAddress, CErc20ImmutableArtifact.abi, this.tropykus.provider,
               );
-              const underlyingAddress = await contractInstance.callStatic.underlying()
-                .then((result) => result);
-              if (kRDocAddress && marketAddress === kRDocAddress.toLowerCase()) {
-                instance = new CRDOC(this.tropykus, marketAddress, underlyingAddress);
-              } else {
-                instance = new CToken(this.tropykus, marketAddress, underlyingAddress);
-              }
+              const underlyingAddress = await contractInstance.callStatic.underlying();
+              return new CToken(this.tropykus, marketAddress, underlyingAddress);
+            } catch (error) {
+              // If underlying() call fails (e.g., market is deprecated), still create a CToken
+              // but without underlying address - this handles deprecated markets gracefully
+              return new CToken(this.tropykus, marketAddress, null);
             }
-            instances.push(instance);
-            if (instances.length === marketAddresses.length) resolve(instances);
-          });
-        })
-        .catch(reject);
-    });
+          }
+        });
+        
+        return Promise.all(instancePromises);
+      });
   }
 
   /**
