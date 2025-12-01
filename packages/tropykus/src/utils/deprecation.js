@@ -46,3 +46,11 @@ export function warnDeprecatedOnce(marketAddress, marketName, metadata) {
     warnedMarkets.add(lowerAddress);
   }
 }
+
+/**
+ * Reset the warned markets cache (for testing purposes only)
+ * @private
+ */
+export function resetWarnedMarketsCache() {
+  warnedMarkets.clear();
+}

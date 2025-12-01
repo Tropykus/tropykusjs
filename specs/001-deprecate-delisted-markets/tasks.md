@@ -51,7 +51,7 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T006 [P] [US1] Create integration test for deprecated market warning display in packages/tropykus/test/deprecation.spec.js
+- [X] T006 [P] [US1] Create integration test for deprecated market warning display in packages/tropykus/test/deprecation.spec.js
 - [ ] T007 [P] [US1] Create unit test for getDeprecationMetadata function in packages/tropykus/test/utils/deprecation.spec.js
 - [ ] T008 [P] [US1] Create unit test for warnDeprecatedOnce function caching behavior in packages/tropykus/test/utils/deprecation.spec.js
 
