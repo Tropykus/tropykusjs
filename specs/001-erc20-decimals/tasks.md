@@ -99,7 +99,7 @@ Phase 0 (Test Suite Verification) - BLOCKING PREREQUISITE
 - [X] T007 Fix Market failing tests (5 failures: deploy markets, get symbols)
 - [X] T008 Fix Market setups failing tests (2 failures: set comptroller, set reserve factor)
 - [X] T009 Fix Unitroller failing tests (2 failures: set pending implementation, get implementation) ✅ **COMPLETE** - Updated tests to deploy fresh unitrollers for testing to avoid permission issues on forked networks, fixed both tests to properly set up comptroller implementations
-- [ ] T010 Fix deprecation utility tests (18 failures: getDeprecationMetadata, warnDeprecatedOnce)
+- [X] T010 Fix deprecation utility tests (18 failures: getDeprecationMetadata, warnDeprecatedOnce) ✅ **COMPLETE** - Updated test addresses in test/utils/deprecation.spec.js to match deprecation-config.js, fixed kRDOC deprecation reason to match test expectations, all 35 deprecation utility tests now passing
 - [ ] T011 Fix Quickstart validation test (1 failure: before all hook)
 - [ ] T012 Re-run full test suite and verify 100% pass rate (all 93 tests passing)
 - [ ] T013 Document final test suite baseline (100% pass rate confirmed)

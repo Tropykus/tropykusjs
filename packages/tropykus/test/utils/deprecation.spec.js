@@ -5,10 +5,10 @@ import { getDeprecationMetadata, warnDeprecatedOnce, resetWarnedMarketsCache } f
 const { expect } = chai;
 
 // Deprecated market addresses from deprecation-config.js (lowercase)
-const csatMarketAddress = '0xf8a2e7a2bfa135a81f0c78edd6252a818619e2c3'; // kSAT/cSAT - deprecated
-const crdocAddress = '0x1a389e93be8ef2b5d105dea44271d4426736a484'; // kRDOC/cRDOC - deprecated
-const krifAddress = '0xd22de9a3f9d87e6bf58783e44b5453b3deacb0fe'; // kRIF - deprecated
-const kusdtAddress = '0x3ac74a85b80824caa8cc9dbae0ddce584f3d3e8e'; // kUSDT - deprecated
+const csatMarketAddress = '0xd2ec53e8dd00d204d3d9313af5474eb9f5188ef6'; // kSAT/cSAT - deprecated
+const crdocAddress = '0x0000000000000000000000000000000000000000'; // kRDOC/cRDOC - deprecated
+const krifAddress = '0x3134b7fbfca5db217eca523eab1941452cf35163'; // kRIF - deprecated
+const kusdtAddress = '0xedaefc6b596ed38d712100976969975a37c84464'; // kUSDT - deprecated
 
 // Non-deprecated market address (for comparison)
 const crbtcMarketAddress = '0xE498D1E3A0d7fdb80a2d7591D997aFDA34F8c5C5'; // kRBTC - not deprecated
@@ -24,7 +24,7 @@ describe('getDeprecationMetadata', () => {
     });
 
     it('should return metadata for kSAT/cSAT market address (mixed case)', () => {
-      const mixedCaseAddress = '0xf8A2e7A2bfa135a81f0c78edD6252a818619E2c3';
+      const mixedCaseAddress = '0xd2Ec53E8Dd00D204D3d9313Af5474Eb9F5188Ef6';
       const metadata = getDeprecationMetadata(mixedCaseAddress);
       expect(metadata).to.not.be.null;
       expect(metadata.deprecated).to.be.true;
@@ -111,12 +111,12 @@ describe('getDeprecationMetadata', () => {
     });
 
     it('should return null for invalid address format (no 0x prefix)', () => {
-      const metadata = getDeprecationMetadata('f8a2e7a2bfa135a81f0c78edd6252a818619e2c3');
+      const metadata = getDeprecationMetadata('d2ec53e8dd00d204d3d9313af5474eb9f5188ef6');
       expect(metadata).to.be.null;
     });
 
     it('should return null for invalid address format (non-hex characters)', () => {
-      const metadata = getDeprecationMetadata('0xf8a2e7a2bfa135a81f0c78edd6252a818619e2cG');
+      const metadata = getDeprecationMetadata('0xd2ec53e8dd00d204d3d9313af5474eb9f5188efG');
       expect(metadata).to.be.null;
     });
   });
@@ -125,7 +125,7 @@ describe('getDeprecationMetadata', () => {
     it('should return same metadata regardless of address case', () => {
       const lowerMetadata = getDeprecationMetadata(csatMarketAddress.toLowerCase());
       const upperMetadata = getDeprecationMetadata(csatMarketAddress.toUpperCase());
-      const mixedMetadata = getDeprecationMetadata('0xf8A2e7A2bfa135a81f0c78edD6252a818619E2c3');
+      const mixedMetadata = getDeprecationMetadata('0xd2Ec53E8Dd00D204D3d9313Af5474Eb9F5188Ef6');
 
       expect(lowerMetadata).to.not.be.null;
       expect(upperMetadata).to.not.be.null;
@@ -276,11 +276,11 @@ describe('warnDeprecatedOnce', () => {
 
     it('should cache address regardless of case variation', () => {
       const metadata = getDeprecationMetadata(csatMarketAddress);
-
+      
       // Call with different case variations
       warnDeprecatedOnce(csatMarketAddress.toLowerCase(), 'kSAT', metadata);
       warnDeprecatedOnce(csatMarketAddress.toUpperCase(), 'kSAT', metadata);
-      warnDeprecatedOnce('0xf8A2e7A2bfa135a81f0c78edD6252a818619E2c3', 'kSAT', metadata);
+      warnDeprecatedOnce('0xd2Ec53E8Dd00D204D3d9313Af5474Eb9F5188Ef6', 'kSAT', metadata);
 
       // Should only warn once
       expect(consoleWarnStub.callCount).to.equal(1);
