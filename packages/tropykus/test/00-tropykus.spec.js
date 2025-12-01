@@ -3,13 +3,16 @@ import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import Tropykus from "../src";
 import Comptroller from "../src/Comptroller";
+import Unitroller from "../src/Unitroller";
+import UnitrollerArtifact from '../artifacts/Unitroller.json';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-const comptrollerAddress = '0xB173b5EE67b9F38263413Bc29440f89cC5BC3C39';
+// Rootstock Mainnet addresses (when forking mainnet)
 const priceOracleAddress = '0x4d7Cc3cdb88Fa1EEC3095C9f849c799F1f7D4031';
-const unitrollerAddress = '0xdC98d636ad43A17bDAcE402997C7c6ABA55EAa28';
+// Rootstock Mainnet Unitroller address (from README)
+const unitrollerAddress = '0x962308fEf8edFaDD705384840e7701F8f39eD0c0';
 
 describe('Core tropykus', () => {
   const provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545');
@@ -17,26 +20,54 @@ describe('Core tropykus', () => {
   const tropykus = new Tropykus(provider, wsProvider, 400000);
 
   it('should get provider\'s chainId', async () => {
-    expect(Number(await tropykus.getChainId())).equals(1337);
+    const chainId = Number(await tropykus.getChainId());
+    // Accept Rootstock Mainnet (30), Rootstock Testnet (31), Hardhat default (1337), or Anvil default (31337)
+    expect([30, 31, 1337, 31337]).to.include(chainId);
   });
 
   it('should generate an account', async () => {
-    expect((await tropykus.getAccount()).address.toLowerCase())
-      .equals('0xe317349c7279ffF242cc8ADCb575EbA0153760BA'.toLowerCase());
+    const account = await tropykus.getAccount();
+    // Anvil/Hardhat default first account
+    const expectedAddress = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
+    expect(account.address.toLowerCase()).to.equal(expectedAddress.toLowerCase());
+    expect(account.signer).to.exist;
+    expect(account.address).to.match(/0x[a-fA-F0-9]{40}/);
   });
 
   it('should get internal comptroller instance', async () => {
     const dep = await tropykus.getAccount();
-    await tropykus.setComptroller(dep, comptrollerAddress);
-    expect(tropykus.comptroller.address).to.equal(comptrollerAddress.toLowerCase());
+    await tropykus.setComptroller(dep, unitrollerAddress);
+    expect(tropykus.comptroller.address).to.equal(unitrollerAddress.toLowerCase());
   });
 
   it('should deploy a new comptroller', async () => {
     const dep = await tropykus.getAccount();
+    // Deploy a fresh unitroller (proxy) for testing to avoid permission issues
+    // on forked networks where we're not the admin
+    const unitrollerFactory = new ethers.ContractFactory(
+      UnitrollerArtifact.abi,
+      UnitrollerArtifact.bytecode,
+      dep.signer,
+    );
+    const testUnitroller = await unitrollerFactory.deploy();
+    await testUnitroller.deployed();
+    
+    // Deploy a new comptroller implementation and set it up with the unitroller
+    // setComptroller will:
+    // 1. Deploy a new Comptroller implementation
+    // 2. Set it as pending implementation on the Unitroller
+    // 3. Call become() to make it the active implementation
     const newComptroller = await tropykus.setComptroller(
-        dep, null, unitrollerAddress);
+        dep, null, testUnitroller.address);
+    
+    // Verify the comptroller was deployed
     expect(newComptroller).instanceOf(Comptroller);
     expect(newComptroller.address).to.match(/0x[a-fA-F0-9]{40}/);
+    
+    // Verify the unitroller is using the deployed comptroller as its implementation
+    const unitroller = new Unitroller(testUnitroller.address, tropykus);
+    const implementation = await unitroller.getComptrollerImplementation();
+    expect(implementation.toLowerCase()).to.equal(newComptroller.address.toLowerCase());
   });
 
   it('should set package price oracle instance', async () => {

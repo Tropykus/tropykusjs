@@ -89,12 +89,12 @@ Phase 0 (Test Suite Verification) - BLOCKING PREREQUISITE
 
 ### Tasks
 
-- [ ] T000 Verify npm dependencies are installed (run `npm install` in repo root)
-- [ ] T001 Verify project builds successfully (run `npm run build` in repo root) ✅ **COMPLETE**
-- [ ] T002 Run full test suite and capture results (run `npm test` in repo root) ✅ **COMPLETE - 42 failures identified**
-- [ ] T003 Document test suite baseline (total tests: 93, passing: 51, failing: 42, execution time: ~6s)
-- [ ] T004 Investigate root causes of failing tests (test environment, network, test data)
-- [ ] T005 Fix Core tropykus failing tests (3 failures: chainId, account generation, deploy comptroller)
+- [X] T000 Verify npm dependencies are installed (run `npm install` in repo root)
+- [X] T001 Verify project builds successfully (run `npm run build` in repo root) ✅ **COMPLETE**
+- [X] T002 Run full test suite and capture results (run `npm test` in repo root) ✅ **COMPLETE - 42 failures identified**
+- [X] T003 Document test suite baseline (total tests: 93, passing: 51, failing: 42, execution time: ~6s) ✅ **COMPLETE** - See [test-suite-baseline.md](./test-suite-baseline.md)
+- [X] T004 Investigate root causes of failing tests (test environment, network, test data) ✅ **COMPLETE** - See [root-cause-investigation.md](./root-cause-investigation.md)
+- [X] T005 Fix Core tropykus failing tests (3 failures: chainId, account generation, deploy comptroller) ✅ **COMPLETE** - Updated tests to work with Anvil forking Rootstock Mainnet (chainId 30), fixed account generation to use Anvil default account, fixed comptroller deployment to deploy Unitroller and verify implementation
 - [ ] T006 Fix Comptroller failing tests (3 failures: list markets, enter markets, setup hooks)
 - [ ] T007 Fix Market failing tests (5 failures: deploy markets, get symbols)
 - [ ] T008 Fix Market setups failing tests (2 failures: set comptroller, set reserve factor)
