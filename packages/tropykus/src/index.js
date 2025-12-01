@@ -9,6 +9,7 @@ import CRBTCArtifact from '../artifacts/CRBTC.json';
 import CRDOCArtifact from '../artifacts/CRDOC.json';
 import CErc20Artifact from '../artifacts/CErc20Immutable.json';
 import Unitroller from './Unitroller';
+import { getDeprecationMetadata, warnDeprecatedOnce } from './utils/deprecation';
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
@@ -156,6 +157,14 @@ export default class Tropykus {
         market = new CToken(this, address, erc20TokenAddress);
         break;
     }
+
+    // Check for deprecation and display warning once per instance
+    const deprecationMetadata = getDeprecationMetadata(address);
+    if (deprecationMetadata) {
+      const marketName = args.name || args.symbol || address;
+      warnDeprecatedOnce(address, marketName, deprecationMetadata);
+    }
+
     this.markets.push(market);
     return market;
   }

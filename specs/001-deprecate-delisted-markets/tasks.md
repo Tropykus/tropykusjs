@@ -57,7 +57,7 @@
 
 ### Implementation for User Story 1
 
-- [ ] T009 [US1] Update Tropykus.addMarket() method in packages/tropykus/src/index.js to check address deprecation and display warning once per instance
+- [X] T009 [US1] Update Tropykus.addMarket() method in packages/tropykus/src/index.js to check address deprecation and display warning once per instance
 - [ ] T010 [US1] Update Market constructor in packages/tropykus/src/Market.js to check deprecation and display warning once per instance
 - [ ] T011 [US1] Update CRBTC constructor in packages/tropykus/src/Markets/CRBTC.js to check deprecation by address and display warning once per instance
 - [ ] T012 [US1] Update CRDOC constructor in packages/tropykus/src/Markets/CRDOC.js to check deprecation by address and display warning once per instance
