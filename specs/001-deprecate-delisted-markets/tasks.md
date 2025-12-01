@@ -77,16 +77,16 @@
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T016 [P] [US2] Create test to verify README.md contains deprecation notices for all deprecated markets in packages/tropykus/test/documentation.spec.js
+- [X] T016 [P] [US2] Create test to verify README.md contains deprecation notices for all deprecated markets in packages/tropykus/test/documentation.spec.js
 
 ### Implementation for User Story 2
 
-- [ ] T017 [US2] Update README.md to mark kSAT/cSAT market with deprecation notice in network table section
-- [ ] T018 [US2] Update README.md to mark kRDOC/cRDOC market with deprecation notice in network table section
-- [ ] T019 [US2] Update README.md to mark kRIF market with deprecation notice in network table section
-- [ ] T020 [US2] Update README.md to mark kUSDT market with deprecation notice in network table section
-- [ ] T021 [US2] Update README.md code examples to use supported markets or include deprecation warnings for deprecated markets
-- [ ] T022 [US2] Add deprecation notices to all README.md sections that reference deprecated markets (minting, borrowing, redeeming examples)
+- [X] T017 [US2] Update README.md to mark kSAT/cSAT market with deprecation notice in network table section
+- [X] T018 [US2] Update README.md to mark kRDOC/cRDOC market with deprecation notice in network table section
+- [X] T019 [US2] Update README.md to mark kRIF market with deprecation notice in network table section
+- [X] T020 [US2] Update README.md to mark kUSDT market with deprecation notice in network table section
+- [X] T021 [US2] Update README.md code examples to use supported markets or include deprecation warnings for deprecated markets
+- [X] T022 [US2] Add deprecation notices to all README.md sections that reference deprecated markets (minting, borrowing, redeeming examples)
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently. Documentation clearly marks all deprecated markets.
 
