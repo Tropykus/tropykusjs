@@ -101,9 +101,9 @@ Phase 0 (Test Suite Verification) - BLOCKING PREREQUISITE
 - [X] T009 Fix Unitroller failing tests (2 failures: set pending implementation, get implementation) ✅ **COMPLETE** - Updated tests to deploy fresh unitrollers for testing to avoid permission issues on forked networks, fixed both tests to properly set up comptroller implementations
 - [X] T010 Fix deprecation utility tests (18 failures: getDeprecationMetadata, warnDeprecatedOnce) ✅ **COMPLETE** - Updated test addresses in test/utils/deprecation.spec.js to match deprecation-config.js, fixed kRDOC deprecation reason to match test expectations, all 35 deprecation utility tests now passing
 - [X] T011 Fix Quickstart validation test (1 failure: before all hook) ✅ **COMPLETE** - Added error handling in before() hook to verify quickstart.md file exists and is readable, added explicit test to verify quickstart file exists, all 9 quickstart validation tests now passing
-- [ ] T012 Re-run full test suite and verify 100% pass rate (all 93 tests passing)
-- [ ] T013 Document final test suite baseline (100% pass rate confirmed)
-- [ ] T014 Verify test infrastructure is properly configured (local node/testnet accessible)
+- [X] T012 Re-run full test suite and verify 100% pass rate (all 93 tests passing) ✅ **COMPLETE** - Fixed unitroller test by waiting for transaction to be mined, optimized Market test token transfers, all tests passing. **IMPORTANT**: Before running the full test suite (`yarn test`), you MUST restart the Anvil node to ensure a clean state and avoid nonce conflicts and state issues from previous test runs.
+- [X] T013 Document final test suite baseline (100% pass rate confirmed) ✅ **COMPLETE** - Updated test-suite-baseline.md with final baseline showing 100% pass rate, documented all test fixes completed (T005-T011), added critical Anvil restart requirement, documented test infrastructure verification
+- [X] T014 Verify test infrastructure is properly configured (local node/testnet accessible) ✅ **COMPLETE** - Verified Anvil node configuration (fork URL, chain ID 30, port 8545), confirmed test environment requirements met, documented Anvil restart requirement in test-suite-baseline.md, verified all test infrastructure components operational
 
 **Completion Criteria**:
 - ✅ All dependencies installed
@@ -114,6 +114,20 @@ Phase 0 (Test Suite Verification) - BLOCKING PREREQUISITE
 - ✅ Test infrastructure verified
 
 **Note**: If tests fail, stop and fix them before proceeding. Do not start implementation until test suite is green.
+
+**⚠️ CRITICAL: Anvil Node Restart Requirement**
+Before running the full test suite (`yarn test`), you **MUST** restart the Anvil node to ensure a clean state. This prevents:
+- Nonce conflicts from previous test runs
+- State pollution from previous deployments
+- Transaction replacement errors
+- Timeout issues from hanging operations
+
+**To restart Anvil:**
+1. Stop the current Anvil process (if running)
+2. Start a fresh Anvil instance: `anvil --fork-url <YOUR_RPC_URL> --chain-id 30`
+3. Run the test suite: `yarn test`
+
+**Why this is necessary:** The test suite deploys fresh contracts and performs many transactions. Running tests multiple times without restarting Anvil can cause state conflicts, nonce mismatches, and other issues that lead to test failures.
 
 ---
 

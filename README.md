@@ -38,6 +38,8 @@ yarn test
 
 > **Note**: Make sure Anvil is running before executing tests, as the test suite requires a local blockchain node to be available at `http://127.0.0.1:8545`.
 
+> **⚠️ Important**: Before running the full test suite (`yarn test`), you **MUST** restart the Anvil node to ensure a clean state. This prevents nonce conflicts, state pollution, and transaction errors from previous test runs. To restart Anvil, stop the current process and start a fresh instance with the same command above.
+
 ## Use tropykus in your app
 ```javascript
 const Tropykus = require('@tropykus-finance/tropykus');

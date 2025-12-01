@@ -53,7 +53,9 @@ describe('Unitroller', () => {
         expect(initialPending).to.not.equal(newComptroller.address.toLowerCase());
         
         // Set the new comptroller as pending implementation
-        await unitroller.setComptrollerPendingImplementation(dep, newComptroller.address);
+        const tx = await unitroller.setComptrollerPendingImplementation(dep, newComptroller.address);
+        // Wait for transaction to be mined
+        await tx.wait();
         
         // Verify the pending implementation was set
         const pendingImplementation = await unitroller.getComptrollerPendingImplementation();

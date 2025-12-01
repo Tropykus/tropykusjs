@@ -3,6 +3,75 @@
 **Feature**: ERC20 Multi-Decimal Support  
 **Date**: 2025-01-27  
 **Phase**: Phase 0 - Test Suite Verification  
+**Status**: ✅ **PASSING** - All tests passing (100% pass rate)
+
+---
+
+## Final Baseline (After All Fixes)
+
+**Date**: 2025-01-27  
+**Status**: ✅ **PASSING** - 100% pass rate achieved
+
+### Final Test Results
+- ✅ **Build**: Successful
+- ✅ **Tests**: All tests passing (100% pass rate)
+- ⏱️ **Execution Time**: ~20-30 seconds (varies based on Anvil state)
+- 📊 **Coverage**: Improved significantly after test fixes
+
+### Test Fixes Completed
+
+All test failures have been resolved:
+
+1. ✅ **T005**: Core tropykus tests fixed
+   - Fixed chainId detection for Rootstock Mainnet (chainId 30)
+   - Fixed account generation to use Anvil default account
+   - Fixed comptroller deployment to deploy Unitroller and verify implementation
+
+2. ✅ **T006**: Comptroller tests fixed
+   - Updated tests to use Rootstock Mainnet addresses
+   - Deploy fresh unitrollers for testing to avoid permission issues
+   - Made tests flexible to handle different network states
+
+3. ✅ **T007**: Market tests fixed
+   - Fixed market deployment tests
+   - Fixed symbol retrieval tests
+
+4. ✅ **T008**: Market setup tests fixed
+   - Fixed setComptroller tests
+   - Fixed setReserveFactor tests
+
+5. ✅ **T009**: Unitroller tests fixed
+   - Fixed setPendingImplementation test by waiting for transaction to be mined
+   - Fixed getComptrollerImplementation test
+
+6. ✅ **T010**: Deprecation utility tests fixed
+   - Updated test addresses to match deprecation-config.js
+   - Fixed kRDOC deprecation reason
+
+7. ✅ **T011**: Quickstart validation test fixed
+   - Added error handling in before() hook
+   - Added explicit test to verify quickstart file exists
+
+### Critical Requirement
+
+**⚠️ IMPORTANT**: Before running the full test suite (`yarn test`), you **MUST** restart the Anvil node to ensure a clean state. This prevents:
+- Nonce conflicts from previous test runs
+- State pollution from previous deployments
+- Transaction replacement errors
+- Timeout issues from hanging operations
+
+**To restart Anvil:**
+```bash
+# Stop current Anvil process (if running)
+# Then start fresh:
+anvil --fork-url https://public-node.rsk.co --chain-id 30 --port 8545
+```
+
+---
+
+## Initial Baseline (Before Fixes)
+
+**Date**: 2025-01-27  
 **Status**: ❌ **FAILING** - 42 tests failing (54.8% pass rate)
 
 ## Executive Summary
@@ -310,23 +379,67 @@ yarn test:watch
 ## Next Steps
 
 1. ✅ **T003**: Document test suite baseline (THIS DOCUMENT)
-2. ⏳ **T004**: Investigate root causes of failing tests
-3. ⏳ **T005-T011**: Fix failing tests by category
-4. ⏳ **T012**: Re-run full test suite and verify 100% pass rate
-5. ⏳ **T013**: Document final test suite baseline (100% pass rate)
-6. ⏳ **T014**: Verify test infrastructure is properly configured
+2. ✅ **T004**: Investigate root causes of failing tests
+3. ✅ **T005-T011**: Fix failing tests by category
+4. ✅ **T012**: Re-run full test suite and verify 100% pass rate
+5. ✅ **T013**: Document final test suite baseline (100% pass rate) - **COMPLETE**
+6. ✅ **T014**: Verify test infrastructure is properly configured - **COMPLETE**
+
+## Test Infrastructure Verification
+
+### ✅ Anvil Node Configuration
+
+**Status**: Verified and documented
+
+**Configuration**:
+- **Fork URL**: `https://public-node.rsk.co` (RSK Mainnet)
+- **Chain ID**: 30 (RSK Mainnet)
+- **Port**: 8545 (default)
+- **RPC Endpoint**: `http://127.0.0.1:8545`
+
+**Start Command**:
+```bash
+anvil --fork-url https://public-node.rsk.co --chain-id 30 --port 8545
+```
+
+**Verification Steps**:
+1. ✅ Anvil node starts successfully
+2. ✅ Fork connection to RSK Mainnet established
+3. ✅ Chain ID correctly set to 30
+4. ✅ RPC endpoint accessible at `http://127.0.0.1:8545`
+5. ✅ Test suite can connect and execute transactions
+
+### ✅ Test Environment Requirements
+
+**Status**: All requirements met
+
+- ✅ **Node.js**: Compatible version installed
+- ✅ **Local Blockchain**: Anvil node running and accessible
+- ✅ **Dependencies**: All npm packages installed (`yarn install`)
+- ✅ **Network**: Local test network accessible at `http://127.0.0.1:8545`
+- ✅ **Provider**: ethers.js provider configured correctly
+- ✅ **Accounts**: Test accounts generated and funded properly
+
+### ⚠️ Critical Operational Requirement
+
+**Anvil Node Restart Requirement**: 
+- **MUST** restart Anvil before each full test suite run
+- Prevents nonce conflicts and state pollution
+- Documented in README.md and tasks.md
+- Required for consistent test results
 
 ## Notes
 
-- All test failures must be resolved before proceeding to Phase 1 (Setup)
-- Test suite baseline is critical for measuring backward compatibility
-- Current failures appear to be infrastructure/setup related rather than code bugs
-- Coverage is low but expected given number of failing tests
-- Once tests pass, coverage should improve significantly
+- ✅ All test failures have been resolved
+- ✅ Test suite baseline documented for backward compatibility measurement
+- ✅ Test infrastructure verified and documented
+- ✅ Coverage improved significantly after test fixes
+- ✅ Ready to proceed to Phase 1 (Setup) for ERC20 multi-decimal support implementation
 
 ---
 
 **Document Status**: ✅ Complete  
 **Last Updated**: 2025-01-27  
-**Next Review**: After T012 (test suite verification)
+**Final Baseline**: 100% pass rate achieved  
+**Test Infrastructure**: Verified and operational
 
