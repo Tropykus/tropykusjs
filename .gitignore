@@ -29,6 +29,7 @@ coverage
 
 # nyc test coverage
 .nyc_output
+.nyc_output/*
 
 # Grunt intermediate storage (https://gruntjs.com/creating-plugins#storing-task-files)
 .grunt
@@ -492,3 +493,5 @@ node_modules
 packages/tropykus/.nyc_output/
 packages/tropykus/.nyc_output/processinfo/index.json
 
+.cursor/
+.specify/

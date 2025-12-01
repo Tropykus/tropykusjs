@@ -95,10 +95,14 @@ const crbtc = await tropykus.addMarket('CRBTC', true, crbtcMarketAddress);
 const cdoc = await tropykus.addMarket('CErc20Immutable', true, cdocAddress, docAddress);
 ```
 
+> **⚠️ Deprecation Notice**: cRIF and cUSDT markets are deprecated (delisted from protocol). Please use supported markets (cDOC, cRBPRO, cRBTC, cUSDRF) instead.
+
 **For cRDOC:**
 ```javascript
 const crdoc = await tropykus.addMarket('CRDOC', true, rcdocAddress, rdocAddress);
 ```
+
+> **⚠️ Deprecation Notice**: cRDOC market is deprecated (never listed). Please use supported markets instead.
 
 Then mint function can be called using the assigned tropykus account to sign the transaction
 
@@ -186,6 +190,8 @@ The third paramether is a flag that indicated to the method if all founds must b
 
 In order to repay in a market after having borrowed in the first place the repayBorrow() function is used:
 
+> **⚠️ Deprecation Notice**: The following example uses cRIF (kRIF), which is deprecated (delisted from protocol). Please use supported markets (cDOC, cRBPRO, cRBTC, cUSDRF) instead.
+
 ```javascript=
 const crif = await tropykus.addMarket('CErc20Immutable', true, cRifAddress, rifAddress);
 
@@ -212,28 +218,29 @@ The third parameter is a flag that indicates the method that must pay all the de
 
 # Networks
 
-## RSK Testnet
+## Deployed Smart Contracts
 
-|  | Artifact | Address |
-| -------- | -------- | -------- |
-| Price Oracle | PriceOracleProxy | 0x1bdf453f72a8466ba3709b091b7658edfc550c23 |
-| tRIF Token | StandardToken | 0xc370cd19517b5a8a9f6df0958679e8cd4874c048 |
-| tDOC Token | StandardToken | 0x494154243ac77c6ab90dfa0d4d42dd411e1df5f3 |
-| trDOC Token | StandardToken | 0xc486ac998afbf1b477533dda94d950bd2190ceb5 |
-| tUSDT Token | StandardToken | 0xcf5137f039578cb10070b91bb30fd3d260bcddde |
-| RIF Interest Rate Model | WhitePaperInterestRateModel | 0x41cbfa04ac7bad4e702fad9c92064cf503964f3a |
-| DOC Interest Rate Model | JumpRateModelV2 | 0xe8cf23e02ffb01b7f7221025e7af0ec56fa6df88 |
-| rDOC Interest Rate Model | JumpRateModelV2 | 0x385d059f3dd3dc36addd1918a75fb84d758c3f69 |
-| USDT Interest Rate Model | JumpRateModelV2 | 0x01ffd800f0d5af18b7847e52d9bdcfed81bb8f28 |
-| RBTC Interest Rate Model | WhitePaperInterestRateModel | 0x4c9e251ce7073ce1a62d696800ed07f67eace2d5 |
-| RBTC micro(kSAT) Interest Rate Model | HurricaneInterestRateModel | 0xd22de9a3f9d87e6bf58783e44b5453b3deacb0fe |
-| kRIF | CErc20Immutable | 0xd22de9a3f9d87e6bf58783e44b5453b3deacb0fe |
-| kDOC | CErc20Immutable | 0xe7b4770af8152fc1a0e13d08e70a8c9a70f4d9d9 |
-| kRDOC | CRDOC | 0x0981eb51a91e6f89063c963438cadf16c2e44962 |
-| kUSDT | CErc20Immutable | 0x495be6b6d8f35748bb8fe657f884f84342043733 |
-| kRBTC | CRBTC | 0x636b2c156d09cee9516f9afec7a4605e1f43dec1 |
-| kSAT | CRBTC | 0xf2250c3d8e81a562f55e4a207c218d50c62db087 |
-| Comptroller | ComptrollerG6 | 0x7de1ade0c4482ceab96faff408cc9dcc9015b448 |
+> **Note**: Comptroller is a proxy contract, so its address is the Unitroller address.
+
+| Contract | Rootstock Testnet | Rootstock Mainnet |
+| -------- | ----------------- | ----------------- |
+| **Price Oracle** | 0x1bdf453f72a8466ba3709b091b7658edfc550c23 | 0x7fa5500c978e89660bf3bd0526f8f7164de0b38f |
+| **Unitroller (Comptroller Proxy)** | 0x7de1ade0c4482ceab96faff408cc9dcc9015b448 | 0x962308fEf8edFaDD705384840e7701F8f39eD0c0 |
+| **kDOC** | 0xe7b4770af8152fc1a0e13d08e70a8c9a70f4d9d9 | 0x544eb90e766b405134b3b3f62b6b4c23fcd5fda2 |
+| **kBPRO** | 0x844a99Ba756539Aee698ce2915d678bA0FeE4d9d | 0x405062731d8656af5950ef952be9fa110878036b |
+| **kRBTC** | 0x636b2c156d09cee9516f9afec7a4605e1f43dec1 | 0x0aeadb9d4c6a80462a47e87e76e487fa8b9a37d7 |
+| **kUSDRF** | 0xfbee4444493194468df1de7450a37d840eb8b555 | 0xDdf3CE45fcf080DF61ee61dac5Ddefef7ED4F46C |
+
+## Deprecated Markets and Functions
+
+> **⚠️ Deprecated Markets Notice**: The following markets are deprecated and should not be used in new projects: kSAT/cSAT (delisted from protocol), kRDOC/cRDOC (never listed), kRIF (delisted from protocol), and kUSDT (delisted from protocol). These markets remain functional for backward compatibility but are no longer actively supported. Please use supported markets (kDOC, kRBPRO, kRBTC, kUSDRF) instead.
+
+| Contract | Rootstock Testnet | Rootstock Mainnet |
+| -------- | ----------------- | ----------------- |
+| **kSAT ⚠️ DEPRECATED** | 0x13f3a4013e77a65b0cd941b8b0e1687e8f3a0e1d | 0xd2ec53e8dd00d204d3d9313af5474eb9f5188ef6 |
+| **kUSDT ⚠️ DEPRECATED** | 0x5539d6d48a2147cb824c5c45baaa01e7e1a2694f | 0xedaefc6b596ed38d712100976969975a37c84464 |
+| **kRIF ⚠️ DEPRECATED** | 0x23b60e2193057b4b2823973b7478489a076de84f | 0x3134b7fbfca5db217eca523eab1941452cf35163 |
+| **kRDOC ⚠️ DEPRECATED** | 0x0981eb51a91e6f89063c963438cadf16c2e44962 | - |
 
 
 

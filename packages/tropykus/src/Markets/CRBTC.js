@@ -3,6 +3,7 @@ import { BigNumber, ethers, FixedNumber } from 'ethers';
 import CRBTCArtifact from '../../artifacts/CRBTC.json';
 import Market from '../Market';
 import CompanionArtifact from '../../artifacts/CRBTCCompanion.json';
+import { getDeprecationMetadata, warnDeprecatedOnce } from '../utils/deprecation';
 
 const format = 'fixed80x18';
 const factor = FixedNumber.fromString(1e18.toString(), format);
@@ -18,6 +19,19 @@ export default class CRBTC extends Market {
     );
     this.type = 'CRBTC';
     this.companionAddress = '';
+
+    // Deprecation check: We use address-based deprecation (not artifact-based) because
+    // CRBTC artifact is used for both listed markets (e.g., kRBTC) and deprecated markets
+    // (e.g., kSAT). If we checked by artifact, deprecating CRBTC would incorrectly
+    // mark all kRBTC markets as deprecated. By checking the contract address, we
+    // can deprecate specific markets (e.g., kSAT at 0xd2ec53...) without affecting
+    // other markets using the same CRBTC artifact (e.g., kRBTC). The warning is
+    // displayed only once per market instance to avoid spam.
+    const deprecationMetadata = getDeprecationMetadata(contractAddress);
+    if (deprecationMetadata) {
+      const marketName = 'CRBTC';
+      warnDeprecatedOnce(contractAddress, marketName, deprecationMetadata);
+    }
   }
 
   addSubsidy(account, amount) {

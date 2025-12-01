@@ -14,21 +14,29 @@ const { expect } = chai;
 const mnemonic = 'elegant ripple curve exhibit capital oblige off inform recall describe warrior earn';
 const comptrollerAddress = '0xB173b5EE67b9F38263413Bc29440f89cC5BC3C39';
 const crbtcMarketAddress = '0xE498D1E3A0d7fdb80a2d7591D997aFDA34F8c5C5';
+// ⚠️ DEPRECATED: kSAT/cSAT market address - Market delisted from protocol
+// This address is used for testing deprecated market functionality
 const csatMarketAddress = '0xf8A2e7A2bfa135a81f0c78edD6252a818619E2c3';
 const cdocAddress = '0x1CbD672Ac9d98F4f033e12eDE3c55f5CB02B983C';
 const docAddress = '0xC3b5a61f8fc55fef790165d9f12AD23D47F7De99';
 const usdtAddress = '0x3AC74a85B80824caa8cc9Dbae0DdcE584F3D3e8E';
+// ⚠️ DEPRECATED: kRDOC/cRDOC market address - Market never listed
+// This address is used for testing deprecated market functionality
 const crdocAddress = '0x1a389e93be8ef2B5D105DEa44271d4426736A484';
 const rdocAddress = '0x301b50CD6E1a31c56122463aA306290baD3428cf';
 const cdocInterestRateModelAddress = '0x17cFe95D999961dAd27E47Af8B9b8A8Ef07832e4';
+// ⚠️ DEPRECATED: Related to kRDOC/cRDOC market (never listed) - used for testing
 const crdocInterestRateModelAddress = '0x46342D72503A41f797CC47D5B89C8Cc8F592f5a3';
 const crbtcInterestRateModelAddress = '0x466BBE5C0368Ba75EBA90c2f4643c9DbC226B4d7';
+// ⚠️ DEPRECATED: Related to kSAT/cSAT market (delisted) - used for testing
 const csatInterestRateModelAddress = '0xD0Ed8135F9Ceb504A0484eEF9700D17622569Df2';
 const cusdtInterestRateModelAddress = '0x5932c14cBBaA59248321E8448E4E46Ed5734e5a6';
 const priceOracleAddress = '0x4d7Cc3cdb88Fa1EEC3095C9f849c799F1f7D4031';
 const crbtcAdapterAddress = '0x94D2C65157FBeb52BaEEAaaE7b20fA0fAc3f0681';
 const cdocAdapterAddress = '0x21e23076EAe56759304a6883bEBdb2e3EbA7678A';
+// ⚠️ DEPRECATED: Related to kRDOC/cRDOC market (never listed) - used for testing
 const crdocAdapterAddress = '0xB572eee464bFEc3f92189A09fBbb7D7BCD3540C5';
+// ⚠️ DEPRECATED: Related to kSAT/cSAT market (delisted) - used for testing
 const csatAdapterAddress = '0x014635649DDf811FA581e24F95316A4440a02D78';
 const cusdtdapterAddress = '0x99bBf2c61FeA5E067D1F311f0B0114Bd71dC8272';
 const unitrollerAddress = '0xdC98d636ad43A17bDAcE402997C7c6ABA55EAa28';
@@ -141,6 +149,7 @@ describe('Market', () => {
   });
 
   it('should instance a CRDOC Market wit an existing contract address', async () => {
+    // ⚠️ DEPRECATED: Testing with kRDOC/cRDOC market (never listed) - used to verify deprecation warnings
     const crdoc = await tropykus.addMarket(dep, 'CRDOC', crdocAddress, rdocAddress);
     expect(crdoc).instanceOf(CRDOCMarket);
     expect(crdoc.address).equals(crdocAddress.toLowerCase());
@@ -163,8 +172,10 @@ describe('Market', () => {
 
   it('should return the market\'s underlying symbol', async () => {
     const cdoc = await tropykus.addMarket(dep, 'CErc20Immutable', cdocAddress, docAddress);
+    // ⚠️ DEPRECATED: Testing with kRDOC/cRDOC market (never listed) - used to verify deprecation warnings
     const crdoc = await tropykus.addMarket(dep, 'CRDOC', crdocAddress, rdocAddress);
     const crbtc = await tropykus.addMarket(dep, 'CRBTC', crbtcMarketAddress);
+    // ⚠️ DEPRECATED: Testing with kSAT/cSAT market (delisted) - used to verify deprecation warnings
     const csat = await tropykus.addMarket(dep, 'CRBTC', csatMarketAddress);
     expect(await csat.getUnderlyingSymbol()).to.equal('tRBTC');
     expect(await crbtc.getUnderlyingSymbol()).to.equal('tRBTC');
@@ -242,6 +253,7 @@ describe('Market', () => {
           symbol: 'CRBTC',
           decimals: 18,
         });
+      // ⚠️ DEPRECATED: Testing with kSAT/cSAT market (delisted) - used to verify deprecation warnings
       csat = await tropykus.addMarket(
         dep,
         'CRBTC',
@@ -302,7 +314,9 @@ describe('Market', () => {
       await tropykus.setPriceOracle(priceOracleAddress);
       await tropykus.priceOracle.setAdapterToToken(dep, crbtc.address, crbtcAdapterAddress);
       await tropykus.priceOracle.setAdapterToToken(dep, cdoc.address, cdocAdapterAddress);
+      // ⚠️ DEPRECATED: Testing with kRDOC/cRDOC market (never listed) - used to verify deprecation warnings
       await tropykus.priceOracle.setAdapterToToken(dep, crdoc.address, crdocAdapterAddress);
+      // ⚠️ DEPRECATED: Testing with kSAT/cSAT market (delisted) - used to verify deprecation warnings
       await tropykus.priceOracle.setAdapterToToken(dep, csat.address, csatAdapterAddress);
       await tropykus.priceOracle.setAdapterToToken(dep, cusdt.address, cusdtdapterAddress);
 

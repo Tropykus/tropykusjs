@@ -2,6 +2,7 @@
 import { BigNumber, ethers, FixedNumber } from 'ethers';
 import StandartTokenArtifact from '../../artifacts/StandardToken.json';
 import Market from '../Market';
+import { getDeprecationMetadata, warnDeprecatedOnce } from '../utils/deprecation';
 
 const format = 'fixed80x18';
 const factor = FixedNumber.fromString(1e18.toString(), format);
@@ -19,6 +20,20 @@ export default class CErc20 extends Market {
       tropykus.provider,
     );
     this.type = 'CErc20Immutable';
+
+    // Deprecation check: We use address-based deprecation (not artifact-based) because
+    // CErc20Immutable artifact is used for both listed markets (e.g., kDOC)
+    // and deprecated markets (e.g., kRIF, kUSDT). If we checked by artifact,
+    // deprecating CErc20Immutable would incorrectly mark all kDOC markets as
+    // deprecated. By checking the contract address, we can deprecate specific
+    // markets (e.g., kRIF at 0x3134b7...) without affecting other markets using
+    // the same artifact (e.g., kDOC). The warning is displayed only once per
+    // market instance to avoid warning spam.
+    const deprecationMetadata = getDeprecationMetadata(contractAddress);
+    if (deprecationMetadata) {
+      const marketName = 'CErc20';
+      warnDeprecatedOnce(contractAddress, marketName, deprecationMetadata);
+    }
   }
 
   /**
