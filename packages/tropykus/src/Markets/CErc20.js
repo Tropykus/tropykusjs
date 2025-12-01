@@ -2,6 +2,7 @@
 import { BigNumber, ethers, FixedNumber } from 'ethers';
 import StandartTokenArtifact from '../../artifacts/StandardToken.json';
 import Market from '../Market';
+import { getDeprecationMetadata, warnDeprecatedOnce } from '../utils/deprecation';
 
 const format = 'fixed80x18';
 const factor = FixedNumber.fromString(1e18.toString(), format);
@@ -19,6 +20,13 @@ export default class CErc20 extends Market {
       tropykus.provider,
     );
     this.type = 'CErc20Immutable';
+
+    // Check for deprecation and display warning once per instance
+    const deprecationMetadata = getDeprecationMetadata(contractAddress);
+    if (deprecationMetadata) {
+      const marketName = 'CErc20';
+      warnDeprecatedOnce(contractAddress, marketName, deprecationMetadata);
+    }
   }
 
   /**

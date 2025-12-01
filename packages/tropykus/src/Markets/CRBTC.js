@@ -3,6 +3,7 @@ import { BigNumber, ethers, FixedNumber } from 'ethers';
 import CRBTCArtifact from '../../artifacts/CRBTC.json';
 import Market from '../Market';
 import CompanionArtifact from '../../artifacts/CRBTCCompanion.json';
+import { getDeprecationMetadata, warnDeprecatedOnce } from '../utils/deprecation';
 
 const format = 'fixed80x18';
 const factor = FixedNumber.fromString(1e18.toString(), format);
@@ -18,6 +19,13 @@ export default class CRBTC extends Market {
     );
     this.type = 'CRBTC';
     this.companionAddress = '';
+
+    // Check for deprecation and display warning once per instance
+    const deprecationMetadata = getDeprecationMetadata(contractAddress);
+    if (deprecationMetadata) {
+      const marketName = 'CRBTC';
+      warnDeprecatedOnce(contractAddress, marketName, deprecationMetadata);
+    }
   }
 
   addSubsidy(account, amount) {

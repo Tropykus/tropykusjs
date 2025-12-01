@@ -11,17 +11,17 @@ import CToken from '../src/Markets/CToken';
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-const comptrollerAddress = '0xB173b5EE67b9F38263413Bc29440f89cC5BC3C39';
-const priceOracleAddress = '0x4d7Cc3cdb88Fa1EEC3095C9f849c799F1f7D4031';
+const comptrollerAddress = '0x962308fef8edfadd705384840e7701f8f39ed0c0';
+const priceOracleAddress = '0x7fa5500c978e89660bf3bd0526f8f7164de0b38f';
 
 // Deprecated market addresses from deprecation-config.js
-const csatMarketAddress = '0xf8A2e7A2bfa135a81f0c78edD6252a818619E2c3'; // kSAT/cSAT - deprecated
-const crdocAddress = '0x1a389e93be8ef2B5D105DEa44271d4426736A484'; // kRDOC/cRDOC - deprecated
-const krifAddress = '0xd22de9a3f9d87e6bf58783e44b5453b3deacb0fe'; // kRIF - deprecated
-const kusdtAddress = '0x3AC74a85B80824caa8cc9Dbae0DdcE584F3D3e8E'; // kUSDT - deprecated
+const csatMarketAddress = '0xd2ec53e8dd00d204d3d9313af5474eb9f5188ef6'; // kSAT/cSAT - deprecated
+const crdocAddress = '0x0000000000000000000000000000000000000000'; // kRDOC/cRDOC - deprecated
+const krifAddress = '0x3134b7fbfca5db217eca523eab1941452cf35163'; // kRIF - deprecated
+const kusdtAddress = '0xedaefc6b596ed38d712100976969975a37c84464'; // kUSDT - deprecated
 
 // Non-deprecated market address (for comparison)
-const crbtcMarketAddress = '0xE498D1E3A0d7fdb80a2d7591D997aFDA34F8c5C5'; // kRBTC - not deprecated
+const crbtcMarketAddress = '0x0aeadb9d4c6a80462a47e87e76e487fa8b9a37d7'; // kRBTC - not deprecated
 
 describe('Deprecation Warnings', () => {
   let tropykus;
