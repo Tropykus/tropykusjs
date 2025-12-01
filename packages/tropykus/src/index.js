@@ -158,7 +158,15 @@ export default class Tropykus {
         break;
     }
 
-    // Check for deprecation and display warning once per instance
+    // Deprecation check: We use address-based deprecation (not artifact-based) because
+    // the same artifact can be used for both listed and deprecated markets. For example,
+    // CRBTC is used for both kRBTC (listed) and kSAT (deprecated). If we checked by
+    // artifact, deprecating CRBTC would incorrectly mark all kRBTC markets as deprecated.
+    // By checking the market's contract address, we can deprecate specific markets
+    // (e.g., kSAT at address 0xd2ec53...) without affecting other markets using the
+    // same artifact (e.g., kRBTC). The getDeprecationMetadata function looks up the
+    // address in the deprecation configuration, and warnDeprecatedOnce ensures the
+    // warning is displayed only once per market instance to avoid warning spam.
     const deprecationMetadata = getDeprecationMetadata(address);
     if (deprecationMetadata) {
       const marketName = args.name || args.symbol || address;

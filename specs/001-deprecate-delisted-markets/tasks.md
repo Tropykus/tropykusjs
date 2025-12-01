@@ -100,15 +100,15 @@
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T023 [P] [US3] Create test to verify deprecation comments are present in code in packages/tropykus/test/documentation.spec.js
+- [X] T023 [P] [US3] Create test to verify deprecation comments are present in code in packages/tropykus/test/documentation.spec.js
 
 ### Implementation for User Story 3
 
-- [ ] T024 [US3] Add JSDoc comments to deprecation utility functions in packages/tropykus/src/utils/deprecation.js explaining address-based deprecation approach
-- [ ] T025 [US3] Add deprecation comments to deprecation configuration file in packages/tropykus/src/deprecation-config.js explaining which addresses are deprecated and why
-- [ ] T026 [US3] Add inline comments in Market constructor in packages/tropykus/src/Market.js explaining deprecation check logic
-- [ ] T027 [US3] Add inline comments in Tropykus.addMarket() method in packages/tropykus/src/index.js explaining deprecation check logic
-- [ ] T028 [US3] Verify all deprecated market references in test files include deprecation comments in packages/tropykus/test/02-markets.spec.js
+- [X] T024 [US3] Add JSDoc comments to deprecation utility functions in packages/tropykus/src/utils/deprecation.js explaining address-based deprecation approach
+- [X] T025 [US3] Add deprecation comments to deprecation configuration file in packages/tropykus/src/deprecation-config.js explaining which addresses are deprecated and why
+- [X] T026 [US3] Add inline comments in Market constructor in packages/tropykus/src/Market.js explaining deprecation check logic
+- [X] T027 [US3] Add inline comments in Tropykus.addMarket() method in packages/tropykus/src/index.js explaining deprecation check logic
+- [X] T028 [US3] Verify all deprecated market references in test files include deprecation comments in packages/tropykus/test/02-markets.spec.js
 
 **Checkpoint**: All user stories should now be independently functional. Code maintainers can identify deprecated code through JSDoc tags and comments.
 
