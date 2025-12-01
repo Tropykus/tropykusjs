@@ -22,8 +22,8 @@
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Create utils directory structure in packages/tropykus/src/utils/
-- [ ] T002 [P] Verify existing project structure matches plan.md requirements
+- [X] T001 Create utils directory structure in packages/tropykus/src/utils/
+- [X] T002 [P] Verify existing project structure matches plan.md requirements
 
 ---
 
