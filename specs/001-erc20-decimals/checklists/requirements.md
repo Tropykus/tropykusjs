@@ -1,7 +1,7 @@
-# Specification Quality Checklist: Deprecate Delisted Markets
+# Specification Quality Checklist: ERC20 Multi-Decimal Support
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
-**Created**: 2025-12-01
+**Created**: 2025-01-27
 **Feature**: [spec.md](../spec.md)
 
 ## Content Quality
@@ -34,4 +34,5 @@
 - All checklist items pass validation
 - Specification is ready for `/speckit.plan` or `/speckit.clarify`
 - No clarifications needed - all requirements are clear and testable
+- The specification focuses on user-facing outcomes (correct amount handling) rather than implementation details (specific parsing functions)
 
