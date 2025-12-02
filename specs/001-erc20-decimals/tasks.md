@@ -27,10 +27,10 @@
 
 **Purpose**: Project initialization and verification of existing structure
 
-- [ ] T001 Verify project structure exists: `packages/tropykus/src/`, `packages/tropykus/test/`, `packages/tropykus/artifacts/`
-- [ ] T002 [P] Verify PriceOracleAdapterMoc.json exists in `packages/tropykus/artifacts/PriceOracleAdapterMoc.json`
-- [ ] T003 [P] Verify PriceOracleAdapterUSDT.json exists in `packages/tropykus/artifacts/PriceOracleAdapterUSDT.json`
-- [ ] T004 [P] Verify existing Market.js, CErc20.js, and PriceOracle.js files structure
+- [x] T001 Verify project structure exists: `packages/tropykus/src/`, `packages/tropykus/test/`, `packages/tropykus/artifacts/`
+- [x] T002 [P] Verify PriceOracleAdapterMoc.json exists in `packages/tropykus/artifacts/PriceOracleAdapterMoc.json`
+- [x] T003 [P] Verify PriceOracleAdapterUSDT.json exists in `packages/tropykus/artifacts/PriceOracleAdapterUSDT.json`
+- [x] T004 [P] Verify existing Market.js, CErc20.js, and PriceOracle.js files structure
 
 ---
 
@@ -40,10 +40,10 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T005 Create decimal utility module `packages/tropykus/src/utils/decimals.js` with `getTokenDecimals()` function
-- [ ] T006 [P] Implement `parseTokenAmount(amount, decimals)` helper in `packages/tropykus/src/utils/decimals.js`
-- [ ] T007 [P] Implement `formatTokenAmount(amount, decimals)` helper in `packages/tropykus/src/utils/decimals.js`
-- [ ] T008 Add error handling and fallback to 18 decimals in `getTokenDecimals()` in `packages/tropykus/src/utils/decimals.js`
+- [X] T005 Create decimal utility module `packages/tropykus/src/utils/decimals.js` with `getTokenDecimals()` function
+- [X] T006 [P] Implement `parseTokenAmount(amount, decimals)` helper in `packages/tropykus/src/utils/decimals.js`
+- [X] T007 [P] Implement `formatTokenAmount(amount, decimals)` helper in `packages/tropykus/src/utils/decimals.js`
+- [X] T008 Add error handling and fallback to 18 decimals in `getTokenDecimals()` in `packages/tropykus/src/utils/decimals.js`
 - [ ] T009 Implement `detectOracleDecimals(adapterAddress)` method in `packages/tropykus/src/PriceOracle.js`
 - [ ] T010 [P] Add `adapterDecimalsMap` property initialization in PriceOracle constructor in `packages/tropykus/src/PriceOracle.js`
 - [ ] T011 Implement adapter type detection logic (Moc vs USDT vs Unknown) in `detectOracleDecimals()` in `packages/tropykus/src/PriceOracle.js`
