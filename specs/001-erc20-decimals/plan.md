@@ -1,88 +1,98 @@
-# Implementation Plan: ERC20 Multi-Decimal Support
+# Implementation Plan: 6-Decimal Token with 8-Decimal Oracle Integration
 
 **Branch**: `001-erc20-decimals` | **Date**: 2025-01-27 | **Spec**: [spec.md](./spec.md)
 **Input**: Feature specification from `/specs/001-erc20-decimals/spec.md`
 
-**Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/commands/plan.md` for the execution workflow.
+**Note**: This plan focuses on a reduced scope: integrating 6-decimal tokens (like USDT/USDC) with an 8-decimal price oracle, tested using PriceOracleAdapterMoc.json (1e8 price) and PriceOracleAdapterUSDT.json.
 
 ## Summary
 
-Enable support for ERC20 tokens with decimal amounts other than 18 (e.g., 6 decimals for USDC, 8 decimals for WBTC). The system must automatically detect decimal amounts from token contracts and use them for all amount parsing, formatting, and calculations. This requires replacing hardcoded 18-decimal assumptions throughout the codebase with dynamic decimal detection and conversion utilities, while maintaining 100% backward compatibility with existing 18-decimal tokens.
+This implementation plan focuses on integrating 6-decimal ERC20 tokens (stablecoins like USDT/USDC) with an 8-decimal price oracle system. The scope is reduced from the original full multi-decimal support to specifically handle:
+- 6-decimal tokens (e.g., USDT, USDC)
+- 8-decimal price oracle (1e8 precision)
+- Testing with PriceOracleAdapterMoc.json (1e8 price for stablecoin) and PriceOracleAdapterUSDT.json
+
+The technical approach involves:
+1. Detecting token decimals (6 for target tokens)
+2. Handling oracle price conversion from 8 decimals to internal calculations
+3. Converting between token decimals (6) and oracle decimals (8) for USD value calculations
+4. Testing with the specific oracle adapters mentioned
 
 ## Technical Context
 
-**Language/Version**: JavaScript (ES6+), Node.js  
-**Primary Dependencies**: ethers.js v5.1.0 (for blockchain interactions), BigNumber/FixedNumber from ethers  
+**Language/Version**: JavaScript (Node.js), Ethers.js v5.x  
+**Primary Dependencies**: ethers.js v5.x, Hardhat (for testing), Anvil (local blockchain)  
 **Storage**: N/A (blockchain-based, no local storage)  
-**Testing**: Mocha, Chai, Sinon (unit and integration tests)  
-**Target Platform**: Node.js SDK/library (consumed as npm package)  
-**Project Type**: Single library package (monorepo structure with Lerna)  
-**Performance Goals**: No specific performance requirements beyond standard SDK responsiveness  
+**Testing**: Mocha, Chai, Hardhat, Anvil (local blockchain node)  
+**Target Platform**: Node.js runtime (SDK library)  
+**Project Type**: Single package SDK library  
+**Performance Goals**: No specific performance requirements for this feature (decimal conversion is lightweight)  
 **Constraints**: 
-- Must maintain backward compatibility with existing 18-decimal token functionality
-- Must handle all ERC20 standard decimal amounts (0-255, practical focus 0-18)
-- Must preserve precision in all calculations (no rounding errors)
-- Must gracefully handle tokens without `decimals()` function  
+- Must maintain backward compatibility with 18-decimal tokens
+- Must handle precision correctly (no rounding errors in financial calculations)
+- Must work with existing PriceOracle contract interface
 **Scale/Scope**: 
-- Update ~10-15 methods across Market.js, CErc20.js, and related classes
-- Add decimal detection and conversion utilities
-- Update all test files to support multiple decimal amounts
-- Estimated impact: ~500-800 lines of code changes across multiple files
+- Focus on 6-decimal tokens initially
+- Support PriceOracleAdapterMoc and PriceOracleAdapterUSDT adapters
+- Single market testing scenario
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-### I. SDK-First Design ✓
+### I. SDK-First Design ✅
 - **Status**: PASS
-- **Compliance**: Feature extends SDK interface with decimal-aware methods. All public methods will maintain consistent API patterns. JSDoc comments will be updated for all modified methods.
-- **Action Required**: Update JSDoc for all methods that handle decimal conversion
+- **Compliance**: All changes maintain clean SDK interface. Decimal detection and conversion utilities are encapsulated within Market/CErc20 classes. Public API remains unchanged - backward compatible.
+- **Rationale**: No violations. Decimal handling is internal implementation detail, public methods maintain same signatures.
 
-### II. Blockchain Safety & Transaction Integrity (NON-NEGOTIABLE) ✓
+### II. Blockchain Safety & Transaction Integrity (NON-NEGOTIABLE) ✅
 - **Status**: PASS
-- **Compliance**: All transaction methods maintain proper error handling. Decimal conversion must be validated before transaction submission. No changes to transaction safety mechanisms.
-- **Action Required**: Add validation for decimal amounts before parsing/formatting. Ensure all transaction methods handle decimal conversion errors gracefully.
+- **Compliance**: All decimal conversions use BigNumber/FixedNumber for precision. No rounding errors in critical operations. Error handling for missing decimals() function.
+- **Rationale**: No violations. Precision maintained throughout calculations.
 
-### III. Test-First Development (NON-NEGOTIABLE) ✓
+### III. Test-First Development (NON-NEGOTIABLE) ✅
 - **Status**: PASS
-- **Compliance**: Tests MUST be written first for each decimal scenario (0, 2, 6, 8, 18 decimals). Integration tests required for real blockchain interactions with different decimal tokens.
-- **Action Required**: Write tests for each decimal amount before implementation. Include integration tests using testnet/local node with tokens of different decimals.
+- **Compliance**: Integration tests required for 6-decimal token with 8-decimal oracle. Tests must cover PriceOracleAdapterMoc and PriceOracleAdapterUSDT scenarios.
+- **Rationale**: No violations. Testing strategy defined in research phase.
 
-### IV. Integration Testing for Blockchain Interactions ✓
+### IV. Integration Testing for Blockchain Interactions ✅
 - **Status**: PASS
-- **Compliance**: Integration tests required for: market contract interactions with different decimal tokens, decimal detection from token contracts, amount conversions in real transactions.
-- **Action Required**: Create integration test suite covering tokens with 0, 2, 6, 8, and 18 decimals
+- **Compliance**: Integration tests required for:
+  - 6-decimal token market creation
+  - Price oracle adapter interactions (PriceOracleAdapterMoc, PriceOracleAdapterUSDT)
+  - USD value calculations with 8-decimal oracle
+  - Deposit/withdraw/borrow/repay operations
+- **Rationale**: No violations. Integration testing explicitly required for oracle interactions.
 
-### V. Semantic Versioning & Breaking Changes ✓
+### V. Semantic Versioning & Breaking Changes ✅
 - **Status**: PASS
-- **Compliance**: This is a MINOR version increment (new feature, backward compatible). Existing 18-decimal functionality remains unchanged. No breaking API changes.
-- **Action Required**: Version bump to 0.4.0 (MINOR increment from 0.3.0)
+- **Compliance**: No breaking API changes. All changes are backward compatible. MINOR version increment appropriate.
+- **Rationale**: No violations. Public API unchanged.
 
-### VI. Code Quality & Consistency ✓
+### VI. Code Quality & Consistency ✅
 - **Status**: PASS
-- **Compliance**: All code must pass ESLint. Code must be formatted with Prettier. Complex decimal conversion logic requires inline comments.
-- **Action Required**: Ensure all new code passes linting. Add comments explaining decimal conversion logic.
+- **Compliance**: Code must pass ESLint, Prettier. Follow existing code patterns.
+- **Rationale**: No violations. Standard code quality requirements.
 
-### VII. Documentation & Examples ✓
+### VII. Documentation & Examples ✅
 - **Status**: PASS
-- **Compliance**: All public methods must have updated JSDoc. README examples should demonstrate multi-decimal token support. Error scenarios must be documented.
-- **Action Required**: Update JSDoc for all modified methods. Add examples showing 6-decimal and 8-decimal token usage.
+- **Compliance**: JSDoc comments required for new utility functions. Examples in quickstart.md.
+- **Rationale**: No violations. Documentation requirements standard.
 
-**Gate Status (Pre-Phase 0)**: ✅ **PASS** - All constitution principles satisfied. Proceed to Phase 0 research.
-
-**Gate Status (Post-Phase 1)**: ✅ **PASS** - All constitution principles remain satisfied after design phase. Ready for implementation.
+**GATE RESULT**: ✅ PASS - All constitution checks pass. Proceed to Phase 0 research.
 
 ## Project Structure
 
 ### Documentation (this feature)
 
 ```text
-specs/[###-feature]/
+specs/001-erc20-decimals/
 ├── plan.md              # This file (/speckit.plan command output)
 ├── research.md          # Phase 0 output (/speckit.plan command)
 ├── data-model.md        # Phase 1 output (/speckit.plan command)
 ├── quickstart.md        # Phase 1 output (/speckit.plan command)
 ├── contracts/           # Phase 1 output (/speckit.plan command)
+│   └── oracle-adapter-api.md  # Oracle adapter integration API
 └── tasks.md             # Phase 2 output (/speckit.tasks command - NOT created by /speckit.plan)
 ```
 
@@ -91,159 +101,66 @@ specs/[###-feature]/
 ```text
 packages/tropykus/
 ├── src/
-│   ├── Market.js                    # Base Market class (needs decimal support)
 │   ├── Markets/
-│   │   ├── CErc20.js                # ERC20 market (primary changes)
-│   │   ├── CRBTC.js                 # May need updates
-│   │   ├── CRDOC.js                 # May need updates
-│   │   └── CToken.js                # May need updates
-│   ├── index.js                     # Main entry (addMarket method)
-│   ├── Comptroller.js               # May need decimal-aware calculations
-│   ├── PriceOracle.js               # May need decimal conversion
+│   │   └── CErc20.js          # Modified: Add decimal detection, use parseUnits/formatUnits
+│   ├── Market.js              # Modified: Handle oracle decimal conversion (8 decimals)
+│   ├── PriceOracle.js         # Modified: Handle 8-decimal oracle prices
 │   └── utils/
-│       └── decimals.js              # NEW: Decimal detection/conversion utilities
-├── test/
-│   ├── 02-markets.spec.js           # Update with multi-decimal tests
-│   └── utils/
-│       └── decimals.spec.js          # NEW: Decimal utility tests
-└── artifacts/
-    └── StandardToken.json            # ERC20 ABI (includes decimals() function)
+│       └── decimals.js        # New: Decimal detection and conversion utilities
+├── artifacts/
+│   ├── PriceOracleAdapterMoc.json    # Existing: Used for testing
+│   └── PriceOracleAdapterUSDT.json   # Existing: Used for testing
+└── test/
+    └── 02-markets.spec.js     # Modified: Add 6-decimal token + 8-decimal oracle tests
 ```
 
-**Structure Decision**: Monorepo structure with Lerna. Primary changes in `packages/tropykus/src/` with new utility module for decimal handling. Tests in `packages/tropykus/test/`. This follows existing project structure.
-
-## Phase 0: Research - ✅ COMPLETE
-
-**Status**: Complete  
-**Output**: [research.md](./research.md)
-
-### Research Findings Summary
-
-1. **Ethers.js Utilities**: Use `parseUnits()`/`formatUnits()` instead of `parseEther()`/`formatEther()` - supports variable decimals
-2. **Decimal Detection**: Cache decimals per token instance after first fetch - efficient and simple
-3. **Error Handling**: Fallback to 18 decimals with warning if `decimals()` missing - maintains compatibility
-4. **Backward Compatibility**: Automatic detection ensures 18-decimal tokens work identically
-5. **FixedNumber Calculations**: Adjust factor based on detected decimals instead of hardcoded 1e18
-6. **Price Oracle**: Handle conversion between token decimals and 18-decimal oracle values
-
-**All research questions resolved. No blocking issues.**
-
-## Phase 1: Design & Contracts - ✅ COMPLETE
-
-**Status**: Complete  
-**Outputs**: 
-- [data-model.md](./data-model.md) - Entity definitions and data flow
-- [contracts/decimal-api.md](./contracts/decimal-api.md) - API documentation
-- [quickstart.md](./quickstart.md) - Usage examples and migration guide
-
-### Design Decisions
-
-1. **Utility Module**: New `utils/decimals.js` with `getTokenDecimals()`, `parseTokenAmount()`, `formatTokenAmount()`
-2. **Instance Caching**: Store `tokenDecimals` as instance property in Market/CErc20 classes
-3. **API Compatibility**: All public methods maintain same signatures - no breaking changes
-4. **Automatic Detection**: Decimals detected during Market/CErc20 construction
-5. **Error Handling**: Graceful fallback to 18 decimals with console warnings
-
-### Contracts Defined
-
-- Decimal utility functions API
-- Modified Market methods (backward compatible)
-- Error handling contracts
-- Testing requirements
-
-## Phase 2: Implementation Planning
-
-**Status**: Ready for `/speckit.tasks` command  
-**Next Step**: Break down implementation into tasks
-
-## Prerequisites: Test Suite Verification
-
-**CRITICAL**: Before starting implementation, the current test suite MUST pass completely.
-
-### Pre-Implementation Checklist
-
-- [ ] **Install Dependencies**: Ensure all npm dependencies are installed (`npm install`)
-- [ ] **Build Project**: Verify project builds successfully (`npm run build`)
-- [ ] **Run Full Test Suite**: Execute all tests and verify 100% pass rate (`npm test`)
-- [ ] **Document Test Results**: Record test count, pass rate, and any flaky tests
-- [ ] **Fix Any Failing Tests**: Address any existing test failures before starting multi-decimal implementation
-- [ ] **Verify Test Infrastructure**: Ensure test environment (local node/testnet) is properly configured
-
-### Test Suite Baseline
-
-**Purpose**: Establish a known-good baseline before making changes. This ensures:
-1. Any test failures during implementation are due to our changes, not pre-existing issues
-2. Backward compatibility can be verified by comparing test results
-3. Confidence that the codebase is in a stable state before modifications
-
-**Required Actions**:
-1. Run `npm install` to ensure all dependencies are installed
-2. Run `npm run build` to verify project builds
-3. Run `npm test` and capture:
-   - Total test count
-   - Pass/fail status
-   - Test execution time
-   - Any warnings or errors
-4. Document baseline in implementation notes
-5. Fix any failing tests before proceeding
-
-**Gate**: Test suite MUST pass 100% before Phase 1 (Setup) tasks begin.
-
-### Test Suite Status
-
-**Current Status**: ❌ **FAILING** - Test suite has failures that must be fixed before implementation
-
-**Test Results** (as of 2025-01-27):
-- **Total Tests**: 93
-- **Passing**: 51 (54.8%)
-- **Failing**: 42 (45.2%)
-- **Build Status**: ✅ Successful
-
-**Failing Test Categories**:
-1. **Core tropykus** (3 failures):
-   - should get provider's chainId
-   - should generate an account
-   - should deploy a new comptroller
-
-2. **Comptroller** (3 failures):
-   - should list the market's addresses
-   - should list the market's as instances
-   - should enter the markets
-   - "before each" hook failure
-
-3. **Market** (5 failures):
-   - should deployed a new CRBTC market
-   - should deployed a new CRDOC market
-   - should deployed a new CToken market
-   - should return the market's kSymbol
-   - should return the market's underlying symbol
-
-4. **Market setups** (2 failures):
-   - should set market's comptroller
-   - should set market's reserve factor
-
-5. **Unitroller** (2 failures):
-   - should set a pending implementation of comptroller
-   - should get unitroller's comptroller implementation
-
-6. **Deprecation utilities** (multiple failures):
-   - getDeprecationMetadata tests (6 failures)
-   - warnDeprecatedOnce tests (12 failures)
-
-7. **Quickstart validation** (1 failure):
-   - "before all" hook failure
-
-**Action Required**: 
-1. **CRITICAL**: Fix all 42 failing tests before proceeding with multi-decimal implementation
-2. Investigate root causes (likely test environment setup, network connectivity, or test data issues)
-3. Document fixes and ensure tests are stable
-4. Re-run test suite to verify 100% pass rate
-5. Mark Phase 0 as complete only when all tests pass
-
-**Note**: This is a blocking prerequisite. Implementation tasks MUST NOT begin until test suite baseline is established with 100% pass rate. The failing tests appear to be related to test infrastructure and setup, not the codebase itself, but they must be resolved to ensure a stable baseline.
+**Structure Decision**: Single package SDK library structure. Changes are localized to:
+1. Market/CErc20 classes for decimal-aware operations
+2. PriceOracle class for 8-decimal oracle handling
+3. New utility module for decimal detection/conversion
+4. Test file updates for integration testing
 
 ## Complexity Tracking
 
 > **Fill ONLY if Constitution Check has violations that must be justified**
 
-No violations - all constitution principles satisfied.
+No violations identified. All constitution checks pass.
+
+## Implementation Phases
+
+### Phase 0: Research & Oracle Decimal Handling
+
+**Objective**: Research and document how to handle 8-decimal oracle prices with 6-decimal tokens.
+
+**Tasks**:
+1. Research PriceOracleAdapterMoc.json structure and 1e8 price format
+2. Research PriceOracleAdapterUSDT.json structure and DECIMAL_MULTIPLIER
+3. Document conversion logic: 6-decimal token amounts ↔ 8-decimal oracle prices
+4. Identify all places in codebase where oracle prices are used
+5. Document USD value calculation flow with mixed decimals
+
+**Output**: Updated `research.md` with oracle decimal handling section
+
+### Phase 1: Design & Contracts
+
+**Objective**: Design the decimal-aware oracle integration and create API contracts.
+
+**Tasks**:
+1. Update `data-model.md` with oracle decimal conversion entities
+2. Create `contracts/oracle-adapter-api.md` documenting oracle adapter integration
+3. Update `quickstart.md` with testing instructions for 6-decimal token + 8-decimal oracle
+4. Update agent context with new technology patterns
+
+**Output**: 
+- `data-model.md` (updated)
+- `contracts/oracle-adapter-api.md` (new)
+- `quickstart.md` (updated)
+- Agent context files (updated)
+
+### Phase 2: Implementation Tasks
+
+**Note**: Phase 2 is handled by `/speckit.tasks` command, not this plan.
+
+**Objective**: Break down implementation into concrete tasks.
+
+**Output**: `tasks.md` (created by `/speckit.tasks` command)

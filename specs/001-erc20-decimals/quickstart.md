@@ -1,15 +1,187 @@
-# Quickstart: ERC20 Multi-Decimal Support
+# Quickstart: 6-Decimal Token with 8-Decimal Oracle Integration
 
-**Feature**: ERC20 Multi-Decimal Support  
+**Feature**: 6-Decimal Token with 8-Decimal Oracle Integration  
 **Date**: 2025-01-27
 
 ## Overview
 
-The Tropykus SDK now automatically supports ERC20 tokens with any decimal amount (0-18, typically). Decimal detection happens automatically - no code changes needed for existing functionality.
+This quickstart focuses on integrating 6-decimal tokens (like USDT/USDC) with 8-decimal price oracles (PriceOracleAdapterMoc and PriceOracleAdapterUSDT). The SDK automatically detects token decimals and oracle adapter decimal precision - no manual configuration needed.
+
+## Testing Setup: 6-Decimal Token + 8-Decimal Oracle
+
+### Prerequisites
+
+1. **6-Decimal ERC20 Token**: Deploy or use existing mock token with 6 decimals (e.g., USDT/USDC)
+2. **PriceOracleAdapterMoc**: Deploy with 1e8 price for stablecoin
+3. **PriceOracleAdapterUSDT**: Deploy for testing DECIMAL_MULTIPLIER (optional)
+4. **Local Blockchain**: Use Anvil or Hardhat node for testing
+
+### Complete Test Setup
+
+```javascript
+const Tropykus = require('@tropykus-finance/tropykus');
+const { ethers } = require('ethers');
+const PriceOracleAdapterMocArtifact = require('@tropykus-finance/tropykus/artifacts/PriceOracleAdapterMoc.json');
+const PriceOracleAdapterUSDTArtifact = require('@tropykus-finance/tropykus/artifacts/PriceOracleAdapterUSDT.json');
+
+// Setup providers (local Anvil node)
+const provider = new ethers.providers.JsonRpcProvider('http://localhost:8545');
+const wsProvider = new ethers.providers.WebSocketProvider('ws://localhost:8545');
+const tropykus = new Tropykus(provider, wsProvider);
+
+// Get account
+const [deployer] = await provider.listAccounts();
+const account = await tropykus.getAccount(deployer.privateKey);
+
+// 1. Deploy 6-decimal ERC20 token (mock USDT)
+const MockERC20Factory = await ethers.getContractFactory('MockERC20');
+const usdtToken = await MockERC20Factory.deploy(
+  'USDT',
+  'USDT',
+  6, // 6 decimals
+  ethers.utils.parseUnits('1000000', 6) // 1M tokens
+);
+await usdtToken.deployed();
+
+// 2. Deploy mock price provider with 1e8 price
+const MockPriceProviderFactory = await ethers.getContractFactory('MockPriceProvider');
+const priceProvider = await MockPriceProviderFactory.deploy(
+  deployer.address, // guardian
+  ethers.utils.parseUnits('1', 8) // 1.0 USD in 8 decimals (1e8)
+);
+await priceProvider.deployed();
+
+// 3. Deploy PriceOracleAdapterMoc
+const mocAdapterFactory = new ethers.ContractFactory(
+  PriceOracleAdapterMocArtifact.abi,
+  PriceOracleAdapterMocArtifact.bytecode,
+  deployer
+);
+const mocAdapter = await mocAdapterFactory.deploy(
+  deployer.address, // guardian
+  priceProvider.address // priceProvider
+);
+await mocAdapter.deployed();
+
+// 4. Deploy PriceOracleAdapterUSDT (optional)
+const usdtAdapterFactory = new ethers.ContractFactory(
+  PriceOracleAdapterUSDTArtifact.abi,
+  PriceOracleAdapterUSDTArtifact.bytecode,
+  deployer
+);
+const usdtAdapter = await usdtAdapterFactory.deploy(
+  deployer.address, // guardian
+  priceProvider.address // priceProvider
+);
+await usdtAdapter.deployed();
+
+// 5. Deploy PriceOracleProxy (if not already deployed)
+const PriceOracleProxyFactory = await ethers.getContractFactory('PriceOracleProxy');
+const priceOracleProxy = await PriceOracleProxyFactory.deploy();
+await priceOracleProxy.deployed();
+
+// 6. Set price oracle in Tropykus
+await tropykus.setPriceOracle(priceOracleProxy.address);
+
+// 7. Create market for 6-decimal token
+const market = await tropykus.addMarket(
+  account,
+  'CErc20Immutable',
+  marketAddress, // Deploy market contract first
+  usdtToken.address, // 6-decimal token
+  {
+    comptrollerAddress: comptrollerAddress,
+    interestRateModelAddress: interestRateModelAddress,
+    initialExchangeRate: 0.02,
+    name: 'kUSDT',
+    symbol: 'kUSDT',
+    decimals: 0, // Market token decimals
+  }
+);
+
+// 8. Set oracle adapter to market
+await tropykus.priceOracle.setAdapterToToken(
+  account,
+  market.address,
+  mocAdapter.address // PriceOracleAdapterMoc with 8-decimal price
+);
+
+// 9. Verify oracle decimal detection
+const oraclePrice = await tropykus.priceOracle.getUnderlyingPrice(market.address);
+console.log('Oracle price:', oraclePrice); // Should be 1.0 (correctly divided by 1e8)
+
+// 10. Test operations
+// Deposit 1.0 USDT (6 decimals)
+await market.mint(account, 1.0);
+// Internally: 1.0 → 1000000 (1e6)
+
+// Check balance with USD value
+const balance = await market.balanceOfUnderlying(account);
+console.log('Token balance:', balance.underlying.value); // 1.0
+console.log('USD value:', balance.usd.value); // Should be 1.0 (correct conversion)
+
+// Borrow 10.5 USDT
+await market.borrow(account, 10.5);
+// Internally: 10.5 → 10500000 (10.5e6)
+
+// Repay loan
+await market.repayBorrow(account, 10.5);
+```
+
+### Testing USD Value Calculations
+
+The key test is verifying that USD calculations work correctly with mixed decimals:
+
+```javascript
+// Test case: 1.5 USDT (6 decimals) with 1.0 USD price (8-decimal oracle)
+// Expected USD value: 1.5 USD
+
+// Deposit 1.5 USDT
+await market.mint(account, 1.5);
+
+// Get balance
+const balance = await market.balanceOfUnderlying(account);
+
+// Verify calculations
+expect(balance.underlying.value).to.equal(1.5); // 6-decimal token correctly formatted
+expect(balance.usd.value).to.be.closeTo(1.5, 0.0001); // USD value correctly calculated
+
+// Internal calculation:
+// Token: 1500000 (6 decimals = 1.5 tokens)
+// Oracle: 100000000 (8 decimals = 1.0 USD)
+// USD = (1500000 * 10^2) * 100000000 / 10^8
+//     = 150000000 * 100000000 / 100000000
+//     = 150000000 / 10^8
+//     = 1.5 USD ✓
+```
+
+### Testing PriceOracleAdapterUSDT DECIMAL_MULTIPLIER
+
+```javascript
+// Query DECIMAL_MULTIPLIER from USDT adapter
+const usdtAdapterContract = new ethers.Contract(
+  usdtAdapter.address,
+  PriceOracleAdapterUSDTArtifact.abi,
+  provider
+);
+const decimalMultiplier = await usdtAdapterContract.DECIMAL_MULTIPLIER();
+console.log('DECIMAL_MULTIPLIER:', decimalMultiplier.toString());
+
+// Use adapter for market
+await tropykus.priceOracle.setAdapterToToken(
+  account,
+  market.address,
+  usdtAdapter.address
+);
+
+// Verify price retrieval works correctly
+const price = await tropykus.priceOracle.getUnderlyingPrice(market.address);
+// Should correctly handle DECIMAL_MULTIPLIER-based conversion
+```
 
 ## Basic Usage
 
-### Working with 6-Decimal Tokens (e.g., USDC)
+### Working with 6-Decimal Tokens (e.g., USDC/USDT)
 
 ```javascript
 const Tropykus = require('@tropykus-finance/tropykus');
@@ -268,8 +440,35 @@ await market.mint(account, 1500000); // Wrong for 6-decimal token
 
 **Solution**: All 18-decimal tokens work identically to before. No breaking changes.
 
+## Oracle Integration Notes
+
+### PriceOracleAdapterMoc
+- Returns prices in **8-decimal format** (1e8)
+- Used for stablecoin pricing
+- SDK automatically detects and divides by 1e8 (not 1e18)
+
+### PriceOracleAdapterUSDT
+- Has `DECIMAL_MULTIPLIER` constant
+- SDK queries this value at runtime to determine decimal precision
+- Typically also uses 8 decimals
+
+### Decimal Conversion Formula
+
+For 6-decimal token with 8-decimal oracle:
+```
+USD Value = (tokenAmount * 10^(oracleDecimals - tokenDecimals)) * oraclePrice / 10^oracleDecimals
+          = (tokenAmount * 10^2) * oraclePrice / 10^8
+          = tokenAmount * oraclePrice / 10^6
+```
+
+Example:
+- Token: 1.5 USDT = 1500000 (6 decimals)
+- Oracle: 1.0 USD = 100000000 (8 decimals)
+- USD = (1500000 * 100) * 100000000 / 100000000 = 1.5 USD ✓
+
 ## See Also
 
+- [Oracle Adapter API](./contracts/oracle-adapter-api.md) - Oracle integration API reference
 - [API Documentation](./contracts/decimal-api.md) - Detailed API reference
 - [Data Model](./data-model.md) - Internal data structures
 - [Research](./research.md) - Technical decisions and rationale

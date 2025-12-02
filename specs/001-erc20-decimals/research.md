@@ -128,32 +128,78 @@ async getTokenDecimals() {
 
 ### 6. Price Oracle Decimal Handling
 
-**Decision**: Price oracle returns values in 18-decimal format (standard), convert token amounts accordingly
+**Decision**: Handle 8-decimal oracle prices (1e8) for 6-decimal tokens, with adapter-specific conversion logic
 
 **Rationale**:
-- Price oracles typically return prices with 18 decimals (wei precision)
-- Token amounts need conversion from their native decimals to 18 decimals for USD calculations
-- Then convert back for display/operations
+- PriceOracleAdapterMoc returns prices in 1e8 format (8 decimals) for stablecoins
+- PriceOracleAdapterUSDT has DECIMAL_MULTIPLIER constant (needs investigation of actual value)
+- Current PriceOracle.getUnderlyingPrice() divides by 1e18, assuming 18-decimal prices
+- Need to detect oracle adapter type and apply correct decimal conversion
 
-**Implementation**:
-- When calculating USD: Convert token amount (native decimals) → 18 decimals → multiply by price (18 decimals) → result in 18 decimals
-- When displaying: Convert from 18 decimals back to native decimals for user display
+**Oracle Adapter Analysis**:
 
-### 7. Testing Strategy
+1. **PriceOracleAdapterMoc**:
+   - Uses PriceProviderMoC contract
+   - Returns prices in 1e8 format (8 decimals) per user requirement
+   - Used for stablecoin pricing
+   - Current code incorrectly divides by 1e18 instead of 1e8
 
-**Decision**: Create test tokens with different decimal amounts (0, 2, 6, 8, 18) for integration tests
+2. **PriceOracleAdapterUSDT**:
+   - Has DECIMAL_MULTIPLIER constant (view function)
+   - Uses IRedstoneAdapter interface
+   - DECIMAL_MULTIPLIER value needs to be queried at runtime
+   - Likely also uses 8 decimals based on user requirement
+
+**Implementation Strategy**:
+- Detect oracle adapter type (Moc vs USDT) or query DECIMAL_MULTIPLIER
+- Store oracle decimal precision (8) in PriceOracle instance
+- Modify `getUnderlyingPrice()` to divide by correct factor (1e8 instead of 1e18)
+- USD calculations: 
+  - Token amount (6 decimals) → convert to 18 decimals for internal calculation
+  - Oracle price (8 decimals) → convert to 18 decimals
+  - Multiply: (token_amount_18dec) * (price_18dec) / 1e18 = USD value
+  - Or: (token_amount_6dec) * (price_8dec) * (1e18 / 1e6 / 1e8) = USD value
+
+**Conversion Formula**:
+```
+USD Value = (tokenAmount * 10^(18 - tokenDecimals)) * (oraclePrice * 10^(18 - oracleDecimals)) / 10^18
+For 6-decimal token with 8-decimal oracle:
+USD Value = (tokenAmount * 10^12) * (oraclePrice * 10^10) / 10^18
+         = tokenAmount * oraclePrice * 10^4 / 10^18
+         = tokenAmount * oraclePrice / 10^14
+```
+
+**Alternative (Simpler) Approach**:
+- Keep oracle price in native format (8 decimals)
+- Convert token amount to match oracle decimals: tokenAmount * 10^(oracleDecimals - tokenDecimals)
+- Multiply directly: (tokenAmount * 10^2) * oraclePrice / 10^oracleDecimals
+- For 6-decimal token, 8-decimal oracle: (tokenAmount * 100) * oraclePrice / 1e8
+
+### 7. Testing Strategy (Reduced Scope)
+
+**Decision**: Focus on 6-decimal token with 8-decimal oracle integration testing
 
 **Rationale**:
-- Need real blockchain interactions to test decimal detection
-- Multiple decimal amounts ensure comprehensive coverage
+- Reduced scope focuses on specific use case: 6-decimal tokens (USDT/USDC) with 8-decimal oracle
+- Need real blockchain interactions to test decimal detection and oracle conversion
 - Integration tests catch issues unit tests might miss
+- Specific adapters: PriceOracleAdapterMoc.json and PriceOracleAdapterUSDT.json
 
-**Test Tokens Needed**:
-- 0 decimals: Simple integer token
-- 2 decimals: Common for fiat-pegged tokens
-- 6 decimals: USDC-like stablecoin
-- 8 decimals: WBTC-like wrapped asset
-- 18 decimals: Standard ERC20 (backward compatibility)
+**Test Setup Required**:
+1. **6-Decimal Token**: Deploy or use existing 6-decimal ERC20 token (e.g., USDT/USDC mock)
+2. **PriceOracleAdapterMoc**: Deploy with 1e8 price for stablecoin
+3. **PriceOracleAdapterUSDT**: Deploy and connect to market
+4. **Market Creation**: Create market for 6-decimal token
+5. **Oracle Setup**: Connect adapters to PriceOracleProxy
+6. **Operations**: Test deposit, withdraw, borrow, repay with correct decimal handling
+7. **USD Calculations**: Verify USD value calculations use correct decimal conversion
+
+**Test Scenarios**:
+- Deposit 1.0 token → Verify 1000000 (1e6) sent to contract
+- Query balance → Verify 1.0 displayed (6-decimal formatting)
+- Get USD value → Verify correct conversion: (tokenAmount * price) / 10^14
+- Borrow 10.5 tokens → Verify 10500000 (10.5e6) borrowed
+- Repay loan → Verify correct 6-decimal parsing
 
 ## Summary
 
@@ -163,8 +209,19 @@ All research questions resolved. Key decisions:
 3. Fallback to 18 decimals with warning if `decimals()` missing
 4. Maintain backward compatibility by detecting decimals automatically
 5. Adjust FixedNumber factors based on detected decimals
-6. Handle price oracle conversions correctly
-7. Test with multiple decimal amounts
+6. Handle 8-decimal oracle prices correctly (divide by 1e8, not 1e18)
+7. Test with 6-decimal token + 8-decimal oracle using PriceOracleAdapterMoc and PriceOracleAdapterUSDT
+
+**Oracle-Specific Findings**:
+- PriceOracleAdapterMoc returns prices in 1e8 format (8 decimals)
+- PriceOracleAdapterUSDT has DECIMAL_MULTIPLIER (query at runtime)
+- Current PriceOracle.getUnderlyingPrice() incorrectly assumes 18 decimals
+- Need to detect/store oracle decimal precision and apply correct conversion
+
+**Reduced Scope Focus**:
+- 6-decimal tokens (USDT/USDC stablecoins)
+- 8-decimal oracle (1e8 prices)
+- Specific adapters: PriceOracleAdapterMoc.json and PriceOracleAdapterUSDT.json
 
 No blocking issues identified. Ready to proceed with design phase.
 
