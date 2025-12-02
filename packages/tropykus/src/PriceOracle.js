@@ -83,5 +83,49 @@ export default class PriceOracle {
       return 18;
     }
   }
+
+  /**
+   * Sets an adapter to the given market address
+   * @param {object} account Object get from tropykus.getAccount()
+   * @param {string} marketAddress address of the market
+   * @param {string} adapterMarketAddress address of the market adapter
+   * @returns {Promise<unknown>}
+   */
+  async setAdapterToToken(account, marketAddress, adapterMarketAddress) {
+    // Set the adapter on the contract
+    const tx = await this.instance.connect(account.signer)
+      .setAdapterToToken(marketAddress, adapterMarketAddress);
+    
+    // Detect and cache oracle decimals for the adapter
+    await this.detectOracleDecimals(adapterMarketAddress);
+    
+    return tx;
+  }
+
+  /**
+   * Returns the market's price
+   * @param {string} marketAddress address of the market
+   * @returns {Promise<number>} The price in human-readable format (e.g., 1.0 for $1)
+   */
+  async getUnderlyingPrice(marketAddress) {
+    // Get the adapter address for this market
+    const adapterAddress = await this.instance.callStatic.tokenAdapter(marketAddress);
+    
+    // Detect oracle decimals (18 for MoC, 30 for USDT, default 18)
+    const oracleDecimals = await this.detectOracleDecimals(adapterAddress);
+    
+    // Get the raw price from the contract
+    // The contract calls the adapter's assetPrices() which returns:
+    // - 1e18 for MoC adapter
+    // - 1e30 for USDT adapter
+    const rawPrice = await this.instance.callStatic.getUnderlyingPrice(marketAddress);
+    
+    // Divide by the correct factor based on adapter type to get human-readable price
+    // MoC: divide by 1e18, USDT: divide by 1e30
+    const divisor = BigNumber.from(10).pow(oracleDecimals);
+    const price = BigNumber.from(rawPrice).div(divisor);
+    
+    return Number(price.toString());
+  }
 }
 
