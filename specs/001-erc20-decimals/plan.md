@@ -3,20 +3,22 @@
 **Branch**: `001-erc20-decimals` | **Date**: 2025-01-27 | **Spec**: [spec.md](./spec.md)
 **Input**: Feature specification from `/specs/001-erc20-decimals/spec.md`
 
-**Note**: This plan focuses on a reduced scope: integrating 6-decimal tokens (like USDT/USDC) with an 8-decimal price oracle, tested using PriceOracleAdapterMoc.json (1e8 price) and PriceOracleAdapterUSDT.json.
+**Note**: This plan focuses on a reduced scope: integrating 6-decimal tokens (like USDT/USDC) with price oracles. PriceOracleAdapterMoc uses 18 decimals (matching onchain provider), while PriceOracleAdapterUSDT uses 8 decimals. PriceOracleAdapterUSDT adds 22 decimals internally for liquidity calculations via ComptrollerG6.getAccountLiquidity.
 
 ## Summary
 
-This implementation plan focuses on integrating 6-decimal ERC20 tokens (stablecoins like USDT/USDC) with an 8-decimal price oracle system. The scope is reduced from the original full multi-decimal support to specifically handle:
+This implementation plan focuses on integrating 6-decimal ERC20 tokens (stablecoins like USDT/USDC) with price oracle systems. The scope is reduced from the original full multi-decimal support to specifically handle:
 - 6-decimal tokens (e.g., USDT, USDC)
-- 8-decimal price oracle (1e8 precision)
-- Testing with PriceOracleAdapterMoc.json (1e8 price for stablecoin) and PriceOracleAdapterUSDT.json
+- PriceOracleAdapterMoc with 18-decimal precision (1e18, matching onchain provider)
+- PriceOracleAdapterUSDT with 8-decimal precision (1e8) for price queries, plus 22 decimals added internally for liquidity calculations
+- Testing with MockPriceProviderMoC using 18 decimals for MoC adapter tests and 8 decimals for USDT adapter tests
 
 The technical approach involves:
 1. Detecting token decimals (6 for target tokens)
-2. Handling oracle price conversion from 8 decimals to internal calculations
-3. Converting between token decimals (6) and oracle decimals (8) for USD value calculations
-4. Testing with the specific oracle adapters mentioned
+2. Handling oracle price conversion from 18 decimals (MoC) or 8 decimals (USDT) to internal calculations
+3. Converting between token decimals (6) and oracle decimals (18 for MoC, 8 for USDT) for USD value calculations
+4. Accounting for PriceOracleAdapterUSDT's 22-decimal addition in liquidity calculations
+5. Testing with the specific oracle adapters and mock providers mentioned
 
 ## Technical Context
 
@@ -52,15 +54,16 @@ The technical approach involves:
 
 ### III. Test-First Development (NON-NEGOTIABLE) ✅
 - **Status**: PASS
-- **Compliance**: Integration tests required for 6-decimal token with 8-decimal oracle. Tests must cover PriceOracleAdapterMoc and PriceOracleAdapterUSDT scenarios.
+- **Compliance**: Integration tests required for 6-decimal token with 18-decimal oracle (MoC) and 8-decimal oracle (USDT). Tests must cover PriceOracleAdapterMoc (18 decimals) and PriceOracleAdapterUSDT (8 decimals for prices, 22 decimals for liquidity) scenarios.
 - **Rationale**: No violations. Testing strategy defined in research phase.
 
 ### IV. Integration Testing for Blockchain Interactions ✅
 - **Status**: PASS
 - **Compliance**: Integration tests required for:
   - 6-decimal token market creation
-  - Price oracle adapter interactions (PriceOracleAdapterMoc, PriceOracleAdapterUSDT)
-  - USD value calculations with 8-decimal oracle
+  - Price oracle adapter interactions (PriceOracleAdapterMoc with 18 decimals, PriceOracleAdapterUSDT with 8 decimals)
+  - USD value calculations with 18-decimal oracle (MoC) and 8-decimal oracle (USDT)
+  - Liquidity calculations with PriceOracleAdapterUSDT (accounting for 22-decimal addition)
   - Deposit/withdraw/borrow/repay operations
 - **Rationale**: No violations. Integration testing explicitly required for oracle interactions.
 
@@ -103,8 +106,8 @@ packages/tropykus/
 ├── src/
 │   ├── Markets/
 │   │   └── CErc20.js          # Modified: Add decimal detection, use parseUnits/formatUnits
-│   ├── Market.js              # Modified: Handle oracle decimal conversion (8 decimals)
-│   ├── PriceOracle.js         # Modified: Handle 8-decimal oracle prices
+│   ├── Market.js              # Modified: Handle oracle decimal conversion (18 for MoC, 8 for USDT)
+│   ├── PriceOracle.js         # Modified: Handle 18-decimal (MoC) and 8-decimal (USDT) oracle prices, plus USDT 22-decimal liquidity addition
 │   └── utils/
 │       └── decimals.js        # New: Decimal detection and conversion utilities
 ├── artifacts/
@@ -133,11 +136,12 @@ No violations identified. All constitution checks pass.
 **Objective**: Research and document how to handle 8-decimal oracle prices with 6-decimal tokens.
 
 **Tasks**:
-1. Research PriceOracleAdapterMoc.json structure and 1e8 price format
-2. Research PriceOracleAdapterUSDT.json structure and DECIMAL_MULTIPLIER
-3. Document conversion logic: 6-decimal token amounts ↔ 8-decimal oracle prices
-4. Identify all places in codebase where oracle prices are used
-5. Document USD value calculation flow with mixed decimals
+1. Research PriceOracleAdapterMoc.json structure and 18-decimal (1e18) price format (matching onchain provider)
+2. Research PriceOracleAdapterUSDT.json structure, 8-decimal price format, and 22-decimal addition for liquidity calculations
+3. Document conversion logic: 6-decimal token amounts ↔ 18-decimal oracle prices (MoC) and 8-decimal oracle prices (USDT)
+4. Document PriceOracleAdapterUSDT's 22-decimal addition for getAccountLiquidity calculations
+5. Identify all places in codebase where oracle prices are used
+6. Document USD value calculation flow with mixed decimals (6-decimal tokens with 18-decimal MoC oracle or 8-decimal USDT oracle)
 
 **Output**: Updated `research.md` with oracle decimal handling section
 
@@ -146,9 +150,9 @@ No violations identified. All constitution checks pass.
 **Objective**: Design the decimal-aware oracle integration and create API contracts.
 
 **Tasks**:
-1. Update `data-model.md` with oracle decimal conversion entities
-2. Create `contracts/oracle-adapter-api.md` documenting oracle adapter integration
-3. Update `quickstart.md` with testing instructions for 6-decimal token + 8-decimal oracle
+1. Update `data-model.md` with oracle decimal conversion entities (18 for MoC, 8 for USDT, plus 22 for USDT liquidity)
+2. Create `contracts/oracle-adapter-api.md` documenting oracle adapter integration (MoC 18-decimal, USDT 8-decimal with 22-decimal liquidity addition)
+3. Update `quickstart.md` with testing instructions for 6-decimal token + 18-decimal oracle (MoC) and 8-decimal oracle (USDT)
 4. Update agent context with new technology patterns
 
 **Output**: 

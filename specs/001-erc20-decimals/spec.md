@@ -63,6 +63,13 @@ A developer wants to interact with ERC20 tokens that use any valid decimal amoun
 - How does the system handle very small amounts for high-decimal tokens? The system must maintain precision for fractional amounts, ensuring no rounding errors occur in critical calculations
 - What happens when price oracle values use different decimal precision than the underlying token? The system must correctly convert between different decimal precisions when calculating USD values
 
+## Clarifications
+
+### Session 2025-01-27
+
+- Q: What decimal precision do the price oracle adapters use? → A: PriceOracleAdapterMoc returns prices with 18 decimals by default (matching the onchain price provider). PriceOracleAdapterUSDT uses an 8-decimal oracle. For testing, MockPriceProviderMoC is used with 18 decimals for MoC adapter tests and 8 decimals for USDT adapter tests. PriceOracleAdapterUSDT adds 22 decimals internally to calculate correct liquidity when calling getAccountLiquidity from ComptrollerG6.
+- Q: What does PriceOracleAdapterUSDT.assetPrices() return? → A: PriceOracleAdapterUSDT.assetPrices() returns prices in 1e30 format (8-decimal oracle price multiplied by DECIMAL_MULTIPLIER 1e22). ComptrollerG6 uses this 1e30 value, multiplying it by amount * 1e16 to achieve 1e36 order of magnitude for correct liquidity calculations. For standard 18-decimal tokens, assetPrices() returns 1e18, which with 18-decimal token amounts also results in 1e36 for liquidity calculations.
+
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
@@ -77,11 +84,15 @@ A developer wants to interact with ERC20 tokens that use any valid decimal amoun
 - **FR-008**: System MUST handle errors gracefully when a token contract doesn't implement `decimals()` or returns invalid values
 - **FR-009**: System MUST maintain precision in all calculations, avoiding rounding errors that could affect user balances or transaction amounts
 - **FR-010**: System MUST correctly convert between different decimal precisions when calculating USD values from token amounts and price oracle data
+- **FR-011**: System MUST handle PriceOracleAdapterMoc with 18-decimal precision (default behavior, matching onchain price provider)
+- **FR-012**: System MUST handle PriceOracleAdapterUSDT.assetPrices() returning 1e30 format (8-decimal oracle price * 1e22 DECIMAL_MULTIPLIER)
+- **FR-013**: System MUST account for PriceOracleAdapterUSDT's 1e30 return value when ComptrollerG6 calculates liquidity (multiplies 1e30 by amount * 1e16 to achieve 1e36 order of magnitude)
 
 ### Key Entities *(include if feature involves data)*
 
 - **Token Decimal Configuration**: Represents the decimal amount for a specific ERC20 token, retrieved from the token contract's `decimals()` function. This value determines how amounts are parsed and formatted for that token.
 - **Token Amount**: Represents a quantity of tokens, which can be in human-readable format (e.g., 1.5 tokens) or contract format (e.g., 1500000 for 1.5 tokens with 6 decimals). The system must convert between these formats using the correct decimal precision.
+- **Oracle Adapter Decimal Configuration**: Represents the decimal precision for price oracle adapters. PriceOracleAdapterMoc.assetPrices() returns 18 decimals (1e18, matching onchain price provider). PriceOracleAdapterUSDT.assetPrices() returns 1e30 (8-decimal oracle price multiplied by DECIMAL_MULTIPLIER 1e22). ComptrollerG6 uses these values for liquidity calculations, achieving 1e36 order of magnitude (1e30 * amount * 1e16 for USDT, 1e18 * amount * 1e18 for standard tokens).
 
 ## Success Criteria *(mandatory)*
 

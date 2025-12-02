@@ -1,18 +1,18 @@
-# Tasks: 6-Decimal Token with 8-Decimal Oracle Integration
+# Tasks: ERC20 Multi-Decimal Support with Oracle Integration
 
 **Input**: Design documents from `/specs/001-erc20-decimals/`
 **Prerequisites**: plan.md ✓, spec.md ✓, research.md ✓, data-model.md ✓, contracts/oracle-adapter-api.md ✓
 
-**Scope**: Reduced scope focusing on 6-decimal tokens (USDT/USDC) with 8-decimal price oracle integration using PriceOracleAdapterMoc and PriceOracleAdapterUSDT.
+**Scope**: Support for ERC20 tokens with different decimal amounts (0-18), with focus on 6-decimal tokens (USDT/USDC) and 8-decimal tokens (WBTC). Oracle integration handles PriceOracleAdapterMoc (assetPrices() returns 1e18) and PriceOracleAdapterUSDT (assetPrices() returns 1e30).
 
-**Tests**: Integration tests required per Constitution (Test-First Development). Tests must cover 6-decimal token operations with 8-decimal oracle.
+**Tests**: Integration tests required per Constitution (Test-First Development). Tests must cover operations with various decimal amounts and oracle adapter integrations.
 
-**Organization**: Tasks organized to enable independent implementation and testing of the 6-decimal token + 8-decimal oracle integration.
+**Organization**: Tasks organized by user story priority to enable independent implementation and testing.
 
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: Can run in parallel (different files, no dependencies)
-- **[Story]**: Which user story this task belongs to (US1 = 6-decimal tokens with 8-decimal oracle)
+- **[Story]**: Which user story this task belongs to (US1 = 6-decimal tokens, US2 = 8-decimal tokens, US3 = all valid decimals)
 - Include exact file paths in descriptions
 
 ## Path Conventions
@@ -27,10 +27,10 @@
 
 **Purpose**: Project initialization and verification of existing structure
 
-- [x] T001 Verify project structure exists: `packages/tropykus/src/`, `packages/tropykus/test/`, `packages/tropykus/artifacts/`
-- [x] T002 [P] Verify PriceOracleAdapterMoc.json exists in `packages/tropykus/artifacts/PriceOracleAdapterMoc.json`
-- [x] T003 [P] Verify PriceOracleAdapterUSDT.json exists in `packages/tropykus/artifacts/PriceOracleAdapterUSDT.json`
-- [x] T004 [P] Verify existing Market.js, CErc20.js, and PriceOracle.js files structure
+- [ ] T001 Verify project structure exists: `packages/tropykus/src/`, `packages/tropykus/test/`, `packages/tropykus/artifacts/`
+- [ ] T002 [P] Verify PriceOracleAdapterMoc.json exists in `packages/tropykus/artifacts/PriceOracleAdapterMoc.json`
+- [ ] T003 [P] Verify PriceOracleAdapterUSDT.json exists in `packages/tropykus/artifacts/PriceOracleAdapterUSDT.json`
+- [ ] T004 [P] Verify existing Market.js, CErc20.js, and PriceOracle.js files structure
 
 ---
 
@@ -40,79 +40,152 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [X] T005 Create decimal utility module `packages/tropykus/src/utils/decimals.js` with `getTokenDecimals()` function
-- [X] T006 [P] Implement `parseTokenAmount(amount, decimals)` helper in `packages/tropykus/src/utils/decimals.js`
-- [X] T007 [P] Implement `formatTokenAmount(amount, decimals)` helper in `packages/tropykus/src/utils/decimals.js`
-- [X] T008 Add error handling and fallback to 18 decimals in `getTokenDecimals()` in `packages/tropykus/src/utils/decimals.js`
-- [X] T009 Implement `detectOracleDecimals(adapterAddress)` method in `packages/tropykus/src/PriceOracle.js`
-- [X] T010 [P] Add `adapterDecimalsMap` property initialization in PriceOracle constructor in `packages/tropykus/src/PriceOracle.js`
-- [X] T011 Implement adapter type detection logic (Moc vs USDT vs Unknown) in `detectOracleDecimals()` in `packages/tropykus/src/PriceOracle.js`
-- [X] T012 Implement DECIMAL_MULTIPLIER query for PriceOracleAdapterUSDT in `detectOracleDecimals()` in `packages/tropykus/src/PriceOracle.js`
+- [ ] T005 Create decimal utility module `packages/tropykus/src/utils/decimals.js` with `getTokenDecimals(erc20Instance)` function
+- [ ] T006 [P] Implement `parseTokenAmount(amount, decimals)` helper in `packages/tropykus/src/utils/decimals.js` using `ethers.utils.parseUnits()`
+- [ ] T007 [P] Implement `formatTokenAmount(amount, decimals)` helper in `packages/tropykus/src/utils/decimals.js` using `ethers.utils.formatUnits()`
+- [ ] T008 Add error handling and fallback to 18 decimals in `getTokenDecimals()` in `packages/tropykus/src/utils/decimals.js`
+- [ ] T009 Update `detectOracleDecimals(adapterAddress)` method in `packages/tropykus/src/PriceOracle.js` to return 30 for USDT (assetPrices() returns 1e30), 18 for MoC (assetPrices() returns 1e18)
+- [ ] T010 [P] Add `adapterDecimalsMap` property initialization in PriceOracle constructor in `packages/tropykus/src/PriceOracle.js`
+- [ ] T011 Update adapter type detection logic to correctly identify MoC (returns 18) vs USDT (returns 30) in `detectOracleDecimals()` in `packages/tropykus/src/PriceOracle.js`
+- [ ] T012 Update DECIMAL_MULTIPLIER handling: PriceOracleAdapterUSDT.assetPrices() returns 1e30 (8-decimal oracle * 1e22), not 8 decimals in `detectOracleDecimals()` in `packages/tropykus/src/PriceOracle.js`
 
 **Checkpoint**: Foundation ready - decimal detection utilities and oracle adapter detection are complete. User story implementation can now begin.
 
 ---
 
-## Phase 3: User Story 1 - 6-Decimal Tokens with 8-Decimal Oracle (Priority: P1) 🎯 MVP
+## Phase 3: User Story 1 - 6-Decimal Tokens (Priority: P1) 🎯 MVP
 
-**Goal**: Enable developers to interact with 6-decimal ERC20 tokens (like USDT/USDC) using an 8-decimal price oracle. The system should correctly parse and format all amounts using 6-decimal precision for tokens and handle 8-decimal oracle prices correctly for USD value calculations.
+**Goal**: Enable developers to interact with 6-decimal ERC20 tokens (like USDC/USDT). The system should correctly parse and format all amounts using 6-decimal precision, ensuring that 1.0 token units are represented correctly in the underlying token contract.
 
-**Independent Test**: Create a market for a 6-decimal token, set up PriceOracleAdapterMoc with 1e8 price, perform deposit/withdraw/borrow/repay operations, and verify that amounts are correctly parsed/formatted and USD values are correctly calculated.
+**Independent Test**: Create a market for a 6-decimal token, perform deposit and withdrawal operations, and verify that amounts are correctly parsed and formatted. This delivers immediate value by enabling support for popular stablecoins.
 
 ### Tests for User Story 1 ⚠️
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
 - [ ] T013 [P] [US1] Create integration test for 6-decimal token decimal detection in `packages/tropykus/test/02-markets.spec.js`
-- [ ] T014 [P] [US1] Create integration test for PriceOracleAdapterMoc 8-decimal price handling in `packages/tropykus/test/02-markets.spec.js`
-- [ ] T015 [P] [US1] Create integration test for 6-decimal token deposit operation in `packages/tropykus/test/02-markets.spec.js`
-- [ ] T016 [P] [US1] Create integration test for 6-decimal token balance query with USD value calculation in `packages/tropykus/test/02-markets.spec.js`
-- [ ] T017 [P] [US1] Create integration test for 6-decimal token borrow operation in `packages/tropykus/test/02-markets.spec.js`
-- [ ] T018 [P] [US1] Create integration test for 6-decimal token repay operation in `packages/tropykus/test/02-markets.spec.js`
-- [ ] T019 [P] [US1] Create integration test for PriceOracleAdapterUSDT DECIMAL_MULTIPLIER handling in `packages/tropykus/test/02-markets.spec.js`
+- [ ] T014 [P] [US1] Create integration test for 6-decimal token deposit operation (1.0 token → 1000000) in `packages/tropykus/test/02-markets.spec.js`
+- [ ] T015 [P] [US1] Create integration test for 6-decimal token balance query with 6-decimal precision display in `packages/tropykus/test/02-markets.spec.js`
+- [ ] T016 [P] [US1] Create integration test for 6-decimal token borrow operation (10.5 tokens → 10500000) in `packages/tropykus/test/02-markets.spec.js`
+- [ ] T017 [P] [US1] Create integration test for 6-decimal token repay operation with correct 6-decimal parsing in `packages/tropykus/test/02-markets.spec.js`
 
 ### Implementation for User Story 1
 
-- [ ] T020 [US1] Add decimal detection to CErc20 constructor in `packages/tropykus/src/Markets/CErc20.js` - call `getTokenDecimals()` and cache as `this.tokenDecimals`
-- [ ] T021 [US1] Replace `parseEther()` calls with `parseTokenAmount()` using detected decimals in `mint()` method in `packages/tropykus/src/Markets/CErc20.js`
-- [ ] T022 [US1] Replace `parseEther()` calls with `parseTokenAmount()` using detected decimals in `repayBorrow()` method in `packages/tropykus/src/Markets/CErc20.js`
-- [ ] T023 [US1] Replace `parseEther()` calls with `parseTokenAmount()` using detected decimals in `transferUnderlying()` method in `packages/tropykus/src/Markets/CErc20.js`
-- [ ] T024 [US1] Replace `formatEther()` calls with `formatTokenAmount()` using detected decimals in `balanceOfUnderlyingInWallet()` method in `packages/tropykus/src/Markets/CErc20.js`
-- [ ] T025 [US1] Update `getUnderlyingPrice()` to use `detectOracleDecimals()` and divide by correct factor (1e8 for 8-decimal oracle) in `packages/tropykus/src/PriceOracle.js`
-- [ ] T026 [US1] Modify `setAdapterToToken()` to detect and cache oracle decimals when adapter is set in `packages/tropykus/src/PriceOracle.js`
-- [ ] T027 [US1] Update `balanceOfUnderlying()` to handle 6-decimal token amounts and 8-decimal oracle prices correctly in `packages/tropykus/src/Market.js`
-- [ ] T028 [US1] Update `balanceOf()` to handle 6-decimal token amounts and 8-decimal oracle prices correctly in `packages/tropykus/src/Market.js`
-- [ ] T029 [US1] Replace hardcoded `1e18` factors with `10^tokenDecimals` calculations in `balanceOfUnderlying()` in `packages/tropykus/src/Market.js`
-- [ ] T030 [US1] Replace hardcoded `1e18` factors with `10^tokenDecimals` calculations in `balanceOf()` in `packages/tropykus/src/Market.js`
-- [ ] T031 [US1] Update USD value calculation formula to handle 6-decimal token × 8-decimal oracle conversion in `balanceOfUnderlying()` in `packages/tropykus/src/Market.js`
-- [ ] T032 [US1] Update USD value calculation formula to handle 6-decimal token × 8-decimal oracle conversion in `balanceOf()` in `packages/tropykus/src/Market.js`
-- [ ] T033 [US1] Add `getAdapterAddress(marketAddress)` helper method to PriceOracle for retrieving adapter address in `packages/tropykus/src/PriceOracle.js`
-- [ ] T034 [US1] Update all Market methods that use `parseEther()`/`formatEther()` to use decimal-aware utilities in `packages/tropykus/src/Market.js`
-- [ ] T035 [US1] Add JSDoc comments to all new utility functions in `packages/tropykus/src/utils/decimals.js`
-- [ ] T036 [US1] Add JSDoc comments to modified methods in `packages/tropykus/src/PriceOracle.js`
-- [ ] T037 [US1] Add JSDoc comments to modified methods in `packages/tropykus/src/Markets/CErc20.js`
-- [ ] T038 [US1] Add JSDoc comments to modified methods in `packages/tropykus/src/Market.js`
+- [ ] T018 [US1] Add decimal detection to CErc20 constructor in `packages/tropykus/src/Markets/CErc20.js` - call `getTokenDecimals()` and cache as `this.tokenDecimals`
+- [ ] T019 [US1] Replace `parseEther()` calls with `parseTokenAmount()` using detected decimals in `mint()` method in `packages/tropykus/src/Markets/CErc20.js`
+- [ ] T020 [US1] Replace `parseEther()` calls with `parseTokenAmount()` using detected decimals in `repayBorrow()` method in `packages/tropykus/src/Markets/CErc20.js`
+- [ ] T021 [US1] Replace `parseEther()` calls with `parseTokenAmount()` using detected decimals in `transferUnderlying()` method in `packages/tropykus/src/Markets/CErc20.js`
+- [ ] T022 [US1] Replace `formatEther()` calls with `formatTokenAmount()` using detected decimals in `balanceOfUnderlyingInWallet()` method in `packages/tropykus/src/Markets/CErc20.js`
+- [ ] T023 [US1] Replace hardcoded `factor` (1e18) with dynamic factor based on `tokenDecimals` in CErc20 constructor in `packages/tropykus/src/Markets/CErc20.js`
+- [ ] T024 [US1] Update all Market methods that use hardcoded `factor` (1e18) to use `10^tokenDecimals` in `packages/tropykus/src/Market.js`
+- [ ] T025 [US1] Add JSDoc comments to all new utility functions in `packages/tropykus/src/utils/decimals.js`
+- [ ] T026 [US1] Add JSDoc comments to modified methods in `packages/tropykus/src/Markets/CErc20.js`
+- [ ] T027 [US1] Add JSDoc comments to modified methods in `packages/tropykus/src/Market.js`
 
-**Checkpoint**: At this point, User Story 1 should be fully functional. A developer can create a market for a 6-decimal token, set up an 8-decimal oracle adapter, perform all operations (deposit, withdraw, borrow, repay), and get correct USD values. All tests should pass.
+**Checkpoint**: At this point, User Story 1 should be fully functional. A developer can create a market for a 6-decimal token, perform all operations (deposit, withdraw, borrow, repay), and amounts are correctly parsed and formatted. All tests should pass.
 
 ---
 
-## Phase 4: Polish & Cross-Cutting Concerns
+## Phase 4: User Story 2 - 8-Decimal Tokens (Priority: P2)
+
+**Goal**: Enable developers to interact with 8-decimal ERC20 tokens (like WBTC). The system should handle all operations with 8-decimal precision, ensuring accurate amount conversions and balance calculations.
+
+**Independent Test**: Create a market for an 8-decimal token and perform the full lifecycle of operations (deposit, borrow, repay, withdraw). This delivers value by enabling support for wrapped Bitcoin and similar assets.
+
+### Tests for User Story 2 ⚠️
+
+> **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
+
+- [ ] T028 [P] [US2] Create integration test for 8-decimal token decimal detection in `packages/tropykus/test/02-markets.spec.js`
+- [ ] T029 [P] [US2] Create integration test for 8-decimal token deposit operation (0.5 tokens → 50000000) in `packages/tropykus/test/02-markets.spec.js`
+- [ ] T030 [P] [US2] Create integration test for 8-decimal token operations (deposit, withdraw, borrow, repay) with 8-decimal precision in `packages/tropykus/test/02-markets.spec.js`
+- [ ] T031 [P] [US2] Create integration test for 8-decimal token USD value calculations maintaining 8-decimal precision in `packages/tropykus/test/02-markets.spec.js`
+
+### Implementation for User Story 2
+
+- [ ] T032 [US2] Verify 8-decimal token support works with existing decimal detection (no new code needed, should work automatically) in `packages/tropykus/src/Markets/CErc20.js`
+- [ ] T033 [US2] Add integration test validation for 8-decimal token edge cases in `packages/tropykus/test/02-markets.spec.js`
+
+**Checkpoint**: At this point, User Story 2 should be fully functional. 8-decimal tokens work correctly with the decimal detection system. All tests should pass.
+
+---
+
+## Phase 5: User Story 3 - Oracle Integration with 6-Decimal Tokens (Priority: P1 Extension)
+
+**Goal**: Enable correct USD value calculations for 6-decimal tokens using price oracle adapters. PriceOracleAdapterMoc.assetPrices() returns 1e18, PriceOracleAdapterUSDT.assetPrices() returns 1e30. The system must correctly convert between token decimals and oracle return values.
+
+**Independent Test**: Create a market for a 6-decimal token, set up PriceOracleAdapterMoc (1e18) or PriceOracleAdapterUSDT (1e30), perform operations, and verify USD values are correctly calculated.
+
+### Tests for User Story 3 ⚠️
+
+> **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
+
+- [ ] T034 [P] [US3] Create integration test for PriceOracleAdapterMoc with 1e18 return value handling in `packages/tropykus/test/02-markets.spec.js`
+- [ ] T035 [P] [US3] Create integration test for PriceOracleAdapterUSDT with 1e30 return value handling in `packages/tropykus/test/02-markets.spec.js`
+- [ ] T036 [P] [US3] Create integration test for 6-decimal token balance query with USD value using MoC adapter (1e18) in `packages/tropykus/test/02-markets.spec.js`
+- [ ] T037 [P] [US3] Create integration test for 6-decimal token balance query with USD value using USDT adapter (1e30) in `packages/tropykus/test/02-markets.spec.js`
+- [ ] T038 [P] [US3] Create integration test for PriceOracleAdapterUSDT DECIMAL_MULTIPLIER (1e22) verification in `packages/tropykus/test/02-markets.spec.js`
+- [ ] T039 [P] [US3] Create integration test for liquidity calculation with USDT adapter (1e30 * amount * 1e16 = 1e36) in `packages/tropykus/test/02-markets.spec.js`
+
+### Implementation for User Story 3
+
+- [ ] T040 [US3] Update `getUnderlyingPrice()` to use `detectOracleDecimals()` and divide by correct factor (1e30 for USDT, 1e18 for MoC) in `packages/tropykus/src/PriceOracle.js`
+- [ ] T041 [US3] Modify `setAdapterToToken()` to detect and cache oracle decimals (30 for USDT, 18 for MoC) when adapter is set in `packages/tropykus/src/PriceOracle.js`
+- [ ] T042 [US3] Add `getAdapterAddress(marketAddress)` helper method to PriceOracle for retrieving adapter address in `packages/tropykus/src/PriceOracle.js`
+- [ ] T043 [US3] Update `balanceOfUnderlying()` to handle 6-decimal token amounts and oracle prices (1e18 for MoC, 1e30 for USDT) correctly in `packages/tropykus/src/Market.js`
+- [ ] T044 [US3] Update `balanceOf()` to handle 6-decimal token amounts and oracle prices (1e18 for MoC, 1e30 for USDT) correctly in `packages/tropykus/src/Market.js`
+- [ ] T045 [US3] Update USD value calculation formula to handle 6-decimal token × 1e18 oracle (MoC) conversion in `balanceOfUnderlying()` in `packages/tropykus/src/Market.js`
+- [ ] T046 [US3] Update USD value calculation formula to handle 6-decimal token × 1e30 oracle (USDT) conversion in `balanceOfUnderlying()` in `packages/tropykus/src/Market.js`
+- [ ] T047 [US3] Update USD value calculation formula to handle 6-decimal token × 1e18 oracle (MoC) conversion in `balanceOf()` in `packages/tropykus/src/Market.js`
+- [ ] T048 [US3] Update USD value calculation formula to handle 6-decimal token × 1e30 oracle (USDT) conversion in `balanceOf()` in `packages/tropykus/src/Market.js`
+- [ ] T049 [US3] Add JSDoc comments to modified methods in `packages/tropykus/src/PriceOracle.js` explaining 1e18 vs 1e30 return values
+
+**Checkpoint**: At this point, User Story 3 should be fully functional. A developer can create a market for a 6-decimal token, set up oracle adapters (MoC or USDT), perform operations, and get correct USD values. All tests should pass.
+
+---
+
+## Phase 6: User Story 4 - Support All Valid Decimal Amounts (Priority: P3)
+
+**Goal**: Enable developers to interact with ERC20 tokens that use any valid decimal amount (0-18 decimals). The system should automatically detect the decimal amount from the token contract and use it for all operations.
+
+**Independent Test**: Create markets for tokens with various decimal amounts (0, 2, 4, 6, 8, 18) and verify that each correctly uses its specific decimal precision.
+
+### Tests for User Story 4 ⚠️
+
+> **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
+
+- [ ] T050 [P] [US4] Create integration test for 0-decimal token (100 tokens → 100) in `packages/tropykus/test/02-markets.spec.js`
+- [ ] T051 [P] [US4] Create integration test for 2-decimal token (1.23 tokens → 123) in `packages/tropykus/test/02-markets.spec.js`
+- [ ] T052 [P] [US4] Create integration test for 4-decimal token operations in `packages/tropykus/test/02-markets.spec.js`
+- [ ] T053 [P] [US4] Create integration test for multiple markets with different decimal amounts in same protocol instance in `packages/tropykus/test/02-markets.spec.js`
+
+### Implementation for User Story 4
+
+- [ ] T054 [US4] Verify all valid decimal amounts (0-18) work with existing decimal detection (no new code needed, should work automatically) in `packages/tropykus/src/Markets/CErc20.js`
+- [ ] T055 [US4] Add edge case handling for 0-decimal tokens (integer-only amounts) in `packages/tropykus/src/utils/decimals.js`
+- [ ] T056 [US4] Add validation for decimal amounts exceeding 18 (should support up to 255 per ERC20 standard) in `packages/tropykus/src/utils/decimals.js`
+
+**Checkpoint**: At this point, User Story 4 should be fully functional. Tokens with any valid decimal amount (0-18) work correctly. All tests should pass.
+
+---
+
+## Phase 7: Polish & Cross-Cutting Concerns
 
 **Purpose**: Improvements, edge case handling, and validation
 
-- [ ] T039 [P] Add error handling for missing `decimals()` function with warning logging in `packages/tropykus/src/utils/decimals.js`
-- [ ] T040 [P] Add error handling for invalid decimal values (>255) with fallback to 18 in `packages/tropykus/src/utils/decimals.js`
-- [ ] T041 [P] Add error handling for DECIMAL_MULTIPLIER query failures in `detectOracleDecimals()` in `packages/tropykus/src/PriceOracle.js`
-- [ ] T042 [P] Add backward compatibility validation: ensure 18-decimal tokens still work identically in `packages/tropykus/test/02-markets.spec.js`
-- [ ] T043 [P] Add edge case test for very small amounts with 6-decimal precision in `packages/tropykus/test/02-markets.spec.js`
-- [ ] T044 [P] Add edge case test for oracle adapter type detection edge cases in `packages/tropykus/test/02-markets.spec.js`
-- [ ] T045 [P] Run ESLint and fix any linting errors in modified files
-- [ ] T046 [P] Run Prettier and format all modified files
-- [ ] T047 [P] Verify all existing tests still pass (backward compatibility check)
-- [ ] T048 [P] Update quickstart.md validation: verify test setup instructions work correctly
-- [ ] T049 [P] Add integration test for multiple markets with different oracle adapters in `packages/tropykus/test/02-markets.spec.js`
-- [ ] T050 [P] Add integration test for oracle adapter change after market creation in `packages/tropykus/test/02-markets.spec.js`
+- [ ] T057 [P] Add error handling for missing `decimals()` function with warning logging in `packages/tropykus/src/utils/decimals.js`
+- [ ] T058 [P] Add error handling for invalid decimal values (>255) with fallback to 18 in `packages/tropykus/src/utils/decimals.js`
+- [ ] T059 [P] Add error handling for DECIMAL_MULTIPLIER query failures in `detectOracleDecimals()` in `packages/tropykus/src/PriceOracle.js`
+- [ ] T060 [P] Add backward compatibility validation: ensure 18-decimal tokens still work identically in `packages/tropykus/test/02-markets.spec.js`
+- [ ] T061 [P] Add edge case test for very small amounts with high-decimal precision in `packages/tropykus/test/02-markets.spec.js`
+- [ ] T062 [P] Add edge case test for oracle adapter type detection edge cases in `packages/tropykus/test/02-markets.spec.js`
+- [ ] T063 [P] Add edge case test for tokens with decimals > 18 (up to 255) in `packages/tropykus/test/02-markets.spec.js`
+- [ ] T064 [P] Add integration test for multiple markets with different oracle adapters in `packages/tropykus/test/02-markets.spec.js`
+- [ ] T065 [P] Add integration test for oracle adapter change after market creation in `packages/tropykus/test/02-markets.spec.js`
+- [ ] T066 [P] Run ESLint and fix any linting errors in modified files
+- [ ] T067 [P] Run Prettier and format all modified files
+- [ ] T068 [P] Verify all existing tests still pass (backward compatibility check)
+- [ ] T069 [P] Update quickstart.md validation: verify test setup instructions work correctly
 
 ---
 
@@ -123,33 +196,39 @@
 - **Setup (Phase 1)**: No dependencies - can start immediately
 - **Foundational (Phase 2)**: Depends on Setup completion - BLOCKS all user stories
 - **User Story 1 (Phase 3)**: Depends on Foundational phase completion
-- **Polish (Phase 4)**: Depends on User Story 1 completion
+- **User Story 2 (Phase 4)**: Depends on User Story 1 completion (uses same decimal detection)
+- **User Story 3 (Phase 5)**: Depends on User Story 1 completion (uses decimal detection + adds oracle)
+- **User Story 4 (Phase 6)**: Depends on User Story 1 completion (uses same decimal detection)
+- **Polish (Phase 7)**: Depends on all user story phases completion
 
 ### User Story Dependencies
 
 - **User Story 1 (P1)**: Can start after Foundational (Phase 2) - No dependencies on other stories
+- **User Story 2 (P2)**: Depends on User Story 1 (uses same decimal detection infrastructure)
+- **User Story 3 (P1 Extension)**: Depends on User Story 1 (adds oracle integration to 6-decimal tokens)
+- **User Story 4 (P3)**: Depends on User Story 1 (uses same decimal detection infrastructure)
 
-### Within User Story 1
+### Within Each User Story
 
-- Tests (T013-T019) MUST be written and FAIL before implementation
+- Tests MUST be written and FAIL before implementation
 - Decimal utilities (T005-T008) must be complete before CErc20 modifications
 - Oracle detection (T009-T012) must be complete before PriceOracle modifications
-- CErc20 decimal detection (T020) must be complete before using decimals in operations
-- PriceOracle modifications (T025-T026, T033) must be complete before Market USD calculations
-- Market modifications (T027-T032, T034) depend on both token decimals and oracle decimals being available
+- CErc20 decimal detection (T018) must be complete before using decimals in operations
+- PriceOracle modifications (T040-T042) must be complete before Market USD calculations
+- Market modifications (T043-T048) depend on both token decimals and oracle decimals being available
 
 ### Parallel Opportunities
 
 - **Setup Phase**: T002, T003, T004 can run in parallel
 - **Foundational Phase**: T006, T007, T010 can run in parallel
-- **User Story 1 Tests**: T013-T019 can all run in parallel (all create different test cases)
+- **User Story 1 Tests**: T013-T017 can all run in parallel (all create different test cases)
 - **User Story 1 Implementation**: 
-  - T021, T022, T023 can run in parallel (different methods in same file, but no dependencies)
-  - T027, T028 can run in parallel (different methods in same file)
-  - T029, T030 can run in parallel (different methods in same file)
-  - T031, T032 can run in parallel (different methods in same file)
-  - T035, T036, T037, T038 can run in parallel (JSDoc additions to different files)
-- **Polish Phase**: T039-T050 can mostly run in parallel (different concerns)
+  - T019, T020, T021 can run in parallel (different methods in same file, but no dependencies)
+  - T025, T026, T027 can run in parallel (JSDoc additions to different files)
+- **User Story 2 Tests**: T028-T031 can run in parallel
+- **User Story 3 Tests**: T034-T039 can run in parallel
+- **User Story 4 Tests**: T050-T053 can run in parallel
+- **Polish Phase**: T057-T069 can mostly run in parallel (different concerns)
 
 ---
 
@@ -158,54 +237,54 @@
 ```bash
 # Launch all tests for User Story 1 together:
 Task T013: "Create integration test for 6-decimal token decimal detection"
-Task T014: "Create integration test for PriceOracleAdapterMoc 8-decimal price handling"
-Task T015: "Create integration test for 6-decimal token deposit operation"
-Task T016: "Create integration test for 6-decimal token balance query with USD value"
-Task T017: "Create integration test for 6-decimal token borrow operation"
-Task T018: "Create integration test for 6-decimal token repay operation"
-Task T019: "Create integration test for PriceOracleAdapterUSDT DECIMAL_MULTIPLIER handling"
+Task T014: "Create integration test for 6-decimal token deposit operation"
+Task T015: "Create integration test for 6-decimal token balance query"
+Task T016: "Create integration test for 6-decimal token borrow operation"
+Task T017: "Create integration test for 6-decimal token repay operation"
 
 # Launch parallel implementation tasks (after dependencies met):
-Task T021: "Replace parseEther() in mint() method"
-Task T022: "Replace parseEther() in repayBorrow() method"
-Task T023: "Replace parseEther() in transferUnderlying() method"
+Task T019: "Replace parseEther() in mint() method"
+Task T020: "Replace parseEther() in repayBorrow() method"
+Task T021: "Replace parseEther() in transferUnderlying() method"
 
-Task T027: "Update balanceOfUnderlying() for 6-decimal tokens"
-Task T028: "Update balanceOf() for 6-decimal tokens"
-
-Task T035: "Add JSDoc to decimals.js"
-Task T036: "Add JSDoc to PriceOracle.js"
-Task T037: "Add JSDoc to CErc20.js"
-Task T038: "Add JSDoc to Market.js"
+Task T025: "Add JSDoc to decimals.js"
+Task T026: "Add JSDoc to CErc20.js"
+Task T027: "Add JSDoc to Market.js"
 ```
 
 ---
 
 ## Implementation Strategy
 
-### MVP First (User Story 1 Only)
+### MVP First (User Story 1 + 3)
 
 1. Complete Phase 1: Setup (verify structure)
 2. Complete Phase 2: Foundational (CRITICAL - blocks all stories)
    - Decimal utilities (T005-T008)
-   - Oracle adapter detection (T009-T012)
-3. Complete Phase 3: User Story 1
-   - Write tests first (T013-T019) - ensure they FAIL
-   - Implement decimal detection in CErc20 (T020)
-   - Update CErc20 methods (T021-T024)
-   - Update PriceOracle methods (T025-T026, T033)
-   - Update Market methods (T027-T032, T034)
-   - Add documentation (T035-T038)
-4. **STOP and VALIDATE**: Run all tests, verify 6-decimal token + 8-decimal oracle works correctly
-5. Complete Phase 4: Polish (edge cases, validation, cleanup)
+   - Oracle adapter detection (T009-T012) - returns 30 for USDT, 18 for MoC
+3. Complete Phase 3: User Story 1 (6-decimal tokens)
+   - Write tests first (T013-T017) - ensure they FAIL
+   - Implement decimal detection in CErc20 (T018)
+   - Update CErc20 methods (T019-T023)
+   - Update Market methods (T024)
+   - Add documentation (T025-T027)
+4. Complete Phase 5: User Story 3 (Oracle integration)
+   - Write tests first (T034-T039) - ensure they FAIL
+   - Update PriceOracle methods (T040-T042)
+   - Update Market USD calculations (T043-T048)
+   - Add documentation (T049)
+5. **STOP and VALIDATE**: Run all tests, verify 6-decimal token + oracle integration works correctly
+6. Complete Phase 4: User Story 2 (8-decimal tokens) - should work automatically
+7. Complete Phase 6: User Story 4 (all valid decimals) - should work automatically
+8. Complete Phase 7: Polish (edge cases, validation, cleanup)
 
 ### Incremental Delivery
 
 1. **Foundation** (Phase 1 + 2): Decimal utilities + Oracle detection ready
-2. **Core Functionality** (Phase 3, Part 1): Decimal detection + basic operations (deposit, withdraw)
-3. **USD Calculations** (Phase 3, Part 2): Oracle integration + USD value calculations
-4. **Complete Operations** (Phase 3, Part 3): Borrow, repay with correct decimals
-5. **Polish** (Phase 4): Edge cases, error handling, validation
+2. **Core Functionality** (Phase 3): Decimal detection + basic operations (deposit, withdraw, borrow, repay)
+3. **Oracle Integration** (Phase 5): Oracle adapter integration + USD value calculations
+4. **Extended Support** (Phase 4 + 6): 8-decimal tokens and all valid decimals (should work automatically)
+5. **Polish** (Phase 7): Edge cases, error handling, validation
 
 ### Parallel Team Strategy
 
@@ -213,25 +292,29 @@ With multiple developers:
 
 1. **Team completes Setup + Foundational together** (Phase 1 + 2)
 2. **Once Foundational is done**:
-   - Developer A: Write all integration tests (T013-T019)
-   - Developer B: Implement CErc20 decimal detection and methods (T020-T024)
-   - Developer C: Implement PriceOracle oracle detection (T025-T026, T033)
+   - Developer A: Write all integration tests for US1 (T013-T017)
+   - Developer B: Implement CErc20 decimal detection and methods (T018-T023)
+   - Developer C: Implement PriceOracle oracle detection (T009-T012, T040-T042)
 3. **After core detection is done**:
-   - Developer A: Implement Market balance methods (T027-T032)
-   - Developer B: Add JSDoc documentation (T035-T038)
-   - Developer C: Work on edge cases and polish (Phase 4)
+   - Developer A: Implement Market balance methods (T024, T043-T048)
+   - Developer B: Add JSDoc documentation (T025-T027, T049)
+   - Developer C: Work on edge cases and polish (Phase 7)
 
 ---
 
 ## Notes
 
 - **[P] tasks** = different files or different methods, no dependencies
-- **[US1] label** = task belongs to User Story 1 (6-decimal tokens with 8-decimal oracle)
-- **Test-First**: Write tests (T013-T019) FIRST, ensure they FAIL before implementation
+- **[US1] label** = task belongs to User Story 1 (6-decimal tokens)
+- **[US2] label** = task belongs to User Story 2 (8-decimal tokens)
+- **[US3] label** = task belongs to User Story 3 (Oracle integration)
+- **[US4] label** = task belongs to User Story 4 (All valid decimals)
+- **Test-First**: Write tests FIRST, ensure they FAIL before implementation
 - **Backward Compatibility**: All changes must maintain 18-decimal token compatibility
 - **Precision**: Use BigNumber/FixedNumber for all calculations to avoid rounding errors
-- **Oracle Decimals**: Default to 18 if adapter type unknown (backward compatibility)
+- **Oracle Decimals**: PriceOracleAdapterMoc.assetPrices() returns 1e18, PriceOracleAdapterUSDT.assetPrices() returns 1e30
 - **Token Decimals**: Default to 18 if `decimals()` function missing (backward compatibility)
+- **Liquidity Calculations**: ComptrollerG6 uses 1e30 * amount * 1e16 = 1e36 for USDT, 1e18 * amount * 1e18 = 1e36 for standard tokens
 - Commit after each logical group of tasks
 - Stop at checkpoints to validate functionality independently
 - Verify all existing tests still pass after each phase
@@ -240,13 +323,20 @@ With multiple developers:
 
 ## Task Summary
 
-- **Total Tasks**: 50
+- **Total Tasks**: 69
 - **Setup Phase**: 4 tasks
 - **Foundational Phase**: 8 tasks (CRITICAL - blocks all user stories)
-- **User Story 1**: 26 tasks (13 tests + 19 implementation)
-- **Polish Phase**: 12 tasks
+- **User Story 1**: 15 tasks (5 tests + 10 implementation)
+- **User Story 2**: 5 tasks (4 tests + 1 implementation)
+- **User Story 3**: 16 tasks (6 tests + 10 implementation)
+- **User Story 4**: 7 tasks (4 tests + 3 implementation)
+- **Polish Phase**: 14 tasks
 
-**MVP Scope**: Phases 1-3 (User Story 1) = 38 tasks
-**Full Scope**: All phases = 50 tasks
+**MVP Scope**: Phases 1-3 + 5 (User Story 1 + Oracle Integration) = 43 tasks
+**Full Scope**: All phases = 69 tasks
 
-**Independent Test Criteria**: User Story 1 can be fully tested by creating a market for a 6-decimal token, setting up PriceOracleAdapterMoc with 1e8 price, performing deposit/withdraw/borrow/repay operations, and verifying correct decimal handling and USD value calculations.
+**Independent Test Criteria**:
+- **User Story 1**: Create a market for a 6-decimal token, perform deposit/withdraw/borrow/repay operations, verify correct decimal handling
+- **User Story 2**: Create a market for an 8-decimal token, perform full lifecycle operations, verify 8-decimal precision
+- **User Story 3**: Create a market for a 6-decimal token, set up oracle adapters (MoC 1e18 or USDT 1e30), verify correct USD value calculations
+- **User Story 4**: Create markets for tokens with various decimal amounts (0, 2, 4, 6, 8, 18), verify each uses correct decimal precision

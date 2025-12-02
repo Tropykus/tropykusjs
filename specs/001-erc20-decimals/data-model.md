@@ -56,10 +56,12 @@
 **Purpose**: Represents the decimal precision for price oracle adapters, determining how oracle prices are parsed and converted.
 
 **Attributes**:
-- `oracleDecimals` (uint8): The number of decimal places for the oracle price (typically 8 for PriceOracleAdapterMoc/USDT)
+- `assetPricesReturnDecimals` (uint8): The decimal precision returned by assetPrices() function (18 for PriceOracleAdapterMoc returning 1e18, 30 for PriceOracleAdapterUSDT returning 1e30)
+- `oracleSourceDecimals` (uint8): The decimal precision of the underlying oracle (18 for MoC onchain provider, 8 for USDT oracle)
 - `adapterAddress` (string): The oracle adapter contract address
 - `adapterType` (string): Type of adapter ('Moc' or 'USDT' or 'Unknown')
-- `decimalMultiplier` (BigNumber, optional): DECIMAL_MULTIPLIER value for USDT adapter (queried at runtime)
+- `decimalMultiplier` (BigNumber, optional): DECIMAL_MULTIPLIER value for USDT adapter (1e22, queried at runtime)
+- `liquidityCalculationOrder` (string): Order of magnitude for liquidity calculations (1e36 for both standard tokens and USDT via ComptrollerG6)
 
 **Relationships**:
 - One-to-many with Market instances (multiple markets can use same oracle adapter)
@@ -67,14 +69,14 @@
 - Stored in PriceOracle instance
 
 **Validation Rules**:
-- Must be within reasonable range (typically 8 or 18)
+- assetPricesReturnDecimals must be within reasonable range (18 for MoC, 30 for USDT)
 - Defaults to 18 if adapter type unknown (backward compatibility)
-- For PriceOracleAdapterUSDT: Query DECIMAL_MULTIPLIER at runtime
-- For PriceOracleAdapterMoc: Use 8 decimals (1e8) as per specification
+- For PriceOracleAdapterUSDT: assetPrices() returns 1e30 (8-decimal oracle * 1e22 DECIMAL_MULTIPLIER); ComptrollerG6 multiplies 1e30 by amount * 1e16 to achieve 1e36 for liquidity
+- For PriceOracleAdapterMoc: assetPrices() returns 1e18 matching onchain price provider behavior; ComptrollerG6 multiplies 1e18 by amount * 1e18 to achieve 1e36 for liquidity
 
 **State**:
-- **Uninitialized**: `oracleDecimals` is `undefined`, not yet detected
-- **Detected**: `oracleDecimals` has been detected from adapter type or queried
+- **Uninitialized**: `assetPricesReturnDecimals` is `undefined`, not yet detected
+- **Detected**: `assetPricesReturnDecimals` has been detected from adapter type (18 for MoC, 30 for USDT)
 - **Defaulted**: Adapter type unknown, defaulted to 18
 
 ### Market Instance (Extended)
@@ -99,9 +101,9 @@
 - `adapterDecimalsMap` (Map<string, uint8>): Map of adapter address → decimal precision
 
 **Behavior Changes**:
-- `getUnderlyingPrice()`: Divides by correct factor (1e8 for 8-decimal oracle, 1e18 for 18-decimal)
+- `getUnderlyingPrice()`: Divides by correct factor (1e30 for PriceOracleAdapterUSDT.assetPrices(), 1e18 for PriceOracleAdapterMoc.assetPrices())
 - Adapter detection: Detects adapter type or queries DECIMAL_MULTIPLIER when adapter is set
-- Backward compatibility: Defaults to 18 decimals if adapter type unknown
+- Backward compatibility: Defaults to 18 decimals (1e18) if adapter type unknown
 
 ## Data Flow
 
@@ -157,43 +159,44 @@ Check adapter address
 Detect adapter type (Moc vs USDT vs Unknown)
   ↓
 If PriceOracleAdapterUSDT:
-  Query DECIMAL_MULTIPLIER constant
-  Calculate oracleDecimals from multiplier
+  Set assetPricesReturnDecimals = 30 (assetPrices() returns 1e30)
+  Set oracleSourceDecimals = 8 (underlying oracle uses 8 decimals)
+  Query DECIMAL_MULTIPLIER constant (1e22) to verify calculation
+  Note: ComptrollerG6 multiplies 1e30 by amount * 1e16 = 1e36 for liquidity
 Else If PriceOracleAdapterMoc:
-  Set oracleDecimals = 8 (1e8)
+  Set assetPricesReturnDecimals = 18 (assetPrices() returns 1e18) matching onchain provider
+  Set oracleSourceDecimals = 18
+  Note: ComptrollerG6 multiplies 1e18 by amount * 1e18 = 1e36 for liquidity
 Else:
-  Default to oracleDecimals = 18
+  Default to assetPricesReturnDecimals = 18
   ↓
 Cache in adapterDecimalsMap[adapterAddress] = oracleDecimals
 ```
 
-### USD Value Calculation Flow (6-decimal token, 8-decimal oracle)
+### USD Value Calculation Flow (6-decimal token, 1e18 oracle for MoC, 1e30 oracle for USDT)
 
 ```
-User queries balance with USD value
+User queries balance with USD value (USDT adapter)
   ↓
 Get token balance: BigNumber(1500000) (6 decimals = 1.5 tokens)
   ↓
-Get oracle price: BigNumber(100000000) (8 decimals = 1.0 USD)
+Get oracle price from assetPrices(): BigNumber(1000000000000000000000000000000) (1e30 = 1.0 USD)
   ↓
-Convert token amount to match oracle decimals:
-  tokenAmount * 10^(oracleDecimals - tokenDecimals)
-  1500000 * 10^(8-6) = 1500000 * 100 = 150000000
+Convert for calculation:
+  tokenAmount (6 decimals) * oraclePrice (1e30) / 10^30
+  1500000 * 1000000000000000000000000000000 / 10^30
+  = 1500000000000000000000000000000000000 / 10^30
+  = 1500000 (in 6 decimals)
   ↓
-Multiply: (150000000 * 100000000) / 10^8
-  = 15000000000000000 / 100000000
-  = 150000000 (in 8 decimals)
-  ↓
-Convert to human-readable: 150000000 / 10^8 = 1.5 USD
+Convert to human-readable: 1500000 / 10^6 = 1.5 USD
 ```
 
-**Alternative Calculation** (using 18-decimal intermediate):
+**Alternative Calculation** (MoC adapter with 1e18):
 ```
 Token amount: 1500000 (6 decimals)
-Oracle price: 100000000 (8 decimals)
+Oracle price from assetPrices(): 1000000000000000000 (1e18 = 1.0 USD)
   ↓
 Convert token to 18 decimals: 1500000 * 10^12 = 1500000000000000000
-Convert price to 18 decimals: 100000000 * 10^10 = 1000000000000000000
   ↓
 Multiply: (1500000000000000000 * 1000000000000000000) / 10^18
   = 1500000000000000000000000000000000000 / 10^18
@@ -228,7 +231,11 @@ Convert to USD: 1500000000000000000 / 10^18 = 1.5 USD
 4. **Very small amounts with high decimals**: Maintain precision in calculations
 5. **Oracle adapter type unknown**: Default to 18 decimals, maintain backward compatibility
 6. **PriceOracleAdapterUSDT DECIMAL_MULTIPLIER query fails**: Default to 18 decimals, log warning
-7. **6-decimal token with 8-decimal oracle**: Correct conversion formula: (tokenAmount * 10^2) * oraclePrice / 10^8
-8. **Multiple markets with different oracle adapters**: Each adapter's decimal precision cached separately
-9. **Oracle adapter changed after market creation**: Re-detect decimals when adapter is updated
+7. **6-decimal token with 1e18 oracle (MoC)**: assetPrices() returns 1e18; correct conversion formula: (tokenAmount * 10^12) * oraclePrice / 10^18
+8. **6-decimal token with 1e30 oracle (USDT)**: assetPrices() returns 1e30 (8-decimal oracle * 1e22); correct conversion formula: tokenAmount * oraclePrice / 10^30
+9. **PriceOracleAdapterUSDT liquidity calculations**: ComptrollerG6 multiplies 1e30 (from assetPrices()) by amount * 1e16 to achieve 1e36 order of magnitude for correct liquidity calculations
+10. **Standard token liquidity calculations**: ComptrollerG6 multiplies 1e18 (from assetPrices()) by amount * 1e18 to achieve 1e36 order of magnitude
+11. **Multiple markets with different oracle adapters**: Each adapter's assetPrices() return value cached separately (18 for MoC, 30 for USDT)
+12. **Oracle adapter changed after market creation**: Re-detect assetPrices() return decimals when adapter is updated
+13. **MockPriceProviderMoC for testing**: Use 18 decimals for MoC adapter tests (results in 1e18 from assetPrices()), 8 decimals for USDT adapter tests (results in 1e30 from assetPrices() after DECIMAL_MULTIPLIER)
 
