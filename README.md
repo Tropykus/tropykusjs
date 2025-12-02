@@ -120,6 +120,8 @@ const cdoc = await tropykus.addMarket('CErc20Immutable', true, cdocAddress, docA
 
 > **⚠️ Deprecation Notice**: cRIF and cUSDT markets are deprecated (delisted from protocol). Please use supported markets (cDOC, cRBPRO, cRBTC, cUSDRF) instead.
 
+> **Note**: USDT0 refers to the standard 6-decimal USDT token on Rootstock. The deprecated kUSDT market used rUSDT, an 18-decimal wrapped version. New integrations should use USDT0 with 6 decimals for proper decimal handling and compatibility with current standards.
+
 **For cRDOC:**
 ```javascript
 const crdoc = await tropykus.addMarket('CRDOC', true, rcdocAddress, rdocAddress);
@@ -256,7 +258,7 @@ The third parameter is a flag that indicates the method that must pay all the de
 
 ## Deprecated Markets and Functions
 
-> **⚠️ Deprecated Markets Notice**: The following markets are deprecated and should not be used in new projects: kSAT/cSAT (delisted from protocol), kRDOC/cRDOC (never listed), kRIF (delisted from protocol), and kUSDT (delisted from protocol). These markets remain functional for backward compatibility but are no longer actively supported. Please use supported markets (kDOC, kRBPRO, kRBTC, kUSDRF) instead.
+> **⚠️ Deprecated Markets Notice**: The following markets are deprecated and should not be used in new projects: kSAT/cSAT (delisted from protocol), kRDOC/cRDOC (never listed), kRIF (delisted from protocol), and kUSDT (delisted from protocol - used 18-decimal rUSDT, not the standard 6-decimal USDT0). These markets remain functional for backward compatibility but are no longer actively supported. Please use supported markets (kDOC, kRBPRO, kRBTC, kUSDRF) instead.
 
 | Contract | Rootstock Testnet | Rootstock Mainnet |
 | -------- | ----------------- | ----------------- |

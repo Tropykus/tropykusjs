@@ -265,7 +265,7 @@ AssertionError: expected 'RBTC' to equal 'tRBTC'
 - `'0xd2ec53e8dd00d204d3d9313af5474eb9f5188ef6'` - kSAT/cSAT (mainnet)
 - `'0x0000000000000000000000000000000000000000'` - kRDOC/cRDOC (never listed)
 - `'0x3134b7fbfca5db217eca523eab1941452cf35163'` - kRIF (mainnet)
-- `'0xedaefc6b596ed38d712100976969975a37c84464'` - kUSDT (mainnet)
+- `'0xedaefc6b596ed38d712100976969975a37c84464'` - kUSDT (mainnet, deprecated - used 18-decimal rUSDT, not the standard 6-decimal USDT0)
 
 **Mismatch Identified**:
 - Test uses **testnet/local addresses**

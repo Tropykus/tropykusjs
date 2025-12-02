@@ -180,13 +180,13 @@ USD Value = (tokenAmount * 10^12) * (oraclePrice * 10^10) / 10^18
 **Decision**: Focus on 6-decimal token with 8-decimal oracle integration testing
 
 **Rationale**:
-- Reduced scope focuses on specific use case: 6-decimal tokens (USDT/USDC) with 8-decimal oracle
+- Reduced scope focuses on specific use case: 6-decimal tokens (USDT0/USDC) with 8-decimal oracle
 - Need real blockchain interactions to test decimal detection and oracle conversion
 - Integration tests catch issues unit tests might miss
 - Specific adapters: PriceOracleAdapterMoc.json and PriceOracleAdapterUSDT.json
 
 **Test Setup Required**:
-1. **6-Decimal Token**: Deploy or use existing 6-decimal ERC20 token (e.g., USDT/USDC mock)
+1. **6-Decimal Token**: Deploy or use existing 6-decimal ERC20 token (e.g., USDT0/USDC mock)
 2. **PriceOracleAdapterMoc**: Deploy with 1e8 price for stablecoin
 3. **PriceOracleAdapterUSDT**: Deploy and connect to market
 4. **Market Creation**: Create market for 6-decimal token
@@ -219,7 +219,7 @@ All research questions resolved. Key decisions:
 - Need to detect/store oracle decimal precision and apply correct conversion
 
 **Reduced Scope Focus**:
-- 6-decimal tokens (USDT/USDC stablecoins)
+- 6-decimal tokens (USDT0/USDC stablecoins)
 - 8-decimal oracle (1e8 prices)
 - Specific adapters: PriceOracleAdapterMoc.json and PriceOracleAdapterUSDT.json
 

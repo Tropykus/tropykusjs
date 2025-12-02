@@ -3,7 +3,7 @@
 **Input**: Design documents from `/specs/001-erc20-decimals/`
 **Prerequisites**: plan.md ✓, spec.md ✓, research.md ✓, data-model.md ✓, contracts/oracle-adapter-api.md ✓
 
-**Scope**: Support for ERC20 tokens with different decimal amounts (0-18), with focus on 6-decimal tokens (USDT/USDC) and 8-decimal tokens (WBTC). Oracle integration handles PriceOracleAdapterMoc (assetPrices() returns 1e18) and PriceOracleAdapterUSDT (assetPrices() returns 1e30).
+**Scope**: Support for ERC20 tokens with different decimal amounts (0-18), with focus on 6-decimal tokens (USDT0/USDC) and 8-decimal tokens (WBTC). Oracle integration handles PriceOracleAdapterMoc (assetPrices() returns 1e18) and PriceOracleAdapterUSDT (assetPrices() returns 1e30).
 
 **Tests**: Integration tests required per Constitution (Test-First Development). Tests must cover operations with various decimal amounts and oracle adapter integrations.
 
@@ -55,7 +55,7 @@
 
 ## Phase 3: User Story 1 - 6-Decimal Tokens (Priority: P1) 🎯 MVP
 
-**Goal**: Enable developers to interact with 6-decimal ERC20 tokens (like USDC/USDT). The system should correctly parse and format all amounts using 6-decimal precision, ensuring that 1.0 token units are represented correctly in the underlying token contract.
+**Goal**: Enable developers to interact with 6-decimal ERC20 tokens (like USDC/USDT0). The system should correctly parse and format all amounts using 6-decimal precision, ensuring that 1.0 token units are represented correctly in the underlying token contract.
 
 **Independent Test**: Create a market for a 6-decimal token, perform deposit and withdrawal operations, and verify that amounts are correctly parsed and formatted. This delivers immediate value by enabling support for popular stablecoins.
 

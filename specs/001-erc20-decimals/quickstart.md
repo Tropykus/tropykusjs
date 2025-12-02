@@ -5,13 +5,13 @@
 
 ## Overview
 
-This quickstart focuses on integrating 6-decimal tokens (like USDT/USDC) with 8-decimal price oracles (PriceOracleAdapterMoc and PriceOracleAdapterUSDT). The SDK automatically detects token decimals and oracle adapter decimal precision - no manual configuration needed.
+This quickstart focuses on integrating 6-decimal tokens (like USDT0/USDC) with 8-decimal price oracles (PriceOracleAdapterMoc and PriceOracleAdapterUSDT). The SDK automatically detects token decimals and oracle adapter decimal precision - no manual configuration needed.
 
 ## Testing Setup: 6-Decimal Token + 8-Decimal Oracle
 
 ### Prerequisites
 
-1. **6-Decimal ERC20 Token**: Deploy or use existing mock token with 6 decimals (e.g., USDT/USDC)
+1. **6-Decimal ERC20 Token**: Deploy or use existing mock token with 6 decimals (e.g., USDT0/USDC)
 2. **PriceOracleAdapterMoc**: Deploy with 1e8 price for stablecoin
 3. **PriceOracleAdapterUSDT**: Deploy for testing DECIMAL_MULTIPLIER (optional)
 4. **Local Blockchain**: Use Anvil or Hardhat node for testing
@@ -33,11 +33,11 @@ const tropykus = new Tropykus(provider, wsProvider);
 const [deployer] = await provider.listAccounts();
 const account = await tropykus.getAccount(deployer.privateKey);
 
-// 1. Deploy 6-decimal ERC20 token (mock USDT)
+// 1. Deploy 6-decimal ERC20 token (mock USDT0)
 const MockERC20Factory = await ethers.getContractFactory('MockERC20');
 const usdtToken = await MockERC20Factory.deploy(
-  'USDT',
-  'USDT',
+  'USDT0',
+  'USDT0',
   6, // 6 decimals
   ethers.utils.parseUnits('1000000', 6) // 1M tokens
 );
@@ -93,8 +93,8 @@ const market = await tropykus.addMarket(
     comptrollerAddress: comptrollerAddress,
     interestRateModelAddress: interestRateModelAddress,
     initialExchangeRate: 0.02,
-    name: 'kUSDT',
-    symbol: 'kUSDT',
+    name: 'kUSDT0',
+    symbol: 'kUSDT0',
     decimals: 0, // Market token decimals
   }
 );
@@ -111,7 +111,7 @@ const oraclePrice = await tropykus.priceOracle.getUnderlyingPrice(market.address
 console.log('Oracle price:', oraclePrice); // Should be 1.0 (correctly divided by 1e8)
 
 // 10. Test operations
-// Deposit 1.0 USDT (6 decimals)
+// Deposit 1.0 USDT0 (6 decimals)
 await market.mint(account, 1.0);
 // Internally: 1.0 → 1000000 (1e6)
 
@@ -120,7 +120,7 @@ const balance = await market.balanceOfUnderlying(account);
 console.log('Token balance:', balance.underlying.value); // 1.0
 console.log('USD value:', balance.usd.value); // Should be 1.0 (correct conversion)
 
-// Borrow 10.5 USDT
+// Borrow 10.5 USDT0
 await market.borrow(account, 10.5);
 // Internally: 10.5 → 10500000 (10.5e6)
 
@@ -133,10 +133,10 @@ await market.repayBorrow(account, 10.5);
 The key test is verifying that USD calculations work correctly with mixed decimals:
 
 ```javascript
-// Test case: 1.5 USDT (6 decimals) with 1.0 USD price (8-decimal oracle)
+// Test case: 1.5 USDT0 (6 decimals) with 1.0 USD price (8-decimal oracle)
 // Expected USD value: 1.5 USD
 
-// Deposit 1.5 USDT
+// Deposit 1.5 USDT0
 await market.mint(account, 1.5);
 
 // Get balance
@@ -181,7 +181,7 @@ const price = await tropykus.priceOracle.getUnderlyingPrice(market.address);
 
 ## Basic Usage
 
-### Working with 6-Decimal Tokens (e.g., USDC/USDT)
+### Working with 6-Decimal Tokens (e.g., USDC/USDT0)
 
 ```javascript
 const Tropykus = require('@tropykus-finance/tropykus');
@@ -462,7 +462,7 @@ USD Value = (tokenAmount * 10^(oracleDecimals - tokenDecimals)) * oraclePrice / 
 ```
 
 Example:
-- Token: 1.5 USDT = 1500000 (6 decimals)
+- Token: 1.5 USDT0 = 1500000 (6 decimals)
 - Oracle: 1.0 USD = 100000000 (8 decimals)
 - USD = (1500000 * 100) * 100000000 / 100000000 = 1.5 USD ✓
 

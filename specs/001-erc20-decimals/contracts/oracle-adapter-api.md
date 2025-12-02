@@ -6,7 +6,7 @@
 
 ## Overview
 
-This document describes the API changes for integrating 6-decimal tokens (like USDT/USDC) with 8-decimal price oracles (PriceOracleAdapterUSDT). All changes maintain backward compatibility - existing code using 18-decimal tokens and 18-decimal oracles (PriceOracleAdapterMoc) continues to work without modification.
+This document describes the API changes for integrating 6-decimal tokens (like USDT0/USDC) with 8-decimal price oracles (PriceOracleAdapterUSDT). All changes maintain backward compatibility - existing code using 18-decimal tokens and 18-decimal oracles (PriceOracleAdapterMoc) continues to work without modification.
 
 ## Oracle Adapter Detection
 
@@ -187,7 +187,7 @@ async getUnderlyingPrice(marketAddress) {
 ### Test Setup for 6-Decimal Token + 8-Decimal Oracle
 
 **Required Components**:
-1. 6-decimal ERC20 token (mock USDT/USDC)
+1. 6-decimal ERC20 token (mock USDT0/USDC)
 2. PriceOracleAdapterMoc deployed with MockPriceProviderMoC using 18 decimals (1e18 price format)
 3. PriceOracleAdapterUSDT deployed with MockPriceProviderMoC using 8 decimals (1e8 price format)
 4. Market created for 6-decimal token

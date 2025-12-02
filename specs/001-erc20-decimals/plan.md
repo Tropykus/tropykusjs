@@ -3,12 +3,12 @@
 **Branch**: `001-erc20-decimals` | **Date**: 2025-01-27 | **Spec**: [spec.md](./spec.md)
 **Input**: Feature specification from `/specs/001-erc20-decimals/spec.md`
 
-**Note**: This plan focuses on a reduced scope: integrating 6-decimal tokens (like USDT/USDC) with price oracles. PriceOracleAdapterMoc uses 18 decimals (matching onchain provider), while PriceOracleAdapterUSDT uses 8 decimals. PriceOracleAdapterUSDT adds 22 decimals internally for liquidity calculations via ComptrollerG6.getAccountLiquidity.
+**Note**: This plan focuses on a reduced scope: integrating 6-decimal tokens (like USDT0/USDC) with price oracles. PriceOracleAdapterMoc uses 18 decimals (matching onchain provider), while PriceOracleAdapterUSDT uses 8 decimals. PriceOracleAdapterUSDT adds 22 decimals internally for liquidity calculations via ComptrollerG6.getAccountLiquidity.
 
 ## Summary
 
-This implementation plan focuses on integrating 6-decimal ERC20 tokens (stablecoins like USDT/USDC) with price oracle systems. The scope is reduced from the original full multi-decimal support to specifically handle:
-- 6-decimal tokens (e.g., USDT, USDC)
+This implementation plan focuses on integrating 6-decimal ERC20 tokens (stablecoins like USDT0/USDC) with price oracle systems. The scope is reduced from the original full multi-decimal support to specifically handle:
+- 6-decimal tokens (e.g., USDT0, USDC)
 - PriceOracleAdapterMoc with 18-decimal precision (1e18, matching onchain provider)
 - PriceOracleAdapterUSDT with 8-decimal precision (1e8) for price queries, plus 22 decimals added internally for liquidity calculations
 - Testing with MockPriceProviderMoC using 18 decimals for MoC adapter tests and 8 decimals for USDT adapter tests
