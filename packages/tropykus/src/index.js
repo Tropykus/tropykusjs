@@ -8,6 +8,7 @@ import CRBTCArtifact from '../artifacts/CRBTC.json';
 import CRDOCArtifact from '../artifacts/CRDOC.json';
 import CErc20Artifact from '../artifacts/CErc20Immutable.json';
 import Unitroller from './Unitroller';
+import PriceOracle from './PriceOracle';
 import { getDeprecationMetadata, warnDeprecatedOnce } from './utils/deprecation';
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);

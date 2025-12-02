@@ -44,10 +44,10 @@
 - [X] T006 [P] Implement `parseTokenAmount(amount, decimals)` helper in `packages/tropykus/src/utils/decimals.js` using `ethers.utils.parseUnits()`
 - [X] T007 [P] Implement `formatTokenAmount(amount, decimals)` helper in `packages/tropykus/src/utils/decimals.js` using `ethers.utils.formatUnits()`
 - [X] T008 Add error handling and fallback to 18 decimals in `getTokenDecimals()` in `packages/tropykus/src/utils/decimals.js`
-- [ ] T009 Update `detectOracleDecimals(adapterAddress)` method in `packages/tropykus/src/PriceOracle.js` to return 30 for USDT (assetPrices() returns 1e30), 18 for MoC (assetPrices() returns 1e18)
-- [ ] T010 [P] Add `adapterDecimalsMap` property initialization in PriceOracle constructor in `packages/tropykus/src/PriceOracle.js`
-- [ ] T011 Update adapter type detection logic to correctly identify MoC (returns 18) vs USDT (returns 30) in `detectOracleDecimals()` in `packages/tropykus/src/PriceOracle.js`
-- [ ] T012 Update DECIMAL_MULTIPLIER handling: PriceOracleAdapterUSDT.assetPrices() returns 1e30 (8-decimal oracle * 1e22), not 8 decimals in `detectOracleDecimals()` in `packages/tropykus/src/PriceOracle.js`
+- [X] T009 Update `detectOracleDecimals(adapterAddress)` method in `packages/tropykus/src/PriceOracle.js` to return 30 for USDT (assetPrices() returns 1e30), 18 for MoC (assetPrices() returns 1e18)
+- [X] T010 [P] Add `adapterDecimalsMap` property initialization in PriceOracle constructor in `packages/tropykus/src/PriceOracle.js`
+- [X] T011 Update adapter type detection logic to correctly identify MoC (returns 18) vs USDT (returns 30) in `detectOracleDecimals()` in `packages/tropykus/src/PriceOracle.js`
+- [X] T012 Update DECIMAL_MULTIPLIER handling: PriceOracleAdapterUSDT.assetPrices() returns 1e30 (8-decimal oracle * 1e22), not 8 decimals in `detectOracleDecimals()` in `packages/tropykus/src/PriceOracle.js`
 
 **Checkpoint**: Foundation ready - decimal detection utilities and oracle adapter detection are complete. User story implementation can now begin.
 
