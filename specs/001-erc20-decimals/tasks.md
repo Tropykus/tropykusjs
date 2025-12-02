@@ -44,10 +44,10 @@
 - [X] T006 [P] Implement `parseTokenAmount(amount, decimals)` helper in `packages/tropykus/src/utils/decimals.js`
 - [X] T007 [P] Implement `formatTokenAmount(amount, decimals)` helper in `packages/tropykus/src/utils/decimals.js`
 - [X] T008 Add error handling and fallback to 18 decimals in `getTokenDecimals()` in `packages/tropykus/src/utils/decimals.js`
-- [ ] T009 Implement `detectOracleDecimals(adapterAddress)` method in `packages/tropykus/src/PriceOracle.js`
-- [ ] T010 [P] Add `adapterDecimalsMap` property initialization in PriceOracle constructor in `packages/tropykus/src/PriceOracle.js`
-- [ ] T011 Implement adapter type detection logic (Moc vs USDT vs Unknown) in `detectOracleDecimals()` in `packages/tropykus/src/PriceOracle.js`
-- [ ] T012 Implement DECIMAL_MULTIPLIER query for PriceOracleAdapterUSDT in `detectOracleDecimals()` in `packages/tropykus/src/PriceOracle.js`
+- [X] T009 Implement `detectOracleDecimals(adapterAddress)` method in `packages/tropykus/src/PriceOracle.js`
+- [X] T010 [P] Add `adapterDecimalsMap` property initialization in PriceOracle constructor in `packages/tropykus/src/PriceOracle.js`
+- [X] T011 Implement adapter type detection logic (Moc vs USDT vs Unknown) in `detectOracleDecimals()` in `packages/tropykus/src/PriceOracle.js`
+- [X] T012 Implement DECIMAL_MULTIPLIER query for PriceOracleAdapterUSDT in `detectOracleDecimals()` in `packages/tropykus/src/PriceOracle.js`
 
 **Checkpoint**: Foundation ready - decimal detection utilities and oracle adapter detection are complete. User story implementation can now begin.
 
