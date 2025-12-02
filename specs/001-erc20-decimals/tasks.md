@@ -27,10 +27,10 @@
 
 **Purpose**: Project initialization and verification of existing structure
 
-- [ ] T001 Verify project structure exists: `packages/tropykus/src/`, `packages/tropykus/test/`, `packages/tropykus/artifacts/`
-- [ ] T002 [P] Verify PriceOracleAdapterMoc.json exists in `packages/tropykus/artifacts/PriceOracleAdapterMoc.json`
-- [ ] T003 [P] Verify PriceOracleAdapterUSDT.json exists in `packages/tropykus/artifacts/PriceOracleAdapterUSDT.json`
-- [ ] T004 [P] Verify existing Market.js, CErc20.js, and PriceOracle.js files structure
+- [X] T001 Verify project structure exists: `packages/tropykus/src/`, `packages/tropykus/test/`, `packages/tropykus/artifacts/`
+- [X] T002 [P] Verify PriceOracleAdapterMoc.json exists in `packages/tropykus/artifacts/PriceOracleAdapterMoc.json`
+- [X] T003 [P] Verify PriceOracleAdapterUSDT.json exists in `packages/tropykus/artifacts/PriceOracleAdapterUSDT.json`
+- [X] T004 [P] Verify existing Market.js, CErc20.js, and PriceOracle.js files structure
 
 ---
 
@@ -40,10 +40,10 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T005 Create decimal utility module `packages/tropykus/src/utils/decimals.js` with `getTokenDecimals(erc20Instance)` function
-- [ ] T006 [P] Implement `parseTokenAmount(amount, decimals)` helper in `packages/tropykus/src/utils/decimals.js` using `ethers.utils.parseUnits()`
-- [ ] T007 [P] Implement `formatTokenAmount(amount, decimals)` helper in `packages/tropykus/src/utils/decimals.js` using `ethers.utils.formatUnits()`
-- [ ] T008 Add error handling and fallback to 18 decimals in `getTokenDecimals()` in `packages/tropykus/src/utils/decimals.js`
+- [X] T005 Create decimal utility module `packages/tropykus/src/utils/decimals.js` with `getTokenDecimals(erc20Instance)` function
+- [X] T006 [P] Implement `parseTokenAmount(amount, decimals)` helper in `packages/tropykus/src/utils/decimals.js` using `ethers.utils.parseUnits()`
+- [X] T007 [P] Implement `formatTokenAmount(amount, decimals)` helper in `packages/tropykus/src/utils/decimals.js` using `ethers.utils.formatUnits()`
+- [X] T008 Add error handling and fallback to 18 decimals in `getTokenDecimals()` in `packages/tropykus/src/utils/decimals.js`
 - [ ] T009 Update `detectOracleDecimals(adapterAddress)` method in `packages/tropykus/src/PriceOracle.js` to return 30 for USDT (assetPrices() returns 1e30), 18 for MoC (assetPrices() returns 1e18)
 - [ ] T010 [P] Add `adapterDecimalsMap` property initialization in PriceOracle constructor in `packages/tropykus/src/PriceOracle.js`
 - [ ] T011 Update adapter type detection logic to correctly identify MoC (returns 18) vs USDT (returns 30) in `detectOracleDecimals()` in `packages/tropykus/src/PriceOracle.js`

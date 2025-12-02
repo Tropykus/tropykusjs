@@ -1,6 +1,5 @@
 import { ethers, Wallet } from 'ethers';
 import Comptroller from './Comptroller';
-import PriceOracle from './PriceOracle';
 import CRBTC from './Markets/CRBTC';
 import CRDOC from './Markets/CRDOC';
 import CToken from './Markets/CToken';
