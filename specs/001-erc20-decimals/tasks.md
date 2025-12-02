@@ -63,11 +63,11 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T013 [P] [US1] Create integration test for 6-decimal token decimal detection in `packages/tropykus/test/02-markets.spec.js`
-- [ ] T014 [P] [US1] Create integration test for 6-decimal token deposit operation (1.0 token → 1000000) in `packages/tropykus/test/02-markets.spec.js`
-- [ ] T015 [P] [US1] Create integration test for 6-decimal token balance query with 6-decimal precision display in `packages/tropykus/test/02-markets.spec.js`
-- [ ] T016 [P] [US1] Create integration test for 6-decimal token borrow operation (10.5 tokens → 10500000) in `packages/tropykus/test/02-markets.spec.js`
-- [ ] T017 [P] [US1] Create integration test for 6-decimal token repay operation with correct 6-decimal parsing in `packages/tropykus/test/02-markets.spec.js`
+- [X] T013 [P] [US1] Create integration test for 6-decimal token decimal detection in `packages/tropykus/test/02-markets.spec.js`
+- [X] T014 [P] [US1] Create integration test for 6-decimal token deposit operation (1.0 token → 1000000) in `packages/tropykus/test/02-markets.spec.js`
+- [X] T015 [P] [US1] Create integration test for 6-decimal token balance query with 6-decimal precision display in `packages/tropykus/test/02-markets.spec.js`
+- [X] T016 [P] [US1] Create integration test for 6-decimal token borrow operation (10.5 tokens → 10500000) in `packages/tropykus/test/02-markets.spec.js`
+- [X] T017 [P] [US1] Create integration test for 6-decimal token repay operation with correct 6-decimal parsing in `packages/tropykus/test/02-markets.spec.js`
 
 ### Implementation for User Story 1
 
