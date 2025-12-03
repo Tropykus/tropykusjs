@@ -1949,6 +1949,9 @@ describe('Market', () => {
     });
 
     it('should borrow 10.5 USDT0 tokens (6 decimals → 10500000)', async () => {
+      // Get initial balance
+      const initialBalance = await usdt0Token.balanceOf(alice.address);
+      
       // First, deposit collateral so alice can borrow
       const collateralAmount = ethers.utils.parseUnits('20', 6); // 20 USDT0
       await usdt0Token.transfer(alice.address, collateralAmount);
@@ -1967,8 +1970,9 @@ describe('Market', () => {
       
       // Verify alice received the borrowed tokens
       const aliceTokenBalance = await usdt0Token.balanceOf(alice.address);
-      // Should have: 20 (initial) - 20 (deposited) + 10.5 (borrowed) = 10.5
-      expect(aliceTokenBalance.toString()).to.equal(ethers.utils.parseUnits('10.5', 6).toString());
+      // Should have: initial + 20 (transferred) - 20 (deposited) + 10.5 (borrowed) = initial + 10.5
+      const expectedTokenBalance = initialBalance.add(ethers.utils.parseUnits('10.5', 6));
+      expect(aliceTokenBalance.toString()).to.equal(expectedTokenBalance.toString());
     });
 
     it.skip('should repay borrow with correct 6-decimal parsing', async () => {

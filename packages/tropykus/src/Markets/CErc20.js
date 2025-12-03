@@ -112,6 +112,20 @@ export default class CErc20 extends Market {
   }
 
   /**
+   * Borrows an amount from the market
+   * @param {object} account Object get from tropykus.getAccount()
+   * @param {number} amount amount to be borrowed
+   * @returns {Promise<Object>} transaction
+   */
+  async borrow(account, amount) {
+    const decimals = await this._ensureDecimals();
+    const parsedAmount = parseTokenAmount(amount.toString(), decimals);
+    
+    return this.instance.connect(account.signer)
+      .borrow(parsedAmount, { gasLimit: this.tropykus.gasLimit });
+  }
+
+  /**
    * Sends an amount from the given account to the address given
    * @param {object} accountFrom Object get from tropykus.getAccount()
    * @param {string} addressTo address to transfer amount
