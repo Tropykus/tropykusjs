@@ -565,8 +565,7 @@ export default class Comptroller {
   async getTotalSupplyInAllMarkets(account, markets, marketAddress) {
     let fixedNumber = FixedNumber.fromString('0', format);
     let withCollateral = FixedNumber.fromString('0', format);
-    let marketSupplyUSD = FixedNumber.fromString('0', format);
-    let marketSupplyWithCollateral = FixedNumber.fromString('0', format);
+    let priceUnderlying = FixedNumber.fromString('0', format);
     
     // Process all markets in parallel
     const marketPromises = markets.map(async (market) => {
@@ -604,6 +603,11 @@ export default class Comptroller {
       const priceHumanReadable = FixedNumber.from(priceMantissa.toString(), format)
         .divUnsafe(oracleFactor);
       
+      // Store price for underlying calculation if this is the target market
+      if (market.address.toLowerCase() === (marketAddress || '').toLowerCase()) {
+        priceUnderlying = priceHumanReadable;
+      }
+      
       // supply.fixedNumber is raw balance in token decimals
       // Convert to human-readable
       const supplyHumanReadable = supply.fixedNumber.divUnsafe(tokenFactor);
@@ -615,31 +619,24 @@ export default class Comptroller {
       return {
         supplyAsUSD,
         withCollateralASUSD,
-        supplyHumanReadable,
-        collateralFactor,
-        isTargetMarket: market.address.toLowerCase() === (marketAddress || '').toLowerCase(),
       };
     });
     
     const results = await Promise.all(marketPromises);
     
-    // Sum all supplies and track target market supply
+    // Sum all supplies
     results.forEach((result) => {
       fixedNumber = fixedNumber.addUnsafe(result.supplyAsUSD);
       withCollateral = withCollateral.addUnsafe(result.withCollateralASUSD);
-      
-      // If this is the target market, store its supply values
-      if (result.isTargetMarket) {
-        marketSupplyUSD = result.supplyAsUSD;
-        marketSupplyWithCollateral = result.withCollateralASUSD;
-      }
     });
     
-    // If marketAddress is provided, return that market's supply with collateral factor applied
-    // Otherwise return total supply across all markets
-    const usd = marketAddress ? marketSupplyUSD : fixedNumber;
-    const underlying = marketAddress && marketSupplyWithCollateral._value !== '0.0'
-      ? marketSupplyWithCollateral
+    // Always return total supply across all markets in USD
+    const usd = fixedNumber;
+    
+    // If marketAddress is provided, convert total USD to that market's underlying token
+    // For stablecoins (price = 1), USD and underlying will match
+    const underlying = marketAddress && priceUnderlying._value !== '0.0'
+      ? fixedNumber.divUnsafe(priceUnderlying)
       : FixedNumber.fromString('0', format);
     
     return {
@@ -648,5 +645,5 @@ export default class Comptroller {
       fixedNumber,
       withCollateral: Number(withCollateral._value),
     };
-  }
+  }  
 }
