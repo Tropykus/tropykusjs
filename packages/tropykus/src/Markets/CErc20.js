@@ -146,16 +146,12 @@ export default class CErc20 extends Market {
    * @param {number} amount amount to transfer
    * @returns {Promise<Object>} transaction
    */
-  transferUnderlying(accountFrom, addressTo, amount) {
-    return new Promise((resolve, reject) => {
-      this.erc20Instance.connect(accountFrom.signer)
-        .transfer(
-          addressTo,
-          ethers.utils.parseEther(amount.toString()),
-        )
-        .then(resolve)
-        .catch(reject);
-    });
+  async transferUnderlying(accountFrom, addressTo, amount) {
+    const decimals = await this._ensureDecimals();
+    const parsedAmount = parseTokenAmount(amount.toString(), decimals);
+    
+    return this.erc20Instance.connect(accountFrom.signer)
+      .transfer(addressTo, parsedAmount);
   }
 
   /** Returns the balance of a given account on the underlying of this market
