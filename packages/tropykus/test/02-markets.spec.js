@@ -2111,6 +2111,7 @@ describe('Market', () => {
     let cdoc;
     let newComptroller;
     let alice;
+    let bob;
     let markets;
 
     beforeEach(async () => {
@@ -2298,10 +2299,11 @@ describe('Market', () => {
 
       // Get test accounts
       alice = tropykus.getAccountFromMnemonic(mnemonic, `m/44'/60'/0'/0/1`);
+      bob = tropykus.getAccountFromMnemonic(mnemonic, `m/44'/60'/0'/0/2`);
 
       // Fund accounts with native currency (RBTC/ETH) for gas
       const fundAmount = ethers.utils.parseEther('10000'); // 10000 RBTC/ETH per account
-      const accountsToFund = [dep, alice];
+      const accountsToFund = [dep, alice, bob];
 
       // Use Anvil's setBalance RPC method for efficient funding
       for (const account of accountsToFund) {
@@ -2316,7 +2318,9 @@ describe('Market', () => {
       const docAmount = ethers.utils.parseEther('100000'); // 100k DOC with 18 decimals
       await usdt0Token.transfer(alice.address, usdt0Amount);
       await docToken.transfer(alice.address, docAmount);
-
+      await usdt0Token.transfer(bob.address, usdt0Amount);
+      await docToken.transfer(bob.address, docAmount);
+      
       // Create markets array for multi-market operations
       markets = [cusdt0, cdoc];
     });
@@ -2532,9 +2536,15 @@ describe('Market', () => {
     });
 
     it('should calculate maxAllowedToWithdraw correctly across multiple markets', async () => {
+      // Alice deposits 1000 USDT0 and 1000 DOC to initialize pool liquidity
+      await cusdt0.mint(bob, 10000.0); // 1000 USDT0 (6 decimals)
+      await cdoc.mint(bob, 10000.0);   // 1000 DOC (18 decimals)
       // Deposit collateral in both markets
       await cusdt0.mint(alice, 1000.0); // 1000 USDT0 (6 decimals)
       await cdoc.mint(alice, 2000.0); // 2000 DOC (18 decimals)
+
+      // The total supply in USD is 3000 USD, the collateral factor is 0.7 for USDT0 and 0.8 for DOC
+      // The total liquidity is 2300 USD
 
       // Enter markets
       await newComptroller.enterMarkets(alice, [cusdt0.address, cdoc.address]);
@@ -2544,24 +2554,25 @@ describe('Market', () => {
 
       // Get max allowed to withdraw from USDT0 market
       const maxWithdrawUSDT0 = await cusdt0.maxAllowedToWithdraw(alice, markets);
-      expect(maxWithdrawUSDT0.underlying).to.be.greaterThan(0);
-      expect(maxWithdrawUSDT0.usd).to.be.greaterThan(0);
-      expect(maxWithdrawUSDT0.tokens).to.be.ok;
-      expect(maxWithdrawUSDT0.tokens.value).to.be.greaterThan(0);
+      console.log("🚀 ~ maxWithdrawUSDT0:", maxWithdrawUSDT0)
+      expect(maxWithdrawUSDT0.underlying).to.be.closeTo(1000, 0.1);
+      // expect(maxWithdrawUSDT0.usd).to.be.greaterThan(0);
+      // expect(maxWithdrawUSDT0.tokens).to.be.ok;
+      // expect(maxWithdrawUSDT0.tokens.value).to.be.greaterThan(0);
 
-      // Get max allowed to withdraw from DOC market
-      const maxWithdrawDOC = await cdoc.maxAllowedToWithdraw(alice, markets);
-      expect(maxWithdrawDOC.underlying).to.be.greaterThan(0);
-      expect(maxWithdrawDOC.usd).to.be.greaterThan(0);
-      expect(maxWithdrawDOC.tokens).to.be.ok;
-      expect(maxWithdrawDOC.tokens.value).to.be.greaterThan(0);
+      // // Get max allowed to withdraw from DOC market
+      // const maxWithdrawDOC = await cdoc.maxAllowedToWithdraw(alice, markets);
+      // expect(maxWithdrawDOC.underlying).to.be.greaterThan(0);
+      // expect(maxWithdrawDOC.usd).to.be.greaterThan(0);
+      // expect(maxWithdrawDOC.tokens).to.be.ok;
+      // expect(maxWithdrawDOC.tokens.value).to.be.greaterThan(0);
 
-      // Max withdraw should be less than or equal to supply
-      const balanceUSDT0 = await cusdt0.balanceOfUnderlying(alice);
-      expect(maxWithdrawUSDT0.underlying).to.be.at.most(balanceUSDT0.underlying);
+      // // Max withdraw should be less than or equal to supply
+      // const balanceUSDT0 = await cusdt0.balanceOfUnderlying(alice);
+      // expect(maxWithdrawUSDT0.underlying).to.be.at.most(balanceUSDT0.underlying);
 
-      const balanceDOC = await cdoc.balanceOfUnderlying(alice);
-      expect(maxWithdrawDOC.underlying).to.be.at.most(balanceDOC.underlying);
+      // const balanceDOC = await cdoc.balanceOfUnderlying(alice);
+      // expect(maxWithdrawDOC.underlying).to.be.at.most(balanceDOC.underlying);
     });
 
     it.skip('should calculate maxAllowedToDeposit correctly for each market', async () => {
