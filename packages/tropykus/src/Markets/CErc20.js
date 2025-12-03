@@ -210,6 +210,26 @@ export default class CErc20 extends Market {
     };
   }
 
+  /**
+   * Redeems an amount from the market
+   * @param {object} account Object get from tropykus.getAccount()
+   * @param {number} amount value to be redeemed
+   * @param {boolean} maxValue if true ignores amount and redeems all kTokens
+   * @returns {Promise<Object>} transaction
+   */
+  async redeem(account, amount, maxValue = false) {
+    if (maxValue) {
+      const kTokens = await this.instance.callStatic.balanceOf(account.address);
+      return this.instance.connect(account.signer)
+        .redeem(kTokens, { gasLimit: this.tropykus.gasLimit });
+    }
+    const decimals = await this._ensureDecimals();
+    const parsedAmount = parseTokenAmount(amount.toString(), decimals);
+    
+    return this.instance.connect(account.signer)
+      .redeemUnderlying(parsedAmount, { gasLimit: this.tropykus.gasLimit });
+  }
+
   getUnderlyingSymbol() {
     return new Promise((resolve, reject) => {
       this.erc20Instance.callStatic.symbol()
