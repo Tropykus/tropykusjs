@@ -3,6 +3,7 @@ import { BigNumber, ethers, FixedNumber } from 'ethers';
 import StandartTokenArtifact from '../../artifacts/StandardToken.json';
 import Market from '../Market';
 import { getDeprecationMetadata, warnDeprecatedOnce } from '../utils/deprecation';
+import { getTokenDecimals, parseTokenAmount } from '../utils/decimals';
 
 const format = 'fixed80x18';
 const factor = FixedNumber.fromString(1e18.toString(), format);
@@ -21,6 +22,12 @@ export default class CErc20 extends Market {
     );
     this.type = 'CErc20Immutable';
 
+    // Detect and cache token decimals for accurate amount parsing/formatting
+    // This supports tokens with various decimal precisions (6 for USDT/USDC, 8 for WBTC, 18 for standard tokens)
+    // Falls back to 18 decimals if detection fails (backward compatibility)
+    this.tokenDecimals = null; // Will be initialized async in _initializeDecimals()
+    this._decimalsPromise = this._initializeDecimals();
+
     // Deprecation check: We use address-based deprecation (not artifact-based) because
     // CErc20Immutable artifact is used for both listed markets (e.g., kDOC)
     // and deprecated markets (e.g., kRIF, kUSDT). If we checked by artifact,
@@ -37,20 +44,40 @@ export default class CErc20 extends Market {
   }
 
   /**
+   * Initialize token decimals asynchronously
+   * @private
+   */
+  async _initializeDecimals() {
+    this.tokenDecimals = await getTokenDecimals(this.erc20Instance);
+    return this.tokenDecimals;
+  }
+
+  /**
+   * Ensure decimals are initialized before using them
+   * @private
+   */
+  async _ensureDecimals() {
+    if (this.tokenDecimals === null) {
+      await this._decimalsPromise;
+    }
+    return this.tokenDecimals;
+  }
+
+  /**
    * Deposits and amount in the name of a given account
    * @param {object} account Object get from tropykus.getAccount()
    * @param {number} amount amount to be deposit
    * @returns {Promise<Object>} transaction
    */
-  mint(account, amount) {
-    return new Promise((resolve, reject) => {
-      this.erc20Instance.connect(account.signer)
-        .approve(this.address, ethers.utils.parseEther(amount.toString()))
-        .then(() => this.instance.connect(account.signer)
-          .mint(ethers.utils.parseEther(amount.toString()), { gasLimit: this.tropykus.gasLimit }))
-        .then(resolve)
-        .catch(reject);
-    });
+  async mint(account, amount) {
+    const decimals = await this._ensureDecimals();
+    const parsedAmount = parseTokenAmount(amount.toString(), decimals);
+    
+    await this.erc20Instance.connect(account.signer)
+      .approve(this.address, parsedAmount);
+    
+    return this.instance.connect(account.signer)
+      .mint(parsedAmount, { gasLimit: this.tropykus.gasLimit });
   }
 
   /**
