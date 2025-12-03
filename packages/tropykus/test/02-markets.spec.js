@@ -12,6 +12,7 @@ import StandardTokenArtifact from '../artifacts/StandardToken.json';
 import JumpRateModelV2Artifact from '../artifacts/JumpRateModelV2.json';
 import MockPriceProviderMoCArtifact from '../artifacts/MockPriceProviderMoC.json';
 import PriceOracleAdapterMocArtifact from '../artifacts/PriceOracleAdapterMoc.json';
+import MockPriceOracleAdapterUSDTArtifact from '../artifacts/MockPriceOracleAdapterUSDT.json';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -1808,17 +1809,17 @@ describe('Market', () => {
         dep.signer,
       );
 
-      // USDT0 price: 1 * 1e18 (stablecoin)
+      // USDT0 price: 1 * 1e8 (stablecoin) from redstone oracles
       const cusdt0PriceProvider = await mockPriceProviderFactory.deploy(
         dep.address, // guardian
-        ethers.utils.parseEther('1'), // price in 18 decimals
+        ethers.utils.parseUnits('1', 8), // price in 8 decimals
       );
       await cusdt0PriceProvider.deployed();
 
       // Deploy PriceOracleAdapterMoc
       const adapterFactory = new ethers.ContractFactory(
-        PriceOracleAdapterMocArtifact.abi,
-        PriceOracleAdapterMocArtifact.bytecode,
+        MockPriceOracleAdapterUSDTArtifact.abi,
+        MockPriceOracleAdapterUSDTArtifact.bytecode,
         dep.signer,
       );
 
@@ -1836,7 +1837,7 @@ describe('Market', () => {
       const tx = await tropykus.priceOracle.setAdapterToToken(dep, cusdt0.address, cusdt0Adapter.address);
       await tx.wait();
 
-      // Set comptroller and support market
+      // Set comptroller and support se
       await cusdt0.setComptroller(dep, newComptroller.address);
       await newComptroller.supportMarket(dep, cusdt0.address);
       await newComptroller.setCollateralFactor(dep, cusdt0.address, 0.75);
@@ -1889,6 +1890,7 @@ describe('Market', () => {
         expect(marketTokenDecimals).to.equal(6);
       }
     });
+
 
     it('should deposit 1.0 USDT0 token (6 decimals → 1000000)', async () => {
       // Transfer tokens to alice first

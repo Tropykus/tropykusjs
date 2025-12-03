@@ -5,7 +5,7 @@ import chaiAsPromised from 'chai-as-promised';
 import Tropykus from '../src';
 import PriceOracle from '../src/PriceOracle';
 import PriceOracleAdapterMocArtifact from '../artifacts/PriceOracleAdapterMoc.json';
-import PriceOracleAdapterUSDTArtifact from '../artifacts/PriceOracleAdapterUSDT.json';
+import MockPriceOracleAdapterUSDTArtifact from '../artifacts/MockPriceOracleAdapterUSDT.json';
 import PriceOracleProxyArtifact from '../artifacts/PriceOracleProxy.json';
 import MockPriceProviderMoCArtifact from '../artifacts/MockPriceProviderMoC.json';
 import StandardTokenArtifact from '../artifacts/StandardToken.json';
@@ -84,8 +84,8 @@ describe('PriceOracle', () => {
 
     // Deploy PriceOracleAdapterUSDT (has DECIMAL_MULTIPLIER, returns 1e30)
     const usdtAdapterFactory = new ethers.ContractFactory(
-      PriceOracleAdapterUSDTArtifact.abi,
-      PriceOracleAdapterUSDTArtifact.bytecode,
+      MockPriceOracleAdapterUSDTArtifact.abi,
+      MockPriceOracleAdapterUSDTArtifact.bytecode,
       dep.signer,
     );
     usdtAdapter = await usdtAdapterFactory.deploy(
@@ -200,7 +200,7 @@ describe('PriceOracle', () => {
       // Verify DECIMAL_MULTIPLIER exists and equals 1e22
       const usdtAdapterContract = new ethers.Contract(
         usdtAdapter.address,
-        PriceOracleAdapterUSDTArtifact.abi,
+        MockPriceOracleAdapterUSDTArtifact.abi,
         tropykus.provider,
       );
       const multiplier = await usdtAdapterContract.callStatic.DECIMAL_MULTIPLIER();
@@ -231,7 +231,7 @@ describe('PriceOracle', () => {
     it('should query DECIMAL_MULTIPLIER using callStatic (T011)', async () => {
       const usdtAdapterContract = new ethers.Contract(
         usdtAdapter.address,
-        PriceOracleAdapterUSDTArtifact.abi,
+        MockPriceOracleAdapterUSDTArtifact.abi,
         tropykus.provider,
       );
       const multiplier = await usdtAdapterContract.callStatic.DECIMAL_MULTIPLIER();
@@ -245,7 +245,7 @@ describe('PriceOracle', () => {
       // Verify the multiplier is 1e22
       const usdtAdapterContract = new ethers.Contract(
         usdtAdapter.address,
-        PriceOracleAdapterUSDTArtifact.abi,
+        MockPriceOracleAdapterUSDTArtifact.abi,
         tropykus.provider,
       );
       const multiplier = await usdtAdapterContract.callStatic.DECIMAL_MULTIPLIER();
@@ -264,7 +264,7 @@ describe('PriceOracle', () => {
       // Verify DECIMAL_MULTIPLIER equals 1e22
       const usdtAdapterContract = new ethers.Contract(
         usdtAdapter.address,
-        PriceOracleAdapterUSDTArtifact.abi,
+        MockPriceOracleAdapterUSDTArtifact.abi,
         tropykus.provider,
       );
       const multiplier = await usdtAdapterContract.callStatic.DECIMAL_MULTIPLIER();
@@ -296,7 +296,7 @@ describe('PriceOracle', () => {
       // Verify adapter's price provider is set correctly
       const usdtAdapterContract = new ethers.Contract(
         usdtAdapter.address,
-        PriceOracleAdapterUSDTArtifact.abi,
+        MockPriceOracleAdapterUSDTArtifact.abi,
         tropykus.provider,
       );
       const adapterPriceProvider = await usdtAdapterContract.priceProviderUSDT();
