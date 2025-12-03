@@ -444,9 +444,32 @@ export default class Comptroller {
     };
   }
 
+  /**
+   * Calculates the total borrowed amount (in USD and underlying token units) across all specified markets for an account.
+   *
+   * - Handles mixed token decimals (6, 8, 18, etc.) and oracle decimals (18, 30, etc.).
+   * - Computes the borrow amount in both human-readable underlying and USD values.
+   * - If a specific `marketAddress` is provided, also calculates the borrowed amount in that market's underlying token unit.
+   *
+   * @param {object} account - The account object obtained from tropykus.getAccount().
+   * @param {Array<Object>} markets - Array of Market instances to include in calculation.
+   * @param {string} [marketAddress=''] - Optional. Market address to use for returning an accurate underlying value (set to empty string for USD sum only).
+   * @returns {Promise<Object>} Borrow stats across all supplied markets:
+   * @returns {number} return.underlying - Total borrowed amount (in selected market's underlying units if marketAddress specified, otherwise 0).
+   * @returns {number} return.usd - Total borrowed amount in USD across all supplied markets.
+   * @returns {FixedNumber} return.fixedNumber - The raw FixedNumber sum of borrowed USD amounts.
+   *
+   * @example
+   * const borrows = await comptroller.getTotalBorrowsInAllMarkets(alice, [cusdt0, cbtc]);
+   * // borrows.usd = 505.0 (if 5 BTC and 500 USDT borrowed and prices are $1 and $100)
+   * // borrows.underlying = 0 (if marketAddress not specified)
+   *
+   * const borrowsWithUnderlying = await comptroller.getTotalBorrowsInAllMarkets(alice, [cusdt0, cbtc], cbtc.address);
+   * // borrowsWithUnderlying.underlying = 5 (BTC)
+   */
   async getTotalBorrowsInAllMarkets(account, markets, marketAddress = '') {
     let fixedNumber = FixedNumber.fromString('0', format);
-    let priceUnderlying = FixedNumber.fromString('0', format);
+    let underlyingBorrowAmount = FixedNumber.fromString('0', format);
     
     // Process all markets in parallel
     const marketPromises = markets.map(async (market) => {
@@ -485,24 +508,26 @@ export default class Comptroller {
       // Calculate USD: (human-readable borrow) * (human-readable price)
       const borrowsAsUSD = borrowsHumanReadable.mulUnsafe(priceHumanReadable);
       
-      // Store price for underlying calculation if this is the target market
-      if (market.address === marketAddress.toLowerCase()) {
-        priceUnderlying = priceHumanReadable;
-      }
-      
-      return borrowsAsUSD;
+      return {
+        borrowsAsUSD,
+        borrowsHumanReadable,
+        isTargetMarket: market.address.toLowerCase() === marketAddress.toLowerCase(),
+      };
     });
     
-    const borrowsUSDArray = await Promise.all(marketPromises);
+    const results = await Promise.all(marketPromises);
     
-    // Sum all borrows in USD
-    borrowsUSDArray.forEach((borrowsUSD) => {
-      fixedNumber = fixedNumber.addUnsafe(borrowsUSD);
+    // Sum all borrows in USD and get underlying borrow for target market
+    results.forEach((result) => {
+      fixedNumber = fixedNumber.addUnsafe(result.borrowsAsUSD);
+      if (result.isTargetMarket) {
+        underlyingBorrowAmount = result.borrowsHumanReadable;
+      }
     });
     
     const usd = fixedNumber;
-    const underlying = marketAddress && priceUnderlying._value !== '0.0' 
-      ? fixedNumber.divUnsafe(priceUnderlying) 
+    const underlying = marketAddress && underlyingBorrowAmount._value !== '0.0'
+      ? underlyingBorrowAmount
       : FixedNumber.fromString('0', format);
     
     return {
@@ -512,10 +537,36 @@ export default class Comptroller {
     };
   }
 
+  /**
+   * Calculates the total supplied amount (in USD and underlying token units) across all specified markets for an account.
+   *
+   * - Handles mixed token decimals (6, 8, 18, etc.) and oracle decimals (18, 30, etc.).
+   * - Computes the supplied amount in both human-readable underlying units and USD values.
+   * - Also computes the USD value of the supplied amount that is eligible as collateral, using the collateral factor of each market.
+   * - If a specific `marketAddress` is provided, also calculates the total supplied amount in that market's underlying token unit.
+   *
+   * @param {object} account - The account object obtained from tropykus.getAccount().
+   * @param {Array<Object>} markets - Array of Market instances to include in the calculation.
+   * @param {string} marketAddress - Optional. Market address to use for returning an accurate underlying value (set to empty string for USD sum only).
+   * @returns {Promise<Object>} Supply stats across all supplied markets:
+   * @returns {number} return.underlying - Total supplied amount (in selected market's underlying units if marketAddress specified, otherwise 0).
+   * @returns {number} return.usd - Total supplied amount in USD across all supplied markets.
+   * @returns {FixedNumber} return.fixedNumber - The raw FixedNumber sum of supplied USD amounts.
+   * @returns {FixedNumber} return.withCollateral - The raw FixedNumber sum of collateral-eligible supplied USD amounts.
+   *
+   * @example
+   * const supplies = await comptroller.getTotalSupplyInAllMarkets(alice, [cusdt0, cbtc]);
+   * // supplies.usd = 505.0 (if 5 BTC and 500 USDT supplied and prices are $1 and $100)
+   * // supplies.underlying = 0 (if marketAddress not specified)
+   *
+   * const suppliesWithUnderlying = await comptroller.getTotalSupplyInAllMarkets(alice, [cusdt0, cbtc], cbtc.address);
+   * // suppliesWithUnderlying.underlying = 5 (BTC)
+   */
   async getTotalSupplyInAllMarkets(account, markets, marketAddress) {
     let fixedNumber = FixedNumber.fromString('0', format);
     let withCollateral = FixedNumber.fromString('0', format);
-    let priceUnderlying = FixedNumber.fromString('0', format);
+    let marketSupplyUSD = FixedNumber.fromString('0', format);
+    let marketSupplyWithCollateral = FixedNumber.fromString('0', format);
     
     // Process all markets in parallel
     const marketPromises = markets.map(async (market) => {
@@ -553,11 +604,6 @@ export default class Comptroller {
       const priceHumanReadable = FixedNumber.from(priceMantissa.toString(), format)
         .divUnsafe(oracleFactor);
       
-      // Store price for underlying calculation if this is the target market
-      if (market.address === marketAddress.toLowerCase()) {
-        priceUnderlying = priceHumanReadable;
-      }
-      
       // supply.fixedNumber is raw balance in token decimals
       // Convert to human-readable
       const supplyHumanReadable = supply.fixedNumber.divUnsafe(tokenFactor);
@@ -569,27 +615,38 @@ export default class Comptroller {
       return {
         supplyAsUSD,
         withCollateralASUSD,
+        supplyHumanReadable,
+        collateralFactor,
+        isTargetMarket: market.address.toLowerCase() === (marketAddress || '').toLowerCase(),
       };
     });
     
     const results = await Promise.all(marketPromises);
     
-    // Sum all supplies
-    results.forEach(({ supplyAsUSD, withCollateralASUSD }) => {
-      fixedNumber = fixedNumber.addUnsafe(supplyAsUSD);
-      withCollateral = withCollateral.addUnsafe(withCollateralASUSD);
+    // Sum all supplies and track target market supply
+    results.forEach((result) => {
+      fixedNumber = fixedNumber.addUnsafe(result.supplyAsUSD);
+      withCollateral = withCollateral.addUnsafe(result.withCollateralASUSD);
+      
+      // If this is the target market, store its supply values
+      if (result.isTargetMarket) {
+        marketSupplyUSD = result.supplyAsUSD;
+        marketSupplyWithCollateral = result.withCollateralASUSD;
+      }
     });
     
-    const usd = fixedNumber;
-    const underlying = marketAddress && priceUnderlying._value !== '0.0'
-      ? fixedNumber.divUnsafe(priceUnderlying)
+    // If marketAddress is provided, return that market's supply with collateral factor applied
+    // Otherwise return total supply across all markets
+    const usd = marketAddress ? marketSupplyUSD : fixedNumber;
+    const underlying = marketAddress && marketSupplyWithCollateral._value !== '0.0'
+      ? marketSupplyWithCollateral
       : FixedNumber.fromString('0', format);
     
     return {
       underlying: Number(underlying._value),
       usd: Number(usd._value),
       fixedNumber,
-      withCollateral,
+      withCollateral: Number(withCollateral._value),
     };
   }
 }
