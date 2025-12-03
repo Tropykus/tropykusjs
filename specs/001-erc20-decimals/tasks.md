@@ -73,9 +73,9 @@
 
 - [X] T018 [US1] Add decimal detection to CErc20 constructor in `packages/tropykus/src/Markets/CErc20.js` - call `getTokenDecimals()` and cache as `this.tokenDecimals`
 - [X] T019 [US1] Replace `parseEther()` calls with `parseTokenAmount()` using detected decimals in `mint()` method in `packages/tropykus/src/Markets/CErc20.js`
-- [ ] T020 [US1] Replace `parseEther()` calls with `parseTokenAmount()` using detected decimals in `repayBorrow()` method in `packages/tropykus/src/Markets/CErc20.js`
+- [X] T020 [US1] Replace `parseEther()` calls with `parseTokenAmount()` using detected decimals in `repayBorrow()` method in `packages/tropykus/src/Markets/CErc20.js`
 - [ ] T021 [US1] Replace `parseEther()` calls with `parseTokenAmount()` using detected decimals in `transferUnderlying()` method in `packages/tropykus/src/Markets/CErc20.js`
-- [ ] T022 [US1] Replace `formatEther()` calls with `formatTokenAmount()` using detected decimals in `balanceOfUnderlyingInWallet()` method in `packages/tropykus/src/Markets/CErc20.js`
+- [X] T022 [US1] Replace `formatEther()` calls with `formatTokenAmount()` using detected decimals in `balanceOfUnderlyingInWallet()` method in `packages/tropykus/src/Markets/CErc20.js`
 - [ ] T023 [US1] Replace hardcoded `factor` (1e18) with dynamic factor based on `tokenDecimals` in CErc20 constructor in `packages/tropykus/src/Markets/CErc20.js`
 - [ ] T024 [US1] Update all Market methods that use hardcoded `factor` (1e18) to use `10^tokenDecimals` in `packages/tropykus/src/Market.js`
 - [ ] T025 [US1] Add JSDoc comments to all new utility functions in `packages/tropykus/src/utils/decimals.js`

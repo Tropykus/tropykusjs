@@ -134,34 +134,52 @@ export default class CErc20 extends Market {
    * @param {object} account Object get from tropykus.getAccount()
    * @returns {Promise<Number>} balance of underlying in wallet
    */
-  balanceOfUnderlyingInWallet(account) {
-    return new Promise((resolve, reject) => {
-      Promise.all([
-        this.erc20Instance.connect(account.signer)
-          .balanceOf(account.address),
-        this.tropykus.priceOracle.instance.callStatic
-          .getUnderlyingPrice(this.address),
-      ])
-        .then(([balanceMantissa, priceMantissa]) => {
-          const price = FixedNumber.from(priceMantissa, format)
-            .divUnsafe(factor);
-          const underlying = FixedNumber.from(balanceMantissa.toString(), format)
-            .divUnsafe(factor);
-          const usd = underlying.mulUnsafe(price);
-          return {
-            underlying: {
-              value: Number(underlying._value),
-              fixedNumber: underlying,
-            },
-            usd: {
-              value: Number(usd._value),
-              fixedNumber: usd,
-            },
-          };
-        })
-        .then(resolve)
-        .catch(reject);
-    });
+  async balanceOfUnderlyingInWallet(account) {
+    // Get token decimals (from CErc20.tokenDecimals if available, default to 18)
+    const decimals = await this._ensureDecimals();
+    
+    // Get adapter address for this market
+    const adapterAddress = await this.tropykus.priceOracle.instance.callStatic.tokenAdapter(this.address);
+    
+    // Detect oracle decimals (18 for MoC, 30 for USDT, default 18)
+    const oracleDecimals = await this.tropykus.priceOracle.detectOracleDecimals(adapterAddress);
+    
+    // Create dynamic factors based on detected decimals
+    // Use BigNumber to avoid scientific notation issues with large powers
+    const tokenFactorValue = BigNumber.from(10).pow(decimals).toString();
+    const oracleFactorValue = BigNumber.from(10).pow(oracleDecimals).toString();
+    const tokenFactor = FixedNumber.fromString(tokenFactorValue, format);
+    const oracleFactor = FixedNumber.fromString(oracleFactorValue, format);
+    
+    // Get balance and price from contracts
+    const [balanceMantissa, priceMantissa] = await Promise.all([
+      this.erc20Instance.connect(account.signer)
+        .balanceOf(account.address),
+      this.tropykus.priceOracle.instance.callStatic
+        .getUnderlyingPrice(this.address),
+    ]);
+    
+    // Convert price from oracle decimals to human-readable
+    const price = FixedNumber.from(priceMantissa.toString(), format)
+      .divUnsafe(oracleFactor);
+    
+    // Convert balance from token decimals to human-readable
+    const underlying = FixedNumber.from(balanceMantissa.toString(), format)
+      .divUnsafe(tokenFactor);
+    
+    // Calculate USD value: underlying (human-readable) * price (human-readable)
+    const usd = underlying.mulUnsafe(price);
+    
+    return {
+      underlying: {
+        value: Number(underlying._value),
+        fixedNumber: underlying,
+      },
+      usd: {
+        value: Number(usd._value),
+        fixedNumber: usd,
+      },
+    };
   }
 
   getUnderlyingSymbol() {

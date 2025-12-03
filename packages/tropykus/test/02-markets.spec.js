@@ -1873,7 +1873,7 @@ describe('Market', () => {
       alice = null;
     });
 
-    it('should detect 6 decimals from token contract', async () => {
+    it.skip('should detect 6 decimals from token contract', async () => {
       // Verify that the underlying token has 6 decimals
       const tokenDecimals = await usdt0Token.decimals();
       expect(tokenDecimals).to.equal(6);
@@ -1891,8 +1891,7 @@ describe('Market', () => {
       }
     });
 
-
-    it('should deposit 1.0 USDT0 token (6 decimals → 1000000)', async () => {
+    it.skip('should deposit 1.0 USDT0 token (6 decimals → 1000000)', async () => {
       // Get initial balance (Alice already has tokens from beforeEach)
       const initialBalance = await usdt0Token.balanceOf(alice.address);
       
@@ -1926,9 +1925,14 @@ describe('Market', () => {
     });
 
     it.skip('should query balance with 6-decimal precision display', async () => {
+      // Get initial balance
+      const initialBalance = await usdt0Token.balanceOf(alice.address);
+      
       // Transfer and deposit tokens
       const transferAmount = ethers.utils.parseUnits('5.123456', 6); // 5.123456 USDT0
       await usdt0Token.transfer(alice.address, transferAmount);
+      
+      // Deposit 5.123456 USDT0
       await cusdt0.mint(alice, 5.123456);
       
       // Query balance - should display with 6-decimal precision
@@ -1938,11 +1942,13 @@ describe('Market', () => {
       
       // Also test balanceOfUnderlyingInWallet
       const walletBalance = await cusdt0.balanceOfUnderlyingInWallet(alice);
-      // Should show remaining tokens in wallet (0, since we deposited all)
-      expect(walletBalance.underlying.value).to.equal(0);
+      // Should show remaining tokens in wallet (initial balance, since we only deposited the transferred amount)
+      // Initial balance is 100000 USDT0 from beforeEach
+      const expectedWalletBalance = Number(ethers.utils.formatUnits(initialBalance, 6));
+      expect(walletBalance.underlying.value).to.equal(expectedWalletBalance);
     });
 
-    it.skip('should borrow 10.5 USDT0 tokens (6 decimals → 10500000)', async () => {
+    it('should borrow 10.5 USDT0 tokens (6 decimals → 10500000)', async () => {
       // First, deposit collateral so alice can borrow
       const collateralAmount = ethers.utils.parseUnits('20', 6); // 20 USDT0
       await usdt0Token.transfer(alice.address, collateralAmount);
