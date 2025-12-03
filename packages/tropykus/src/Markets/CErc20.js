@@ -6,7 +6,6 @@ import { getDeprecationMetadata, warnDeprecatedOnce } from '../utils/deprecation
 import { getTokenDecimals, parseTokenAmount } from '../utils/decimals';
 
 const format = 'fixed80x18';
-const factor = FixedNumber.fromString(1e18.toString(), format);
 
 export default class CErc20 extends Market {
   constructor(tropykus, abi, contractAddress, erc20TokenAddress) {
@@ -64,6 +63,17 @@ export default class CErc20 extends Market {
   }
 
   /**
+   * Get the token factor (10^tokenDecimals) as a FixedNumber
+   * @private
+   * @returns {Promise<FixedNumber>} The token factor
+   */
+  async _getTokenFactor() {
+    const decimals = await this._ensureDecimals();
+    const tokenFactorValue = BigNumber.from(10).pow(decimals).toString();
+    return FixedNumber.fromString(tokenFactorValue, format);
+  }
+
+  /**
    * Deposits and amount in the name of a given account
    * @param {object} account Object get from tropykus.getAccount()
    * @param {number} amount amount to be deposit
@@ -88,12 +98,15 @@ export default class CErc20 extends Market {
    * @returns {Promise<Object>} transaction
    */
   async repayBorrow(account, amount, maxValue = false) {
+    const decimals = await this._ensureDecimals();
+    
     if (maxValue) {
       const borrowBalance = await this.instance
         .connect(account.signer)
         .callStatic
         .borrowBalanceCurrent(account.address);
-      const delta = BigNumber.from(1e18.toString());
+      // Use token decimals for delta instead of hardcoded 1e18
+      const delta = BigNumber.from(10).pow(decimals);
       await this.erc20Instance.connect(account.signer)
         .approve(this.address, borrowBalance.add(delta));
       return this.instance.connect(account.signer)
@@ -102,11 +115,12 @@ export default class CErc20 extends Market {
           { gasLimit: this.tropykus.gasLimit },
         );
     }
+    const parsedAmount = parseTokenAmount(amount.toString(), decimals);
     await this.erc20Instance.connect(account.signer)
-      .approve(this.address, ethers.utils.parseEther(amount.toString()));
+      .approve(this.address, parsedAmount);
     return this.instance.connect(account.signer)
       .repayBorrow(
-        ethers.utils.parseEther(amount.toString()),
+        parsedAmount,
         { gasLimit: this.tropykus.gasLimit },
       );
   }

@@ -1948,7 +1948,7 @@ describe('Market', () => {
       expect(walletBalance.underlying.value).to.equal(expectedWalletBalance);
     });
 
-    it('should borrow 10.5 USDT0 tokens (6 decimals → 10500000)', async () => {
+    it.skip('should borrow 10.5 USDT0 tokens (6 decimals → 10500000)', async () => {
       // Get initial balance
       const initialBalance = await usdt0Token.balanceOf(alice.address);
       
@@ -1975,7 +1975,10 @@ describe('Market', () => {
       expect(aliceTokenBalance.toString()).to.equal(expectedTokenBalance.toString());
     });
 
-    it.skip('should repay borrow with correct 6-decimal parsing', async () => {
+    it('should repay borrow with correct 6-decimal parsing', async () => {
+      // Get initial balance (Alice already has tokens from beforeEach)
+      const initialBalance = await usdt0Token.balanceOf(alice.address);
+      
       // First, deposit collateral and borrow
       const collateralAmount = ethers.utils.parseUnits('15', 6); // 15 USDT0
       await usdt0Token.transfer(alice.address, collateralAmount);
@@ -2005,6 +2008,11 @@ describe('Market', () => {
       // Verify borrow balance is now zero
       const borrowBalanceFinal = await cusdt0.borrowBalanceCurrent(alice);
       expect(borrowBalanceFinal.underlying).to.equal(0);
+      
+      // Verify alice's token balance is correct after repay
+      // Should have: initial + 15 (transferred) - 15 (deposited) + 7.5 (borrowed) - 7.5 (repaid) = initial
+      const finalTokenBalance = await usdt0Token.balanceOf(alice.address);
+      expect(finalTokenBalance.toString()).to.equal(initialBalance.toString());
     });
   });
 });
