@@ -133,11 +133,27 @@ export default class Tropykus {
           break;
       }
       if (artifact !== 'CRBTC') {
+        // Get underlying token decimals for proper exchange rate parsing
+        // Exchange rate is always in 18 decimals in the contract, but we need to parse
+        // the initialExchangeRate value correctly based on underlying token decimals
+        let underlyingDecimals = 18; // default
+        try {
+          const erc20Contract = new ethers.Contract(
+            erc20TokenAddress,
+            ['function decimals() view returns (uint8)'],
+            account.signer.provider || this.provider,
+          );
+          underlyingDecimals = await erc20Contract.callStatic.decimals();
+        } catch (error) {
+          // If decimals() call fails, default to 18
+          underlyingDecimals = 18;
+        }
+        
         marketDeployed = await marketFactory.deploy(
           erc20TokenAddress,
           args.comptrollerAddress,
           args.interestRateModelAddress,
-          ethers.utils.parseEther(args.initialExchangeRate.toString()),
+          ethers.utils.parseUnits(args.initialExchangeRate.toString(), underlyingDecimals),
           args.name,
           args.symbol,
           args.decimals,

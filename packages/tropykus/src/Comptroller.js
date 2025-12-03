@@ -266,34 +266,87 @@ export default class Comptroller {
    * @returns {Promise<Object>} total liquidity in usd, underlying and fixedNumber
    */
   async getAccountLiquidity(account, marketAddress = '') {
-    const promises = [this.instance.connect(account.signer).callStatic
-      .getAccountLiquidity(account.address)];
+    // If marketAddress is provided, calculate market-specific liquidity
     if (marketAddress) {
-      promises.push(this.tropykus.priceOracle.instance.callStatic
-        .getUnderlyingPrice(marketAddress));
-    } else {
-      promises.push(Promise.resolve(BigNumber.from('0')));
+      // Create market instance to get balance
+      const marketContract = new ethers.Contract(
+        marketAddress,
+        CErc20ImmutableArtifact.abi,
+        this.tropykus.provider,
+      );
+      
+      // Get token decimals for this market
+      let tokenDecimals = 18;
+      try {
+        const underlyingAddress = await marketContract.callStatic.underlying();
+        const underlyingContract = new ethers.Contract(
+          underlyingAddress,
+          ['function decimals() view returns (uint8)'],
+          this.tropykus.provider,
+        );
+        tokenDecimals = await underlyingContract.callStatic.decimals();
+      } catch (error) {
+        // If underlying() fails (e.g., CRBTC market), default to 18 decimals
+        tokenDecimals = 18;
+      }
+      
+      // Get oracle decimals for this market
+      const adapterAddress = await this.tropykus.priceOracle.instance.callStatic.tokenAdapter(marketAddress);
+      const oracleDecimals = await this.tropykus.priceOracle.detectOracleDecimals(adapterAddress);
+      
+      // Create factors
+      const tokenFactorValue = BigNumber.from(10).pow(tokenDecimals).toString();
+      const oracleFactorValue = BigNumber.from(10).pow(oracleDecimals).toString();
+      const tokenFactor = FixedNumber.fromString(tokenFactorValue, format);
+      const oracleFactor = FixedNumber.fromString(oracleFactorValue, format);
+      
+      // Get balance, price, and collateral factor in parallel
+      const [balanceOfUnderlyingResult, priceMantissa, marketData] = await Promise.all([
+        marketContract.connect(account.signer).callStatic.balanceOfUnderlying(account.address),
+        this.tropykus.priceOracle.instance.callStatic.getUnderlyingPrice(marketAddress),
+        this.instance.callStatic.markets(marketAddress),
+      ]);
+      
+      // Convert collateral factor from mantissa (18 decimals) to human-readable
+      const collateralFactor = FixedNumber
+        .from(marketData.collateralFactorMantissa.toString(), format)
+        .divUnsafe(cTokenFactor);
+      
+      // Convert balance from token decimals to human-readable
+      const balanceHumanReadable = FixedNumber.from(balanceOfUnderlyingResult.toString(), format)
+        .divUnsafe(tokenFactor);
+      
+      // Convert price from oracle decimals to human-readable
+      const priceHumanReadable = FixedNumber.from(priceMantissa.toString(), format)
+        .divUnsafe(oracleFactor);
+      
+      // Calculate liquidity: balance × price × collateralFactor
+      const liquidityUSD = balanceHumanReadable
+        .mulUnsafe(priceHumanReadable)
+        .mulUnsafe(collateralFactor);
+      
+      // Calculate underlying: liquidityUSD / price
+      const liquidityUnderlying = liquidityUSD.divUnsafe(priceHumanReadable);
+      
+      return {
+        usd: {
+          value: Number(liquidityUSD._value),
+          fixedNumber: liquidityUSD,
+        },
+        underlying: {
+          value: Number(liquidityUnderlying._value),
+          fixedNumber: liquidityUnderlying,
+        },
+      };
     }
     
-    const [liq, price] = await Promise.all(promises);
+    // If no marketAddress provided, return total liquidity across all markets
+    const liq = await this.instance.connect(account.signer).callStatic
+      .getAccountLiquidity(account.address);
     
     // Liquidity from contract is in USD with 18 decimals (always)
     const fixedNumber = FixedNumber.from(liq[1].toString(), format);
     const usd = fixedNumber.divUnsafe(cTokenFactor);
-    
-    // Price needs oracle decimals detection
-    let underlying;
-    if (price > 0) {
-      const adapterAddress = await this.tropykus.priceOracle.instance.callStatic.tokenAdapter(marketAddress);
-      const oracleDecimals = await this.tropykus.priceOracle.detectOracleDecimals(adapterAddress);
-      const oracleFactorValue = BigNumber.from(10).pow(oracleDecimals).toString();
-      const oracleFactor = FixedNumber.fromString(oracleFactorValue, format);
-      const priceHumanReadable = FixedNumber.from(price.toString(), format)
-        .divUnsafe(oracleFactor);
-      underlying = fixedNumber.divUnsafe(priceHumanReadable);
-    } else {
-      underlying = FixedNumber.from('0', format);
-    }
     
     return {
       usd: {
@@ -301,8 +354,8 @@ export default class Comptroller {
         fixedNumber: usd,
       },
       underlying: {
-        value: Number(underlying._value),
-        fixedNumber: underlying,
+        value: Number(usd._value),
+        fixedNumber: usd,
       },
     };
   }
@@ -336,10 +389,12 @@ export default class Comptroller {
       tokenDecimals = 18;
     }
     
-    // Parse amounts using detected token decimals
+    // Parse amounts
+    // redeemTokens is in cToken units (always 18 decimals), not underlying token units
     const parsedRedeemTokens = redeemTokens > 0 
-      ? parseTokenAmount(redeemTokens.toString(), tokenDecimals)
+      ? parseTokenAmount(redeemTokens.toString(), 18) // cTokens always have 18 decimals
       : BigNumber.from(0);
+    // borrowAmount is in underlying token units (use tokenDecimals)
     const parsedBorrowAmount = borrowAmount > 0
       ? parseTokenAmount(borrowAmount.toString(), tokenDecimals)
       : BigNumber.from(0);
@@ -370,8 +425,10 @@ export default class Comptroller {
     const priceHumanReadable = FixedNumber.from(price.toString(), format)
       .divUnsafe(oracleFactor);
     
-    const liquidityUnderlying = liquidityFixedNumber.divUnsafe(priceHumanReadable);
-    const shortfallUnderlying = shortfallFixedNumber.divUnsafe(priceHumanReadable);
+    // Convert human-readable USD liquidity to underlying token amount
+    // Divide human-readable USD by human-readable price to get human-readable underlying
+    const liquidityUnderlying = liquidityUsd.divUnsafe(priceHumanReadable);
+    const shortfallUnderlying = shortfallUsd.divUnsafe(priceHumanReadable);
     
     return {
       liquidity: {

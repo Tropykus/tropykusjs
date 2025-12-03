@@ -2,6 +2,7 @@
 import { BigNumber, ethers, FixedNumber } from 'ethers';
 import interestRateModelArtifact from '../artifacts/InterestRateModel.json';
 import Comptroller from './Comptroller';
+import { parseTokenAmount } from './utils/decimals';
 
 const format = 'fixed80x18';
 // cToken factor: cTokens ALWAYS have 18 decimals regardless of underlying token decimals
@@ -1128,10 +1129,12 @@ export default class Market {
    * Important decimal handling:
    * - Token decimals: Dynamically detected from underlying ERC20 token (6, 8, 18, etc.)
    * - Exchange rates: Always 18 decimals (cToken factor)
-   * - Note: This method currently uses `parseEther()` which assumes 18 decimals for the input amount.
-   *   This should be updated to use `parseTokenAmount()` in a future task to support non-18-decimal tokens.
+   * - cTokens: Always 18 decimals (cToken factor)
+   * - This method properly handles tokens with any decimal precision using `parseTokenAmount()`
    * 
    * The calculation: cTokens = underlyingAmount / exchangeRate
+   * - The exchange rate mantissa already accounts for underlying token decimals at deployment
+   * - Formula: cTokensMantissa (18 decimals) = (underlyingAmountParsed * 1e18) / exchangeRateMantissa
    * 
    * @example
    * // For 100 underlying tokens at exchange rate 0.02:
@@ -1147,27 +1150,25 @@ export default class Market {
       tokenDecimals = this.tokenDecimals;
     }
     
-    // Create dynamic token factor based on detected decimals
-    const tokenFactorValue = BigNumber.from(10).pow(tokenDecimals).toString();
-    const tokenFactor = FixedNumber.fromString(tokenFactorValue, format);
+    // Parse underlying amount using correct token decimals
+    const underlyingAmountParsed = parseTokenAmount(amount.toString(), tokenDecimals);
     
-    // Note: This method still uses parseEther which assumes 18 decimals
-    // This should be updated in a separate task to use parseTokenAmount
-    // exchangeRateMantissa is exchange rate (always 18 decimals)
+    // Get exchange rate (always in 18 decimals: underlying/cToken ratio)
+    // The exchange rate mantissa already accounts for underlying token decimals at deployment
     const exchangeRateMantissa = await this.instance.connect(account.signer)
       .callStatic.exchangeRateCurrent();
     
-    const amountAsFixedNumber = FixedNumber
-      .from(ethers.utils.parseEther(amount.toString()), format)
-      .divUnsafe(tokenFactor);
-    // Exchange rate: always 18 decimals
-    const exchangeRate = FixedNumber.from(exchangeRateMantissa.toString(), format)
-      .divUnsafe(cTokenFactor);
-    const fixedNumber = amountAsFixedNumber.divUnsafe(exchangeRate);
+    // Calculate cTokens: cTokens = underlying / exchangeRate
+    // Formula: cTokensMantissa (18 decimals) = (underlyingAmountParsed * 1e18) / exchangeRateMantissa
+    const cTokensMantissa = underlyingAmountParsed.mul(BigNumber.from(10).pow(18)).div(exchangeRateMantissa);
+    
+    // Convert cTokens mantissa (18 decimals) to FixedNumber and then to human-readable
+    const cTokensFixedNumber = FixedNumber.from(cTokensMantissa.toString(), format);
+    const cTokensHumanReadable = cTokensFixedNumber.divUnsafe(cTokenFactor);
     
     return {
-      value: Number(fixedNumber._value),
-      fixedNumber,
+      value: Number(cTokensHumanReadable._value),
+      fixedNumber: cTokensFixedNumber,
     };
   }
 
