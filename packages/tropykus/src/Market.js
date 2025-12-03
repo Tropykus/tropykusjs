@@ -999,7 +999,21 @@ export default class Market {
     const diff = fixedNumber.subUnsafe(marketDepositUSD);
     if (Number(diff._value) >= 0) fixedNumber = marketDepositUSD;
     const underlying = fixedNumber.divUnsafe(price);
-    const calculatedTokens = underlying.divUnsafe(exchangeRate);
+    // Calculate cTokens using the same logic as getTokensFromUnderlying
+    // Round underlying value to token decimals to avoid parseTokenAmount precision errors
+    // Convert underlying to number, round to token decimals, then parse
+    const underlyingNumber = Number(underlying._value);
+    const underlyingRounded = underlyingNumber.toFixed(tokenDecimals);
+    const underlyingAmountParsed = parseTokenAmount(underlyingRounded, tokenDecimals);
+    // Formula: cTokensMantissa (18 decimals) = (underlyingAmountParsed * 1e18) / exchangeRateMantissa
+    // Ensure exchangeRateMantissa is a BigNumber
+    const exchangeRateMantissaBN = BigNumber.isBigNumber(exchangeRateMantissa)
+      ? exchangeRateMantissa
+      : BigNumber.from(exchangeRateMantissa.toString());
+    const cTokensMantissa = underlyingAmountParsed.mul(BigNumber.from(10).pow(18)).div(exchangeRateMantissaBN);
+    // Convert cTokens mantissa (18 decimals) to FixedNumber and then to human-readable
+    const calculatedTokens = FixedNumber.from(cTokensMantissa.toString(), format)
+      .divUnsafe(cTokenFactor);
     const supplyMinusUnderlying = supplyBalance.subUnsafe(underlying);
     if (supplyMinusUnderlying._value
       .localeCompare('0.00000000000000005', undefined, { numeric: true }) < 0) {

@@ -2380,21 +2380,27 @@ describe('Market', () => {
       // Deposit collateral in both markets
       await cusdt0.mint(alice, 1000.0); // 1000 USDT0 (6 decimals)
       await cdoc.mint(alice, 2000.0); // 2000 DOC (18 decimals)
+      await crbtc.mint(alice, 0.01); // 0.01 RBTC (18 decimals)
       
       // Enter markets
-      await newComptroller.enterMarkets(alice, [cusdt0.address, cdoc.address]);
+      await newComptroller.enterMarkets(alice, [cusdt0.address, cdoc.address, crbtc.address]);
       
       // The liquidity from cusdt0 should be 700 because the collateral factor is 0.7
       // The liquidity from cdoc should be 1600 because the collateral factor is 0.8
+      // The liquidity from crbtc should be 600 because the collateral factor is 0.6
+      
       // Get account liquidity in USD (should work with any market address or empty)
       const liquidityUSD = await newComptroller.getAccountLiquidity(alice, '');
       const liquidityCUSDT0 = await newComptroller.getAccountLiquidity(alice, cusdt0.address);
       const liquidityCDOC = await newComptroller.getAccountLiquidity(alice, cdoc.address);
-      expect(liquidityUSD.usd.value).to.be.closeTo(2300, 0.01);
+      const liquidityCRBTC = await newComptroller.getAccountLiquidity(alice, crbtc.address);
+      expect(liquidityUSD.usd.value).to.be.closeTo(2900, 0.01);
       expect(liquidityCUSDT0.usd.value).to.be.equal(700);
       expect(liquidityCUSDT0.underlying.value).to.be.equal(700);
       expect(liquidityCUSDT0.underlying.value).to.be.equal(700);
       expect(liquidityCDOC.underlying.value).to.be.equal(1600);
+      expect(liquidityCRBTC.usd.value).to.be.equal(600);
+      expect(liquidityCRBTC.underlying.value).to.be.equal(0.006);
     });
 
     it.skip('should get hypothetical account liquidity with correct decimal parsing', async () => {
@@ -2599,7 +2605,7 @@ describe('Market', () => {
       expect(Number(totalSupplyCRBTC.withCollateral._value)).to.be.closeTo(2900, 0.1);
     });
 
-    it.skip('should calculate maxAllowedToWithdraw correctly across multiple markets', async () => {
+    it('should calculate maxAllowedToWithdraw correctly across multiple markets', async () => {
       // Alice deposits 1000 USDT0 and 1000 DOC to initialize pool liquidity
       await cusdt0.mint(bob, 10000.0); // 1000 USDT0 (6 decimals)
       await cdoc.mint(bob, 10000.0);   // 1000 DOC (18 decimals)
@@ -2607,36 +2613,38 @@ describe('Market', () => {
       await cusdt0.mint(alice, 1000.0); // 1000 USDT0 (6 decimals)
       await cdoc.mint(alice, 2000.0); // 2000 DOC (18 decimals)
       await crbtc.mint(alice, 0.01); // 0.01 CRBTC (18 decimals) - 1000 USD value and 600 USD of liquidity for collateral
-      // The total supply in USD is 3000 USD, the collateral factor is 0.7 for USDT0 and 0.8 for DOC
-      // The total liquidity is 2300 USD
+      // The total supply in USD is 4000 USD, the collateral factor is 0.7 for USDT0. 0.6 for RBTC and 0.8 for DOC
+      // The total liquidity is 2900 USD
 
       // Enter markets
-      await newComptroller.enterMarkets(alice, [cusdt0.address, cdoc.address]);
+      await newComptroller.enterMarkets(alice, [cusdt0.address, cdoc.address, crbtc.address]);
+      let liquidityUSD = await newComptroller.getAccountLiquidity(alice, '');
+      expect(liquidityUSD.usd.value).to.be.closeTo(2900, 0.01);
 
       // Borrow from one market
-      await cusdt0.borrow(alice, 100.0); // 100 USDT0
+      await cdoc.borrow(alice, 100.0); // 100 USDT0
 
       // Get max allowed to withdraw from USDT0 market
-      const maxWithdrawUSDT0 = await cusdt0.maxAllowedToWithdraw(alice, markets);
-      console.log("🚀 ~ maxWithdrawUSDT0:", maxWithdrawUSDT0)
+      let maxWithdrawUSDT0 = await cusdt0.maxAllowedToWithdraw(alice, markets);
       expect(maxWithdrawUSDT0.underlying).to.be.closeTo(1000, 0.1);
-      // expect(maxWithdrawUSDT0.usd).to.be.greaterThan(0);
-      // expect(maxWithdrawUSDT0.tokens).to.be.ok;
-      // expect(maxWithdrawUSDT0.tokens.value).to.be.greaterThan(0);
+      expect(maxWithdrawUSDT0.usd).to.be.closeTo(1000, 0.1);
+      expect(maxWithdrawUSDT0.tokens.value).to.be.closeTo(50000, 10);
 
-      // // Get max allowed to withdraw from DOC market
-      // const maxWithdrawDOC = await cdoc.maxAllowedToWithdraw(alice, markets);
-      // expect(maxWithdrawDOC.underlying).to.be.greaterThan(0);
-      // expect(maxWithdrawDOC.usd).to.be.greaterThan(0);
-      // expect(maxWithdrawDOC.tokens).to.be.ok;
-      // expect(maxWithdrawDOC.tokens.value).to.be.greaterThan(0);
-
-      // // Max withdraw should be less than or equal to supply
-      // const balanceUSDT0 = await cusdt0.balanceOfUnderlying(alice);
-      // expect(maxWithdrawUSDT0.underlying).to.be.at.most(balanceUSDT0.underlying);
-
-      // const balanceDOC = await cdoc.balanceOfUnderlying(alice);
-      // expect(maxWithdrawDOC.underlying).to.be.at.most(balanceDOC.underlying);
+      await cdoc.borrow(alice, 2700.0); // 2700 DOC
+      liquidityUSD = await newComptroller.getAccountLiquidity(alice, '');
+      expect(liquidityUSD.usd.value).to.be.closeTo(100, 0.01);
+      maxWithdrawUSDT0 = await cusdt0.maxAllowedToWithdraw(alice, markets);
+      // Calculation explanation:
+      // - Account Liquidity: 100 USD
+      // - Collateral Factor (USDT0): 0.7
+      // - Min Liquidity: 1 USD
+      // - Max Withdraw = (Liquidity - minLiquidity) / CF = (100 - 1) / 0.7 ≈ 141.43 USD
+      // This is correct because withdrawing 141.43 USD of collateral reduces borrowing power
+      // by 141.43 * 0.7 = 99 USD, leaving 1 USD (minLiquidity) remaining.
+      // Exchange rate is 0.02 (1000 USDT0 = 50000 tokens), so 141.4 USDT0 ≈ 7070 tokens
+      expect(maxWithdrawUSDT0.underlying).to.be.closeTo(141.4, 0.1);
+      expect(maxWithdrawUSDT0.usd).to.be.closeTo(141.4, 0.1);
+      expect(maxWithdrawUSDT0.tokens.value).to.be.closeTo(7070, 10);
     });
 
     it.skip('should calculate maxAllowedToDeposit correctly for each market', async () => {
