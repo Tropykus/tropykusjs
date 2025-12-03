@@ -144,7 +144,7 @@ describe('PriceOracle', () => {
     });
   });
 
-  describe.skip('detectOracleDecimals (T009, T011, T012)', () => {
+  describe('detectOracleDecimals (T009, T011, T012)', () => {
     it('should return 30 for PriceOracleAdapterUSDT (T009, T012)', async () => {
       const decimals = await priceOracle.detectOracleDecimals(usdtAdapter.address);
       expect(decimals).to.equal(30);

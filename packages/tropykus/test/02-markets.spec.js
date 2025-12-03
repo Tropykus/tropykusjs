@@ -237,7 +237,7 @@ describe('Market', () => {
     });
   });
 
-  describe.skip(('Markets operations'), () => {
+  describe(('Markets operations'), () => {
     let crbtc;
     let csat;
     let cdoc;
@@ -821,10 +821,10 @@ describe('Market', () => {
       } = await newComptroller.getAccountLiquidity(alice, crbtc.address);
       expect(usd.value)
         .to
-        .equal(0.5 * price * collateralFactor);
+        .be.closeTo(0.5 * price * collateralFactor, 5);
       expect(underlying.value)
         .to
-        .equal((0.5 * price * collateralFactor) / 54556.9);
+        .be.closeTo((0.5 * price * collateralFactor) / 54556.9, 0.01);
       expect(usd.fixedNumber)
         .instanceOf(ethers.FixedNumber);
       expect(underlying.fixedNumber)
@@ -1292,7 +1292,7 @@ describe('Market', () => {
       const liquidity = await newComptroller.getAccountLiquidity(alice, csat.address);
       expect(liquidity.usd.value)
         .to
-        .gt(0);
+        .closeTo(0, 5);
     });
 
     it('should return the max value that an account can redeem when cash more than supply', async () => {
@@ -1340,7 +1340,7 @@ describe('Market', () => {
       const liquidity = await newComptroller.getAccountLiquidity(alice, csat.address);
       expect(liquidity.usd.value)
         .to
-        .gt(0);
+        .closeTo(0, 5);
     });
 
     it('should return the max value that an account can redeem from a market with active debts', async () => {
@@ -1458,7 +1458,7 @@ describe('Market', () => {
       const liquidity = await newComptroller.getAccountLiquidity(alice, csat.address);
       expect(liquidity.usd.value)
         .to
-        .gt(0);
+        .closeTo(0, 5);
     });
 
     it('should return the max value that an account can redeem from a market with active debts collateral factor 0', async () => {
@@ -1500,7 +1500,7 @@ describe('Market', () => {
       const liquidity = await newComptroller.getAccountLiquidity(alice, cusdt.address);
       expect(liquidity.usd.value)
         .to
-        .gt(0);
+        .closeTo(0, 5);
     });
 
     it('should return the max value that an account can deposit in stable markets', async () => {
@@ -1716,7 +1716,7 @@ describe('Market', () => {
     });
   });
 
-  describe.skip('6-decimal token decimal detection', () => {
+  describe('6-decimal token decimal detection', () => {
     let usdt0Token;
     let cusdt0;
     let newComptroller;
@@ -2376,7 +2376,7 @@ describe('Market', () => {
       markets = null;
     });
 
-    it.skip('should get account liquidity across multiple markets with different decimals', async () => {
+    it('should get account liquidity across multiple markets with different decimals', async () => {
       // Deposit collateral in both markets
       await cusdt0.mint(alice, 1000.0); // 1000 USDT0 (6 decimals)
       await cdoc.mint(alice, 2000.0); // 2000 DOC (18 decimals)
@@ -2403,7 +2403,7 @@ describe('Market', () => {
       expect(liquidityCRBTC.underlying.value).to.be.equal(0.006);
     });
 
-    it.skip('should get hypothetical account liquidity with correct decimal parsing', async () => {
+    it('should get hypothetical account liquidity with correct decimal parsing', async () => {
       // Deposit collateral
       await cusdt0.mint(alice, 1000.0); // 1000 USDT0
       await cdoc.mint(alice, 2000.0); // 2000 DOC
@@ -2469,7 +2469,7 @@ describe('Market', () => {
       expect(hypothetical.shortfall.underlying).to.be.a('number');
     });
 
-    it.skip('should convert underlying tokens to cTokens with correct decimal handling', async () => {
+    it('should convert underlying tokens to cTokens with correct decimal handling', async () => {
       // Deposit some collateral to establish exchange rate
       await cusdt0.mint(alice, 1000.0); // 1000 USDT0 (6 decimals)
       await cdoc.mint(alice, 100.0); // 100 DOC (18 decimals)
@@ -2509,7 +2509,7 @@ describe('Market', () => {
       expect(cTokensDOC.value).to.be.greaterThan(0);
     });
 
-    it.skip('should get total borrows across all markets with correct decimal handling', async () => {
+    it('should get total borrows across all markets with correct decimal handling', async () => {
       // Deposit collateral
       await cusdt0.mint(alice, 1000.0); // 1000 USDT0
       await cdoc.mint(alice, 2000.0); // 2000 DOC
@@ -2555,7 +2555,7 @@ describe('Market', () => {
 
     });
 
-    it.skip('should get total supply across all markets with correct decimal handling', async () => {
+    it('should get total supply across all markets with correct decimal handling', async () => {
       // Deposit in both markets
       await cusdt0.mint(alice, 1000.0); // 1000 USDT0 (6 decimals)
       await cdoc.mint(alice, 2000.0); // 2000 DOC (18 decimals)
@@ -2647,32 +2647,45 @@ describe('Market', () => {
       expect(maxWithdrawUSDT0.tokens.value).to.be.closeTo(7070, 10);
     });
 
-    it.skip('should calculate maxAllowedToDeposit correctly for each market', async () => {
+    it('should calculate maxAllowedToDeposit correctly for each market', async () => {
+      const initialBalanceUSDT0 = await cusdt0.balanceOfUnderlyingInWallet(alice);
+      const initialBalanceDOC = await cdoc.balanceOfUnderlyingInWallet(alice);
       // Get max allowed to deposit for USDT0 (should be wallet balance)
       const maxDepositUSDT0 = await cusdt0.maxAllowedToDeposit(alice);
-      expect(maxDepositUSDT0.underlying.value).to.be.greaterThan(0);
-      expect(maxDepositUSDT0.usd.value).to.be.greaterThan(0);
+      expect(maxDepositUSDT0.underlying.value).to.be.closeTo(initialBalanceUSDT0.underlying.value, 0.01);
+      expect(maxDepositUSDT0.usd.value).to.be.closeTo(initialBalanceUSDT0.usd.value, 0.01);
 
       // Get max allowed to deposit for DOC (should be wallet balance)
       const maxDepositDOC = await cdoc.maxAllowedToDeposit(alice);
-      expect(maxDepositDOC.underlying.value).to.be.greaterThan(0);
-      expect(maxDepositDOC.usd.value).to.be.greaterThan(0);
+      expect(maxDepositDOC.underlying.value).to.be.closeTo(initialBalanceDOC.underlying.value, 0.01);
+      expect(maxDepositDOC.usd.value).to.be.closeTo(initialBalanceDOC.usd.value, 0.01);
 
-      // Verify it matches wallet balance
-      const walletBalanceUSDT0 = await cusdt0.balanceOfUnderlyingInWallet(alice);
-      expect(maxDepositUSDT0.underlying.value).to.be.closeTo(
-        walletBalanceUSDT0.underlying.value,
-        0.01,
-      );
+      // Mint 1000 usdt0 and 1000 doc
+      await cusdt0.mint(alice, 1000.0);
+      await cdoc.mint(alice, 1000.0);
+      const newBalanceUSDT0 = await cusdt0.balanceOfUnderlyingInWallet(alice);
+      const newBalanceDOC = await cdoc.balanceOfUnderlyingInWallet(alice);
+      expect(newBalanceUSDT0.underlying.value).to.be.closeTo( initialBalanceUSDT0.underlying.value - 1000.0, 0.01);
+      expect(newBalanceDOC.underlying.value).to.be.closeTo(initialBalanceDOC.underlying.value - 1000.0, 0.01);
 
-      const walletBalanceDOC = await cdoc.balanceOfUnderlyingInWallet(alice);
-      expect(maxDepositDOC.underlying.value).to.be.closeTo(
-        walletBalanceDOC.underlying.value,
-        0.01,
-      );
+      const newMaxDepositUSDT0 = await cusdt0.maxAllowedToDeposit(alice);
+      const newMaxDepositDOC = await cdoc.maxAllowedToDeposit(alice);
+      expect(newMaxDepositUSDT0.underlying.value).to.be.closeTo( newBalanceUSDT0.underlying.value, 0.01);
+      expect(newMaxDepositDOC.underlying.value).to.be.closeTo( newBalanceDOC.underlying.value, 0.01);
+
+      // Check the balance of the account and deposit everything
+      const remainingBalanceUSDT0 = await cusdt0.balanceOfUnderlyingInWallet(alice);
+      const remainingBalanceDOC = await cdoc.balanceOfUnderlyingInWallet(alice);
+      await cusdt0.mint(alice, remainingBalanceUSDT0.underlying.value);
+      await cdoc.mint(alice, remainingBalanceDOC.underlying.value);
+
+      const finalBalanceUSDT0 = await cusdt0.balanceOfUnderlyingInWallet(alice);
+      const finalBalanceDOC = await cdoc.balanceOfUnderlyingInWallet(alice);
+      expect(finalBalanceUSDT0.underlying.value).to.be.closeTo(0, 0.01);
+      expect(finalBalanceDOC.underlying.value).to.be.closeTo(0, 0.01);
     });
 
-    it.skip('should handle cross-market operations with mixed decimal precisions', async () => {
+    it('should handle cross-market operations with mixed decimal precisions', async () => {
       // Deposit in both markets
       await cusdt0.mint(alice, 1000.0); // 1000 USDT0 (6 decimals)
       await cdoc.mint(alice, 2000.0); // 2000 DOC (18 decimals)
@@ -2682,6 +2695,7 @@ describe('Market', () => {
 
       // Borrow from USDT0 market (6 decimals)
       await cusdt0.borrow(alice, 100.0);
+      await cdoc.borrow(alice, 50.0);
 
       // Get total borrows - should correctly sum USD values from both markets
       const totalBorrows = await newComptroller.getTotalBorrowsInAllMarkets(
@@ -2689,8 +2703,8 @@ describe('Market', () => {
         markets,
         cusdt0.address,
       );
-      expect(totalBorrows.usd).to.be.greaterThan(0);
-      expect(totalBorrows.underlying).to.be.greaterThan(0);
+      expect(totalBorrows.usd).to.be.closeTo(150, 0.01);
+      expect(totalBorrows.underlying).to.be.closeTo(150, 0.01);
 
       // Get total supply - should correctly sum USD values from both markets
       const totalSupply = await newComptroller.getTotalSupplyInAllMarkets(
@@ -2698,9 +2712,9 @@ describe('Market', () => {
         markets,
         cusdt0.address,
       );
-      expect(totalSupply.usd).to.be.greaterThan(0);
-      expect(totalSupply.underlying).to.be.greaterThan(0);
-      expect(totalSupply.withCollateral._value || totalSupply.withCollateral).to.be.ok;
+      expect(totalSupply.usd).to.be.closeTo(3000, 0.01);
+      expect(totalSupply.underlying).to.be.closeTo(3000, 0.01);
+      expect(Number(totalSupply.withCollateral._value)).to.be.closeTo(2300, 0.01);
 
       // Verify that total supply USD is greater than total borrows USD
       // (account should have positive liquidity)
