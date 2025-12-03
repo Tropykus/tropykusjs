@@ -469,7 +469,7 @@ export default class Comptroller {
    */
   async getTotalBorrowsInAllMarkets(account, markets, marketAddress = '') {
     let fixedNumber = FixedNumber.fromString('0', format);
-    let underlyingBorrowAmount = FixedNumber.fromString('0', format);
+    let priceUnderlying = FixedNumber.fromString('0', format);
     
     // Process all markets in parallel
     const marketPromises = markets.map(async (market) => {
@@ -508,26 +508,24 @@ export default class Comptroller {
       // Calculate USD: (human-readable borrow) * (human-readable price)
       const borrowsAsUSD = borrowsHumanReadable.mulUnsafe(priceHumanReadable);
       
-      return {
-        borrowsAsUSD,
-        borrowsHumanReadable,
-        isTargetMarket: market.address.toLowerCase() === marketAddress.toLowerCase(),
-      };
+      // Store price for underlying calculation if this is the target market
+      if (market.address.toLowerCase() === marketAddress.toLowerCase()) {
+        priceUnderlying = priceHumanReadable;
+      }
+      
+      return borrowsAsUSD;
     });
     
-    const results = await Promise.all(marketPromises);
+    const borrowsUSDArray = await Promise.all(marketPromises);
     
-    // Sum all borrows in USD and get underlying borrow for target market
-    results.forEach((result) => {
-      fixedNumber = fixedNumber.addUnsafe(result.borrowsAsUSD);
-      if (result.isTargetMarket) {
-        underlyingBorrowAmount = result.borrowsHumanReadable;
-      }
+    // Sum all borrows in USD
+    borrowsUSDArray.forEach((borrowsUSD) => {
+      fixedNumber = fixedNumber.addUnsafe(borrowsUSD);
     });
     
     const usd = fixedNumber;
-    const underlying = marketAddress && underlyingBorrowAmount._value !== '0.0'
-      ? underlyingBorrowAmount
+    const underlying = marketAddress && priceUnderlying._value !== '0.0' 
+      ? fixedNumber.divUnsafe(priceUnderlying) 
       : FixedNumber.fromString('0', format);
     
     return {
@@ -604,7 +602,7 @@ export default class Comptroller {
         .divUnsafe(oracleFactor);
       
       // Store price for underlying calculation if this is the target market
-      if (market.address.toLowerCase() === (marketAddress || '').toLowerCase()) {
+      if (market.address === marketAddress.toLowerCase()) {
         priceUnderlying = priceHumanReadable;
       }
       
@@ -625,9 +623,9 @@ export default class Comptroller {
     const results = await Promise.all(marketPromises);
     
     // Sum all supplies
-    results.forEach((result) => {
-      fixedNumber = fixedNumber.addUnsafe(result.supplyAsUSD);
-      withCollateral = withCollateral.addUnsafe(result.withCollateralASUSD);
+    results.forEach(({ supplyAsUSD, withCollateralASUSD }) => {
+      fixedNumber = fixedNumber.addUnsafe(supplyAsUSD);
+      withCollateral = withCollateral.addUnsafe(withCollateralASUSD);
     });
     
     // Always return total supply across all markets in USD
@@ -643,7 +641,7 @@ export default class Comptroller {
       underlying: Number(underlying._value),
       usd: Number(usd._value),
       fixedNumber,
-      withCollateral: Number(withCollateral._value),
+      withCollateral,
     };
   }  
 }
