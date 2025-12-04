@@ -495,3 +495,5 @@ packages/tropykus/.nyc_output/processinfo/index.json
 
 .cursor/
 .specify/
+
+.DS_Store
