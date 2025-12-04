@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2025-12-04
+
+### Added
+
+- Support for 6-decimal ERC20 tokens (USDT0) with dynamic decimal detection
+- `detectOracleDecimals` method in PriceOracle class for automatic oracle decimal detection
+- Decimal utility functions in `utils/decimals.js` for token and oracle decimal handling
+- Comprehensive integration tests for 6-decimal token operations (deposit, borrow, repay, redeem)
+- Mock price oracle adapter for USDT0 testing
+
+### Changed
+
+- Refactored Market and CErc20 classes to use dynamic decimal handling instead of hardcoded factors
+- Updated `balanceOfUnderlying`, `mint`, `borrow`, `repayBorrow`, and `redeem` methods to support variable token decimals
+- Enhanced `getAccountLiquidity`, `getTotalSupplyInAllMarkets`, and `getTotalBorrowsInAllMarkets` in Comptroller for accurate calculations with mixed decimal tokens
+- Migrated test suite to use Anvil for forking RSK Mainnet network
+- Updated test assertions to use `closeTo` for better precision in liquidity and borrowing calculations
+- Improved USD value calculations to handle mixed decimal scenarios (6-decimal tokens with 18-decimal and 30-decimal price oracles)
+
+### Documentation
+
+- Updated README.md to clarify USDT0 (6-decimal) vs deprecated kUSDT (18-decimal rUSDT) distinction
+- Enhanced documentation on decimal handling for new token integrations
+- Added test execution instructions with Anvil node requirements
+
+### Notes
+
+- **Backward Compatibility**: All existing 18-decimal token operations remain fully functional. The changes are backward compatible.
+- **Decimal Detection**: Token and oracle decimals are now automatically detected and cached for improved performance.
+- **Test Infrastructure**: Tests now require Anvil node to be running with RSK Mainnet fork. Anvil must be restarted between full test suite runs to ensure clean state.
+
 ## [0.3.0] - 2025-01-XX
 
 ### Deprecated
