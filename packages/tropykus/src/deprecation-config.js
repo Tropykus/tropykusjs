@@ -20,10 +20,10 @@ const DEPRECATED_MARKETS = {
       deprecated: true,
       reason: 'Market delisted from protocol (kSAT/cSAT)',
     },
-    // kRDOC/cRDOC market address - deprecated because market was never listed in protocol
+    // kRDOC/cRDOC market address - deprecated because market was delisted from protocol
     '0x0000000000000000000000000000000000000000': {
       deprecated: true,
-      reason: 'Market never listed (kRDOC/cRDOC)',
+      reason: 'Market delisted from protocol (kRDOC/cRDOC)',
     },
     // kRIF market address (mainnet) - deprecated because market was delisted from protocol
     '0x3134b7fbfca5db217eca523eab1941452cf35163': {

@@ -11,8 +11,28 @@ describe('T035: Quickstart Validation', () => {
   let quickstartContent;
 
   before(() => {
+    // Verify quickstart.md file exists
+    if (!fs.existsSync(quickstartPath)) {
+      throw new Error(`Quickstart file not found at: ${quickstartPath}`);
+    }
+    
     // Read quickstart.md file
-    quickstartContent = fs.readFileSync(quickstartPath, 'utf8');
+    try {
+      quickstartContent = fs.readFileSync(quickstartPath, 'utf8');
+    } catch (error) {
+      throw new Error(`Failed to read quickstart file: ${error.message}`);
+    }
+    
+    // Verify file has content
+    if (!quickstartContent || quickstartContent.trim().length === 0) {
+      throw new Error('Quickstart file is empty');
+    }
+  });
+  
+  it('should have quickstart.md file that exists and is readable', () => {
+    expect(quickstartContent).to.be.a('string');
+    expect(quickstartContent.length).to.be.greaterThan(0);
+    expect(quickstartContent).to.include('Deprecate Delisted Markets');
   });
 
   it('should have deprecation-config.js file matching quickstart pattern', () => {
