@@ -8,7 +8,8 @@ VERSION=$( node -p "require('./package').version" )
 echo "\"module\",\"shasum\""
 for PACKAGE in ${PACKAGES} ; do
   cd ./packages/${PACKAGE}
+  PACKAGE_NAME=$( node -p "require('./package.json').name" )
   PACKAGE_SHA=$( npm pack --dry-run 2>&1 >/dev/null | grep "shasum: " | awk '{print $NF}' )
-  echo "\"@tropykus-finance/${PACKAGE}@${VERSION}\",\"${PACKAGE_SHA}\""
+  echo "\"${PACKAGE_NAME}@${VERSION}\",\"${PACKAGE_SHA}\""
   cd ../..
 done

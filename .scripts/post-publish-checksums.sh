@@ -7,6 +7,7 @@ PACKAGES=$( ls ./packages/ )
 VERSION=$( node -p "require('./package').version" )
 echo "\"module\",\"shasum\""
 for PACKAGE in ${PACKAGES} ; do
-  PACKAGE_SHA=$( npm view @tropykus-finance/${PACKAGE}@${VERSION} dist.shasum )
-  echo "\"@tropykus-finance/${PACKAGE}@${VERSION}\",\"${PACKAGE_SHA}\""
+  PACKAGE_NAME=$( node -p "require('./packages/${PACKAGE}/package.json').name" )
+  PACKAGE_SHA=$( npm view ${PACKAGE_NAME}@${VERSION} dist.shasum )
+  echo "\"${PACKAGE_NAME}@${VERSION}\",\"${PACKAGE_SHA}\""
 done
