@@ -4,7 +4,7 @@
 
 The Tropykus Protocol is developed using RSK smart contracts for supplying or borrowing assets. Through the cToken contracts, accounts on the blockchain supply capital (RBTC or ERC-20 tokens) to receive kTokens. Accounts may also do the reverse, and borrow assets from the protocol, using other assets as collateral.
 
-The Tropykus cToken contracts (CRBTC, CERC20Immutable and CRDOC) track these balances, and algorithmically set interest rates for borrowers. This process is described in greater detail, in the [Tropykus Whitepaper](https://firebasestorage.googleapis.com/v0/b/tropycofinance.appspot.com/o/Tropykus_Protocol%20V4.pdf?alt=media&token=d2b0cb1e-4163-432f-8b17-38df7393baff).
+The Tropykus cToken contracts (CRBTC and CERC20Immutable) track these balances, and algorithmically set interest rates for borrowers. This process is described in greater detail, in the [Tropykus Whitepaper](https://firebasestorage.googleapis.com/v0/b/tropycofinance.appspot.com/o/Tropykus_Protocol%20V4.pdf?alt=media&token=d2b0cb1e-4163-432f-8b17-38df7393baff).
 
 # Tropykusjs
 
@@ -113,7 +113,7 @@ args = {
 const crbtc = await tropykus.addMarket('CRBTC', true, crbtcMarketAddress);
 ```
 
-**For cTokens (cDOC, cRIF, cUSDT):**
+**For cTokens (cDOC, CBPRO, cUSDRIF):**
 ```javascript
 const cdoc = await tropykus.addMarket('CErc20Immutable', true, cdocAddress, docAddress);
 ```
@@ -122,12 +122,42 @@ const cdoc = await tropykus.addMarket('CErc20Immutable', true, cdocAddress, docA
 
 > **Note**: USDT0 refers to the standard 6-decimal USDT token on Rootstock. The deprecated kUSDT market used rUSDT, an 18-decimal wrapped version. New integrations should use USDT0 with 6 decimals for proper decimal handling and compatibility with current standards.
 
-**For cRDOC:**
+**For USDT0 (6-Decimal Token):**
+
+USDT0 is a 6-decimal token that uses a 30-decimal price oracle adapter. The library automatically detects both the token decimals (6) and oracle decimals (30) for accurate USD value calculations.
+
 ```javascript
-const crdoc = await tropykus.addMarket('CRDOC', true, rcdocAddress, rdocAddress);
+// Add USDT0 market using CErc20Immutable artifact
+const cusdt0 = await tropykus.addMarket('CErc20Immutable', true, usdt0MarketAddress, usdt0TokenAddress);
+
+// Mint 1.5 USDT0 - automatically converts to 1500000 (1.5 × 10^6) internally
+await cusdt0.mint(tropykus.account, 1.5);
+
+// Check balance - returns human-readable values
+const balance = await cusdt0.balanceOfUnderlying(tropykus.account);
+// Returns: { value: 1.5, usd: 1.5 } (assuming $1 USDT price)
+console.log('Balance:', balance.value, 'USDT0');
+console.log('USD Value:', balance.usd, 'USD');
+
+// Borrow 0.5 USDT0 - automatically converts to 500000 (0.5 × 10^6) internally
+await cusdt0.borrow(tropykus.account, 0.5);
+
+// Check borrow balance
+const borrowBalance = await cusdt0.borrowBalanceCurrent(tropykus.account);
+console.log('Borrowed:', borrowBalance.value, 'USDT0');
+
+// Repay borrowed amount
+await cusdt0.repayBorrow(tropykus.account, 0.5);
+
+// Redeem deposited tokens
+await cusdt0.redeem(tropykus.account, 1.0);
 ```
 
-> **⚠️ Deprecation Notice**: cRDOC market is deprecated (never listed). Please use supported markets instead.
+> **Note**: The library automatically detects:
+> - **Token decimals**: 6 for USDT0 (via `getTokenDecimals()`)
+> - **Oracle decimals**: 30 for USDT price oracle adapter (via `detectOracleDecimals()`)
+> 
+> All decimal conversions are handled automatically. You can work with human-readable values (e.g., `1.5 USDT0`) and the library converts them to the correct contract format internally.
 
 Then mint function can be called using the assigned tropykus account to sign the transaction
 
@@ -192,7 +222,7 @@ await crbtc.redeem(account, value);
 ### Example
 
 ```javascript=
-const cdoc = await tropykus.addMarket('CDOC', true, rcdocAddress, rdocAddress);
+const cdoc = await tropykus.addMarket('CErc20Immutable', true, cdocAddress, docAddress);
 
 // It's necesary have founds in the market to be able to redeem
 await cdoc.mint(tropykus.account, depositValue);
@@ -255,6 +285,7 @@ The third parameter is a flag that indicates the method that must pay all the de
 | **kBPRO** | 0x844a99Ba756539Aee698ce2915d678bA0FeE4d9d | 0x405062731d8656af5950ef952be9fa110878036b |
 | **kRBTC** | 0x636b2c156d09cee9516f9afec7a4605e1f43dec1 | 0x0aeadb9d4c6a80462a47e87e76e487fa8b9a37d7 |
 | **kUSDRF** | 0xfbee4444493194468df1de7450a37d840eb8b555 | 0xDdf3CE45fcf080DF61ee61dac5Ddefef7ED4F46C |
+| **kUST0** | 0xF66513302Ad4F64a7C00888c1174d18ee22Ed5f2 | N/A |
 
 ## Deprecated Markets and Functions
 
@@ -266,6 +297,3 @@ The third parameter is a flag that indicates the method that must pay all the de
 | **kUSDT ⚠️ DEPRECATED** | 0x5539d6d48a2147cb824c5c45baaa01e7e1a2694f | 0xedaefc6b596ed38d712100976969975a37c84464 |
 | **kRIF ⚠️ DEPRECATED** | 0x23b60e2193057b4b2823973b7478489a076de84f | 0x3134b7fbfca5db217eca523eab1941452cf35163 |
 | **kRDOC ⚠️ DEPRECATED** | 0x0981eb51a91e6f89063c963438cadf16c2e44962 | - |
-
-
-

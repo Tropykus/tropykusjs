@@ -1,13 +1,12 @@
 {
   "name": "@tropykus/tropykuslibs",
-  "version": "0.4.0-alpha",
+  "version": "0.4.0-beta.1",
   "description": "Tropykus finance contract handlers",
   "main": "dist/@tropykus/tropykuslibs.cjs.js",
   "module": "dist/@tropykus/tropykuslibs.esm.js",
   "browser": "dist/@tropykus/tropykuslibs.umd.js",
   "files": [
-    "dist",
-    "README.md"
+    "dist"
   ],
   "scripts": {
     "build": "rollup -c",
